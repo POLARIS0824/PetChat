@@ -111,7 +111,9 @@ class MainActivity : ComponentActivity() {
     }
 }
 
-@OptIn(ExperimentalFoundationApi::class, ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalFoundationApi::class, ExperimentalMaterial3Api::class,
+    ExperimentalLayoutApi::class
+)
 @Composable
 fun PetChatApp(
     viewModel: PetChatViewModel = viewModel(),
@@ -143,6 +145,8 @@ fun PetChatApp(
             scrimColor = Color.Black.copy(alpha = 0.32f) // Material 3 的标准值
         ) {
             Scaffold(
+                modifier = Modifier.
+                systemBarsPadding(),
                 topBar = {
                     when (currentScreen) {
                         Screen.Chat -> {
@@ -262,6 +266,7 @@ fun PetChatApp(
                 Box(modifier = Modifier
                     .fillMaxSize()
                     .padding(padding)
+                    .imeNestedScroll()
                 ) {
                     when (currentScreen) {
                         Screen.Chat -> {
@@ -423,56 +428,59 @@ fun ChatScreen(
         R.drawable.frame10
     )
 
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
+    Box(
+        modifier = Modifier.fillMaxSize()
     ) {
-        AnimatedAvatar(
-            frameResIds = frames,
+        Column(
             modifier = Modifier
-                .padding(start = 24.dp, top = 24.dp)
-                .size(48.dp)
-                .clip(CircleShape)
-                .zIndex(1f) // 保证头像在顶部
-        )
-
-        // 聊天消息列表
-        LazyColumn(
-            state = listState,
-            modifier = Modifier
-                .weight(1f) // 占据剩余空间
-                .fillMaxWidth(),
-            contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp)
+                .fillMaxSize()
         ) {
-            items(
-                items = viewModel.getChatHistory(petType),
-                key = { it.hashCode() }
-            ) { message ->
-                ChatBubble(
-                    message = message,
-                    modifier = Modifier.animateItemPlacement()
-                )
-            }
-        }
-
-//        Column(modifier = Modifier.align(Alignment.BottomCenter)) {
-            ChatInput(
-                message = message,
-                onMessageChange = { message = it },
-                onSendClick = {
-                    if (message.isNotEmpty()) {
-                        viewModel.sendMessage(message)
-                        message = ""
-                        coroutineScope.launch {
-                            listState.animateScrollToItem(viewModel.getChatHistory(petType).size - 1)
-                        }
-                    }
-                },
-                isLoading = viewModel.isLoading,
+            AnimatedAvatar(
+                frameResIds = frames,
                 modifier = Modifier
-                    .windowInsetsPadding(WindowInsets.ime.only(WindowInsetsSides.Bottom))
+                    .padding(start = 24.dp, top = 24.dp)
+                    .size(48.dp)
+                    .clip(CircleShape)
+                    .zIndex(1f) // 保证头像在顶部
             )
-//        }
+
+            // 聊天消息列表
+            LazyColumn(
+                state = listState,
+                modifier = Modifier
+                    .weight(1f) // 占据剩余空间
+                    .fillMaxWidth(),
+                contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp)
+            ) {
+                items(
+                    items = viewModel.getChatHistory(petType),
+                    key = { it.hashCode() }
+                ) { message ->
+                    ChatBubble(
+                        message = message,
+                        modifier = Modifier.animateItemPlacement()
+                    )
+                }
+            }
+
+                ChatInput(
+                    message = message,
+                    onMessageChange = { message = it },
+                    onSendClick = {
+                        if (message.isNotEmpty()) {
+                            viewModel.sendMessage(message)
+                            message = ""
+                            coroutineScope.launch {
+                                listState.animateScrollToItem(viewModel.getChatHistory(petType).size - 1)
+                            }
+                        }
+                    },
+                    isLoading = viewModel.isLoading,
+                    modifier = Modifier
+                        .imePadding() // 使用 imePadding
+                        .navigationBarsPadding() // 添加导航栏 padding
+                )
+        }
     }
 
     if (showSettings) {
