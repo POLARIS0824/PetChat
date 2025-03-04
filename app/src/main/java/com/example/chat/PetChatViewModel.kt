@@ -23,11 +23,11 @@ class PetChatViewModel(application: Application) : AndroidViewModel(application)
     )
 
     // 当前选择的宠物类型，默认为猫咪
-    var currentPetType by mutableStateOf(PetTypes.CAT)
+    private var currentPetType by mutableStateOf(PetTypes.CAT)
         private set
 
     // 聊天历史记录列表
-    var chatHistory by mutableStateOf<List<ChatMessage>>(emptyList())
+    private var chatHistory by mutableStateOf<List<ChatMessage>>(emptyList())
         private set
 
     // 最后一次AI返回的图片信息
@@ -42,11 +42,46 @@ class PetChatViewModel(application: Application) : AndroidViewModel(application)
     private var _shouldScrollToBottom = mutableStateOf(false)
     val shouldScrollToBottom: Boolean by _shouldScrollToBottom
 
+    init {
+        loadChatHistory()
+    }
+
+    /**
+     * 从数据库加载聊天历史
+     */
+    private fun loadChatHistory() {
+        viewModelScope.launch {
+            try {
+                val messages = repository.getSessionMessages(currentPetType)
+                chatHistory = messages.map { entity ->
+                    ChatMessage(
+                        content = entity.content,
+                        isFromUser = entity.isFromUser,
+                        petType = PetTypes.valueOf(entity.petType)
+                    )
+                }
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
+        }
+    }
+
     /**
      * 切换当前的宠物类型
      */
     fun selectPetType(petType: PetTypes) {
         currentPetType = petType
+        loadChatHistory()
+    }
+
+    /**
+     * 创建新会话
+     */
+    fun createNewSession() {
+        viewModelScope.launch {
+            repository.createNewSession()
+            chatHistory = emptyList() // 清空当前聊天历史
+        }
     }
 
     /**
@@ -55,7 +90,7 @@ class PetChatViewModel(application: Application) : AndroidViewModel(application)
      */
     fun sendMessage(message: String) {
         if (message.isBlank()) return
-        
+
         viewModelScope.launch {
             isLoading = true
             try {
@@ -77,15 +112,19 @@ class PetChatViewModel(application: Application) : AndroidViewModel(application)
                 )
                 chatHistory = chatHistory + petMessage
                 repository.saveChatMessage(petMessage, currentPetType)
-                
+
+                // 更新图片信息
+                lastPictureInfo = pictureInfo
+
                 // 检查是否需要进行分析
-                if (repository.getUnprocessedChatsCount() >= 10) {
+                val unprocessedCount = repository.getUnprocessedChatsCount()
+                if (unprocessedCount >= 10) {
                     repository.analyzeChats()
                 }
-                
+
                 // 触发滚动到底部
                 _shouldScrollToBottom.value = true
-                
+
             } catch (e: Exception) {
                 e.printStackTrace()
             } finally {

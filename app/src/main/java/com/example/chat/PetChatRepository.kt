@@ -3,7 +3,11 @@ package com.example.chat
 import com.example.chat.data.ChatDao
 import com.example.chat.data.ChatEntity
 import com.example.chat.data.ChatAnalysisEntity
+import com.example.chat.model.ChatAnalysisResult
 import com.example.chat.model.ChatMessage
+import com.example.chat.model.DeepseekRequest
+import com.example.chat.model.DeepseekResponse
+import com.example.chat.model.Message
 import com.example.chat.model.PetTypes
 import com.example.chat.model.PictureInfo
 import com.google.gson.Gson
@@ -11,6 +15,7 @@ import okhttp3.*
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.RequestBody.Companion.toRequestBody
 import java.io.IOException
+import java.util.UUID
 import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
 import kotlin.coroutines.suspendCoroutine
@@ -59,6 +64,18 @@ class PetChatRepository private constructor(
             4. 性格活泼开朗
             5. 表达方式要充满活力
             """
+    )
+
+    // 新增：当前会话ID
+    private var currentSessionId: String = UUID.randomUUID().toString()
+
+    // 新增：消息历史限制
+    private val contextMessageLimit = 5  // 只保留最近5条消息作为上下文
+
+    // 新增：系统消息压缩
+    private val compressedPrompts = mapOf(
+        PetTypes.CAT to "你是猫咪。用喵结尾。简短回复。偶尔傲娇。",
+        PetTypes.DOG to "你是狗狗。用汪结尾。热情活泼。喜欢散步玩球。"
     )
 
     /**
@@ -115,57 +132,42 @@ class PetChatRepository private constructor(
     }
 
     /**
-     * 处理未处理的聊天记录并生成分析
+     * 发送API请求并获取响应
      */
-    suspend fun processUnprocessedChats() {
-        val unprocessedCount = chatDao.getUnprocessedChatsCount()
-        if (unprocessedCount >= 10) {
-            val chats = chatDao.getUnprocessedChats()
-            val petType = PetTypes.valueOf(chats.first().petType)
-            
-            val systemPrompt = """分析以下对话记录，执行以下任务：
-                1. 去除重复或相似的对话
-                2. 提取重要的用户偏好和兴趣点
-                3. 总结用户与宠物的互动模式
-                4. 返回JSON格式的分析结果
-                格式：{
-                    "summary": "总体分析",
-                    "preferences": ["偏好1", "偏好2"],
-                    "patterns": ["模式1", "模式2"]
-                }
-            """.trimIndent()
+    private suspend fun makeApiRequest(request: DeepseekRequest): DeepseekResponse {
+        return suspendCoroutine { continuation ->
+            val requestBody = gson.toJson(request).toRequestBody(JSON)
 
-            val chatHistory = chats.joinToString("\n") { 
-                "${if (it.isFromUser) "用户" else "宠物"}：${it.content}" 
-            }
+            val httpRequest = Request.Builder()
+                .url(BASE_URL)
+                .header("Authorization", "Bearer $API_KEY")
+                .post(requestBody)
+                .build()
 
-            try {
-                val response = getPetResponse(petType, chatHistory)
-                
-                // 解析AI返回的JSON结果
-                try {
-                    val analysis = gson.fromJson(response, ChatAnalysisResult::class.java)
-                    
-                    // 保存分析结果
-                    chatDao.insertAnalysis(ChatAnalysisEntity(
-                        petType = petType.name,
-                        summary = analysis.summary,
-                        preferences = gson.toJson(analysis.preferences),
-                        patterns = gson.toJson(analysis.patterns)
-                    ))
-                } catch (e: Exception) {
-                    e.printStackTrace()
+            client.newCall(httpRequest).enqueue(object : Callback {
+                override fun onFailure(call: Call, e: IOException) {
+                    continuation.resumeWithException(e)
                 }
 
-                // 标记消息为已处理
-                chatDao.update(chats.map { it.copy(isProcessed = true) })
-                
-                // 清理旧消息
-                val oneWeekAgo = System.currentTimeMillis() - 7 * 24 * 60 * 60 * 1000
-                chatDao.deleteOldProcessedChats(oneWeekAgo)
-            } catch (e: Exception) {
-                e.printStackTrace()
-            }
+                override fun onResponse(call: Call, response: Response) {
+                    response.use {
+                        if (!response.isSuccessful) {
+                            continuation.resumeWithException(
+                                IOException("API请求失败: ${response.code}")
+                            )
+                            return
+                        }
+
+                        try {
+                            val responseBody = response.body?.string()
+                            val deepseekResponse = gson.fromJson(responseBody, DeepseekResponse::class.java)
+                            continuation.resume(deepseekResponse)
+                        } catch (e: Exception) {
+                            continuation.resumeWithException(e)
+                        }
+                    }
+                }
+            })
         }
     }
 
@@ -232,131 +234,174 @@ class PetChatRepository private constructor(
     }
 
     /**
-     * 调用AI API获取宠物回复
-     * @param petType 当前选择的宠物类型
-     * @param message 用户输入的消息
-     * @return String AI的回复内容
+     * 获取压缩版的系统提示
      */
-    suspend fun getPetResponse(petType: PetTypes, message: String): String {
-        // 先获取增强的提示词
-        val enhancedPrompt = getEnhancedPrompt(petType)
-        
-        // 然后使用 suspendCoroutine 处理网络请求
-        return suspendCoroutine { continuation ->
-            val requestBody = DeepseekRequest(
-                messages = listOf(
-                    Message("system", enhancedPrompt),  // 使用已获取的提示词
-                    Message("user", message)
-                ),
-                model = "deepseek-chat",
-                temperature = 1.0,
-            )
+    private suspend fun getCompressedPrompt(petType: PetTypes): String {
+        val basePrompt = compressedPrompts[petType] ?: ""
+        val analysis = chatDao.getLatestAnalysis(petType.name)
 
-            val request = Request.Builder()
-                .url(BASE_URL)
-                .header("Authorization", "Bearer $API_KEY")
-                .post(gson.toJson(requestBody).toRequestBody(JSON))
-                .build()
-
-            client.newCall(request).enqueue(object : Callback {
-                override fun onFailure(call: Call, e: IOException) {
-                    continuation.resumeWithException(e)
-                }
-
-                override fun onResponse(call: Call, response: Response) {
-                    response.use {
-                        if (!response.isSuccessful) {
-                            continuation.resumeWithException(IOException("Unexpected code $response"))
-                            return
-                        }
-
-                        try {
-                            val responseBody = response.body?.string()
-                            val deepseekResponse = gson.fromJson(responseBody, DeepseekResponse::class.java)
-                            continuation.resume(deepseekResponse.choices[0].message.content)
-                        } catch (e: Exception) {
-                            continuation.resumeWithException(e)
-                        }
-                    }
-                }
-            })
+        return if (analysis != null) {
+            "$basePrompt 用户偏好:${analysis.summary.take(50)}"
+        } else {
+            basePrompt
         }
     }
 
     /**
-     * 获取未处理的聊天记录数量
+     * 保存聊天消息并智能标记重要性
+     */
+    suspend fun saveChatMessage(message: ChatMessage, petType: PetTypes) {
+        // 保存消息
+        val entity = ChatEntity(
+            content = message.content,
+            isFromUser = message.isFromUser,
+            petType = petType.name,
+            sessionId = currentSessionId,
+            role = if (message.isFromUser) "user" else "assistant",
+            // 自动判断消息重要性
+            isImportant = isMessageImportant(message.content)
+        )
+
+        val id = chatDao.insert(entity)
+
+        // 如果消息数量超过限制，执行摘要
+        val unprocessedCount = chatDao.getUnprocessedChatsCount()
+        if (unprocessedCount > 20) {
+            summarizeConversation()
+        }
+    }
+
+    /**
+     * 判断消息是否重要
+     */
+    private fun isMessageImportant(content: String): Boolean {
+        // 简单实现：包含问号或感叹号的消息可能更重要
+        return content.contains("?") || content.contains("!") ||
+                content.length > 50 || content.contains("喜欢") ||
+                content.contains("不喜欢") || content.contains("想要")
+    }
+
+    /**
+     * 对话摘要，减少历史消息数量
+     */
+    private suspend fun summarizeConversation() {
+        // 获取未处理的消息
+        val messages = chatDao.getUnprocessedChats()
+        if (messages.size < 10) return
+
+        // 构建摘要提示词
+        val summaryPrompt = """
+            请对以下对话进行摘要，提取关键信息，不超过100字：
+            ${
+            messages.joinToString("\n") {
+                (if (it.isFromUser) "用户: " else "宠物: ") + it.content
+            }
+        }
+        """.trimIndent()
+
+        try {
+            // 调用API获取摘要
+            val summary =
+                getPetResponse(PetTypes.valueOf(messages.first().petType), summaryPrompt)
+
+            // 创建摘要消息并标记为重要
+            val summaryEntity = ChatEntity(
+                content = "【对话摘要】$summary",
+                isFromUser = false,
+                petType = messages.first().petType,
+                sessionId = currentSessionId,
+                role = "system",
+                isImportant = true,
+                isProcessed = true
+            )
+            chatDao.insert(summaryEntity)
+
+            // 标记已处理的消息
+            chatDao.update(messages.map { it.copy(isProcessed = true) })
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+    }
+
+    /**
+     * 创建新会话
+     */
+    fun createNewSession() {
+        currentSessionId = UUID.randomUUID().toString()
+    }
+
+    /**
+     * 获取当前会话的消息
+     * @param petType 宠物类型
+     * @return 当前会话的消息列表
+     */
+    suspend fun getSessionMessages(petType: PetTypes): List<ChatEntity> {
+        return chatDao.getSessionMessages(currentSessionId, petType.name)
+    }
+
+    /**
+     * 获取未处理消息的数量
+     * @return 未处理消息的数量
      */
     suspend fun getUnprocessedChatsCount(): Int {
         return chatDao.getUnprocessedChatsCount()
     }
 
     /**
-     * 保存聊天消息到本地数据库
-     * @param message 要保存的聊天消息
-     * @param petType 当前的宠物类型
+     * 调用AI API获取宠物回复
+     * @param petType 当前选择的宠物类型
+     * @param message 用户输入的消息
+     * @return String AI的回复内容
      */
-    suspend fun saveChatMessage(message: ChatMessage, petType: PetTypes) {
-        chatDao.insert(
-            ChatEntity(
-            content = message.content,
-            isFromUser = message.isFromUser,
-            petType = petType.name
-        )
-        )
-    }
+    suspend fun getPetResponse(petType: PetTypes, message: String): String {
+        try {
+            // 获取增强的提示词（压缩版）
+            val enhancedPrompt = getCompressedPrompt(petType)
 
-    /**
-     * 发送API请求
-     */
-    private suspend fun makeApiRequest(request: DeepseekRequest): DeepseekResponse {
-        val requestBody = gson.toJson(request).toRequestBody(JSON)
-        val requestBuilder = Request.Builder()
-            .url(BASE_URL)
-            .header("Authorization", "Bearer $API_KEY")
-            .post(requestBody)
-        
-        val response = client.newCall(requestBuilder.build()).execute()
-        return gson.fromJson(response.body?.string(), DeepseekResponse::class.java)
+            // 获取最近的对话历史（限制数量）
+            val recentMessages = chatDao.getRecentSessionMessages(
+                currentSessionId,
+                petType.name,
+                contextMessageLimit
+            )
+
+            // 获取重要消息（关键上下文）
+            val importantMessages = chatDao.getImportantMessages(currentSessionId)
+
+            // 构建消息列表，优先添加系统提示和重要消息
+            val messages = mutableListOf<Message>()
+            messages.add(Message("system", enhancedPrompt))
+
+            // 添加重要消息（如果不在最近消息中）
+            val recentIds = recentMessages.map { it.id }
+            importantMessages
+                .filter { it.id !in recentIds }
+                .forEach {
+                    messages.add(Message(it.role, it.content))
+                }
+
+            // 添加最近消息
+            recentMessages.forEach {
+                messages.add(Message(it.role, it.content))
+            }
+
+            // 添加当前用户消息
+            messages.add(Message("user", message))
+
+            // 调用API获取响应
+            val request = DeepseekRequest(
+                messages = messages,
+                model = "deepseek-chat",
+                temperature = 1.0,
+                max_tokens = 150  // 限制返回长度
+            )
+
+            val response = makeApiRequest(request)
+            return response.choices.firstOrNull()?.message?.content ?: throw IOException("AI响应为空")
+        } catch (e: Exception) {
+            e.printStackTrace()
+            return "抱歉，我现在有点累了，待会再聊吧。" // 返回友好的错误信息
+        }
     }
 }
 
-/**
- * API请求的数据类
- */
-data class DeepseekRequest(
-    val messages: List<Message>,    // 对话消息列表
-    val model: String,              // 使用的模型名称
-    val temperature: Double,        // 回复的随机性参数
-    val max_tokens: Int? = null     // 最大返回长度
-)
-
-/**
- * API消息的数据类
- */
-data class Message(
-    val role: String,    // 消息角色（system/user/assistant）
-    val content: String  // 消息内容
-)
-
-/**
- * API响应的数据类
- */
-data class DeepseekResponse(
-    val choices: List<Choice>  // API返回的选项列表
-)
-
-/**
- * API响应选项的数据类
- */
-data class Choice(
-    val message: Message  // 选中的回复消息
-)
-
-/**
- * AI分析结果的数据类
- */
-private data class ChatAnalysisResult(
-    val summary: String,
-    val preferences: List<String>,
-    val patterns: List<String>
-)

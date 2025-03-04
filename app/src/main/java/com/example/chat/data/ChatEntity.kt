@@ -27,5 +27,14 @@ data class ChatEntity(
     
     // 标识该消息是否已经被AI处理过
     // 用于实现每10条消息进行一次分析的功能
-    val isProcessed: Boolean = false
+    val isProcessed: Boolean = false,
+
+    // 新增：会话ID，用于区分不同的对话
+    val sessionId: String = "",
+    
+    // 新增：消息角色（system/user/assistant）
+    val role: String = if (isFromUser) "user" else "assistant",
+    
+    // 新增：是否为重要消息（用于摘要）
+    val isImportant: Boolean = false
 ) 

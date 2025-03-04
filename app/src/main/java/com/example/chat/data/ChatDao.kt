@@ -16,6 +16,12 @@ interface ChatDao {
     suspend fun getUnprocessedChats(): List<ChatEntity>
 
     /**
+     * 获取指定会话的所有消息
+     */
+    @Query("SELECT * FROM chat_history WHERE sessionId = :sessionId AND petType = :petType ORDER BY timestamp ASC")
+    suspend fun getSessionMessages(sessionId: String, petType: String): List<ChatEntity>
+
+    /**
      * 获取未处理的聊天记录数量
      * 用于判断是否达到需要处理的阈值（10条）
      */
@@ -50,6 +56,18 @@ interface ChatDao {
 
     @Query("SELECT * FROM notes WHERE petType = :petType ORDER BY timestamp DESC")
     suspend fun getNotesByType(petType: String): List<NoteEntity>
+
+    // 新增：获取指定会话的最近消息
+    @Query("SELECT * FROM chat_history WHERE sessionId = :sessionId AND petType = :petType ORDER BY timestamp DESC LIMIT :limit")
+    suspend fun getRecentSessionMessages(sessionId: String, petType: String, limit: Int): List<ChatEntity>
+    
+    // 新增：获取指定会话的重要消息
+    @Query("SELECT * FROM chat_history WHERE sessionId = :sessionId AND isImportant = 1 ORDER BY timestamp ASC")
+    suspend fun getImportantMessages(sessionId: String): List<ChatEntity>
+    
+    // 新增：标记消息为重要
+    @Query("UPDATE chat_history SET isImportant = :isImportant WHERE id = :messageId")
+    suspend fun markMessageImportant(messageId: Long, isImportant: Boolean)
 
     @Insert
     suspend fun insertNote(note: NoteEntity)
