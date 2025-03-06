@@ -68,6 +68,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.zIndex
+import androidx.core.content.contentValuesOf
 import com.example.chat.ui.social.SocialScreen
 import com.example.chat.viewmodel.CardsViewModel
 import kotlinx.coroutines.delay
@@ -351,10 +352,13 @@ fun PetChatApp(
                         }
                     }
                 }
-            ) { padding ->
+            ) { contentPadding ->
                 Box(modifier = Modifier
                     .fillMaxSize()
-                    .padding(padding)
+                    .padding(contentPadding)
+                    .consumeWindowInsets(contentPadding)
+                    .imePadding()
+
 //                    .imeNestedScroll()
                 ) {
                     when (currentScreen) {
@@ -364,7 +368,8 @@ fun PetChatApp(
                                 petType = currentPetType,
                                 onDrawerClick = {
                                     scope.launch { drawerState.open() }
-                                }
+                                },
+                                contentPadding = contentPadding
                             )
                         }
                         Screen.Cards -> {
@@ -484,7 +489,8 @@ fun ChatSessionItemPreview() {
 fun ChatScreen(
     viewModel: PetChatViewModel,
     petType: PetTypes,
-    onDrawerClick: () -> Unit
+    onDrawerClick: () -> Unit,
+    contentPadding: PaddingValues = PaddingValues(0.dp)
 ) {
     var showSettings by remember { mutableStateOf(false) }
     var message by remember { mutableStateOf("") }
@@ -556,7 +562,8 @@ fun ChatScreen(
                 isLoading = viewModel.isForegroundLoading,
                 modifier = Modifier
                     .fillMaxWidth()
-                    .imePadding() // 只使用imePadding
+                    .consumeWindowInsets(contentPadding)
+                    .imePadding()
             )
         }
     }
