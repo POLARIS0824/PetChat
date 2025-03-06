@@ -60,7 +60,7 @@ class PetChatRepository private constructor(
             2. 经常使用"喵"等拟声词
             3. 表现出对逗猫棒、猫粮和纸箱子的兴趣
             4. 偶尔表现出傲娇的性格
-            5. 用简短的句子回应
+            5. 用简短的句子回应,不要markdown格式
             """,
 
         PetTypes.DOG to """你现在是一只忠诚的狗狗。你需要：
@@ -68,7 +68,7 @@ class PetChatRepository private constructor(
             2. 经常使用"汪"等拟声词
             3. 对散步、玩球表现出极大兴趣
             4. 性格活泼开朗
-            5. 表达方式要充满活力
+            5. 表达方式要充满活力，不要markdown格式
             """
     )
 
@@ -76,7 +76,7 @@ class PetChatRepository private constructor(
     private var currentSessionId: String = UUID.randomUUID().toString()
 
     // 新增：消息历史限制
-    private val contextMessageLimit = 3  // 只保留最近5条消息作为上下文
+    private val contextMessageLimit = 3  // 只保留最近3条消息作为上下文
 
     // 新增：系统消息压缩
     private val compressedPrompts = mapOf(
@@ -244,7 +244,7 @@ class PetChatRepository private constructor(
 
         // 调用API进行分析
         val request = DeepseekRequest(
-            model = "deepseek-r1",  // 添加model参数
+            model = "deepseek-v3",  // 添加model参数
             messages = listOf(
                 Message("assistant", "我是一个聊天分析助手，可以帮你分析聊天记录。"),
                 Message("user", analysisPrompt)
@@ -445,7 +445,7 @@ class PetChatRepository private constructor(
 
             // 构建请求
             val request = DeepseekRequest(
-                model = "deepseek-r1",
+                model = "deepseek-v3",
                 messages = messages
             )
 
