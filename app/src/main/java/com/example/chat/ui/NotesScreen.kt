@@ -1,11 +1,13 @@
 package com.example.chat.ui
 
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.grid.rememberLazyGridState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
@@ -35,7 +37,11 @@ fun NotesScreen(
     val notes by viewModel.notes.collectAsState()
     var showAddDialog by remember { mutableStateOf(false) }
 
-    Column(modifier = modifier.fillMaxSize()) {
+    Column(
+        modifier = modifier
+            .fillMaxSize()
+            .background(Color(255, 255, 255))
+    ) {
         // 过滤器
         FilterChips(
             selectedType = viewModel.selectedPetType,
@@ -101,13 +107,23 @@ private fun FilterChips(
             selected = selectedType == null,
             
             onClick = { onFilterSelected(null) },
-            label = { Text("全部") }
+            label = { Text("全部") },
+            colors = FilterChipDefaults.filterChipColors(
+                selectedContainerColor = Color(255, 143, 45),
+                selectedLabelColor = Color.White
+            ),
+            shape = RoundedCornerShape(16.dp)
         )
         PetTypes.values().forEach { type ->
             FilterChip(
                 selected = selectedType == type.name,
                 onClick = { onFilterSelected(type.name) },
-                label = { Text("#${type.displayName}") }
+                label = { Text("#${type.displayName}") },
+                colors = FilterChipDefaults.filterChipColors(
+                    selectedContainerColor = Color(255, 143, 45),
+                    selectedLabelColor = Color.White
+                ),
+                shape = RoundedCornerShape(16.dp)
             )
         }
     }

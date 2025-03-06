@@ -68,6 +68,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.zIndex
+import com.example.chat.ui.social.SocialScreen
 import com.example.chat.viewmodel.CardsViewModel
 import kotlinx.coroutines.delay
 
@@ -370,7 +371,7 @@ fun PetChatApp(
                             PetList(cardsViewModel.pets)
                         }
                         Screen.Notes -> NotesScreen()
-                        Screen.Social -> { /* 萌友圈暂不实现 */ }
+                        Screen.Social -> SocialScreen()
                     }
                 }
             }
@@ -855,7 +856,9 @@ fun ChatInputLoadingPreview() {
 @Composable
 fun PetList(pets: List<com.example.chat.model.Pet>, modifier: Modifier = Modifier) {
     LazyColumn(
-        modifier = modifier.fillMaxSize(),
+        modifier = modifier
+            .fillMaxSize()
+            .background(Color(255, 255, 255)),
         contentPadding = PaddingValues(16.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
@@ -875,6 +878,32 @@ fun PetCard(pet: com.example.chat.model.Pet) {
         elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
     ) {
         Box(modifier = Modifier.fillMaxSize()) {
+            // 左上角的橙色圆点装饰
+            Canvas(
+                modifier = Modifier
+                    .size(60.dp)
+                    .align(Alignment.TopStart)
+            ) {
+                drawCircle(
+                    color = Color(255, 143, 45, 40),
+                    radius = 80.dp.toPx(),
+                    center = Offset(0f, 0f)
+                )
+            }
+
+            // 右下角的橙色圆点装饰
+            Canvas(
+                modifier = Modifier
+                    .size(80.dp)
+                    .align(Alignment.BottomEnd)
+            ) {
+                drawCircle(
+                    color = Color(255, 143, 45, 30),
+                    radius = 180.dp.toPx(),
+                    center = Offset(size.width, size.height)
+                )
+            }
+
             // 背景图片
             Image(
                 painter = painterResource(id = pet.imageRes),
@@ -882,7 +911,7 @@ fun PetCard(pet: com.example.chat.model.Pet) {
                 modifier = Modifier.size(300.dp),
                 contentScale = ContentScale.Crop
             )
-            
+
             // 毛玻璃效果底层
             Box(
                 modifier = Modifier
@@ -927,44 +956,10 @@ fun PetCard(pet: com.example.chat.model.Pet) {
                         color = Color.White.copy(alpha = 0.8f)
                     )
                 }
-                
+
                 Spacer(modifier = Modifier.height(8.dp))
-                
-//                // 年龄和性别行
-//                Row(
-//                    modifier = Modifier.fillMaxWidth(),
-//                    horizontalArrangement = Arrangement.spacedBy(16.dp)
-//                ) {
-//                    Row(verticalAlignment = Alignment.CenterVertically) {
-//                        Icon(
-//                            painter = painterResource(id = R.drawable.ic_more),
-//                            contentDescription = "Age",
-//                            modifier = Modifier.size(16.dp),
-//                            tint = Color.White
-//                        )
-//                        Spacer(modifier = Modifier.width(4.dp))
-//                        Text(
-//                            text = pet.age,
-//                            style = MaterialTheme.typography.bodyMedium,
-//                            color = Color.White.copy(alpha = 0.8f)
-//                        )
-//                    }
-//
-//                    Row(verticalAlignment = Alignment.CenterVertically) {
-//                        Icon(
-//                            painter = painterResource(id = R.drawable.ic_more),
-//                            contentDescription = "Gender",
-//                            modifier = Modifier.size(16.dp),
-//                            tint = Color.White
-//                        )
-//                        Spacer(modifier = Modifier.width(4.dp))
-//                        Text(
-//                            text = pet.gender,
-//                            style = MaterialTheme.typography.bodyMedium,
-//                            color = Color.White.copy(alpha = 0.8f)
-//                        )
-//                    }
-//                }
+
+                // 其他信息...
             }
         }
     }
