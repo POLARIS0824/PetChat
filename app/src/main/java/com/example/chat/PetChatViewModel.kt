@@ -88,9 +88,12 @@ class PetChatViewModel(application: Application) : AndroidViewModel(application)
     }
 
     /**
+     * 核心函数
      * 发送新消息
      * 处理用户输入，获取AI响应，并更新UI状态
      */
+    // PetChatViewModel.sendMessage() → Repository.getUnprocessedChatsCount() →
+    // Repository.analyzeChats() → PetChatRepository.makeApiRequest()
     fun sendMessage(message: String) {
         if (message.isBlank()) return
 

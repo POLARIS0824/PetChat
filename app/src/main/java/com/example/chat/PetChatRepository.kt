@@ -291,8 +291,11 @@ class PetChatRepository private constructor(
     }
 
     /**
+     * 会话摘要函数
      * 保存聊天消息并智能标记重要性
      */
+    // PetChatRepository.saveChatMessage() → Repository.getUnprocessedChatsCount()
+    // → Repository.summarizeConversation()
     suspend fun saveChatMessage(message: ChatMessage, petType: PetTypes) {
         // 保存消息
         val entity = ChatEntity(

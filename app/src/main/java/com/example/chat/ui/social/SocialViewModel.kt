@@ -29,8 +29,8 @@ class SocialViewModel : ViewModel() {
                 authorUsername = "@spicyyuanroll",
                 content = "汪！新玩具上线啦，咬起来特别有嚼劲，实名推荐！",
                 timestamp = dateFormat.parse("2021-06-20 11:18:00") ?: Date(),
-                likeCount = 54,
-                commentCount = 27,
+                likeCount = 5,
+                commentCount = 0,
                 isLiked = true
             ),
             SocialPost(
@@ -40,8 +40,8 @@ class SocialViewModel : ViewModel() {
                 authorUsername = "@skybudgie",
                 content = "飞了一圈，回来还是觉得笼子里更有安全感",
                 timestamp = dateFormat.parse("2021-06-20 11:18:00") ?: Date(),
-                likeCount = 54,
-                commentCount = 27
+                likeCount = 6,
+                commentCount = 0
             ),
             SocialPost(
                 id = UUID.randomUUID().toString(),
@@ -50,8 +50,8 @@ class SocialViewModel : ViewModel() {
                 authorUsername = "@theahighfives",
                 content = "发现主人偷偷吃零食没分我，生气！以后别想有好脸色。",
                 timestamp = dateFormat.parse("2021-06-20 11:18:00") ?: Date(),
-                likeCount = 54,
-                commentCount = 27
+                likeCount = 3,
+                commentCount = 0
             ),
             SocialPost(
                 id = UUID.randomUUID().toString(),
@@ -60,8 +60,8 @@ class SocialViewModel : ViewModel() {
                 authorUsername = "@gibraltar",
                 content = "虽然铲屎的很笨，但他做的饭香味不错，今天就原谅他了。",
                 timestamp = dateFormat.parse("2021-06-20 11:18:00") ?: Date(),
-                likeCount = 54,
-                commentCount = 27
+                likeCount = 9,
+                commentCount = 0
             )
         )
 

@@ -550,6 +550,9 @@ fun ChatScreen(
             ChatInput(
                 message = message,
                 onMessageChange = { message = it },
+                // 点击发送消息
+                // ChatInput.onSendClick() → PetChatViewModel.sendMessage() → PetChatRepository.getPetResponseWithPictureInfo() →
+                // PetChatRepository.getPetResponse() → PetChatRepository.makeApiRequest()
                 onSendClick = {
                     if (message.isNotEmpty()) {
                         viewModel.sendMessage(message)

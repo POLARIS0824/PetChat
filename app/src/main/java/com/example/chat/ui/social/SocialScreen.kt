@@ -17,6 +17,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -253,4 +254,11 @@ private fun formatDate(date: Date): String {
             SimpleDateFormat("HH:mm", Locale.getDefault()).format(date)
         }
     }
+}
+
+// 写一个 preview
+@Preview
+@Composable
+fun PreviewSocialScreen() {
+    SocialScreen()
 }
