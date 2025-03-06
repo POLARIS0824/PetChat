@@ -1,36 +1,48 @@
 package com.example.chat.model
 
+import com.google.gson.annotations.SerializedName
+
 /**
  * API请求的数据类
  */
 data class DeepseekRequest(
-    val messages: List<Message>,    // 对话消息列表
-    val model: String,              // 使用的模型名称
-    val temperature: Double,        // 回复的随机性参数
-    val max_tokens: Int? = null     // 最大返回长度
+    val model: String = "deepseek-r1",
+    val messages: List<Message>,
+//    val temperature: Double = 0.7,
+//    val max_tokens: Int = 1024
 )
 
-/**
- * API消息的数据类
- */
 data class Message(
-    val role: String,    // 消息角色（system/user/assistant）
-    val content: String  // 消息内容
+    val role: String = "deepseek-r1",
+    val content: String,
+//    val reasoning_content : String? = null
 )
 
 /**
  * API响应的数据类
  */
 data class DeepseekResponse(
-    val choices: List<Choice>  // API返回的选项列表
-)
-
-/**
- * API响应选项的数据类
- */
-data class Choice(
-    val message: Message  // 选中的回复消息
-)
+    val choices: List<Choice>,
+    @SerializedName("object") val object_field: String? = null,
+    val usage: Usage? = null,
+    val created: Long? = null,
+    val system_fingerprint: String? = null,
+    val model: String? = null,
+    val id: String? = null,
+) {
+    data class Choice(
+        val message: Message,
+        val finish_reason: String? = null,
+        val index: Int? = null,
+        val logprobs: Any? = null
+    )
+    
+    data class Usage(
+        val prompt_tokens: Int? = null,
+        val completion_tokens: Int? = null,
+        val total_tokens: Int? = null
+    )
+}
 
 /**
  * AI分析结果的数据类

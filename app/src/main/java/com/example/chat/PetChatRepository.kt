@@ -1,5 +1,6 @@
 package com.example.chat
 
+import android.util.Log
 import com.example.chat.data.ChatDao
 import com.example.chat.data.ChatEntity
 import com.example.chat.data.ChatAnalysisEntity
@@ -16,6 +17,7 @@ import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.RequestBody.Companion.toRequestBody
 import java.io.IOException
 import java.util.UUID
+import java.util.concurrent.TimeUnit
 import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
 import kotlin.coroutines.suspendCoroutine
@@ -26,7 +28,11 @@ import kotlin.coroutines.suspendCoroutine
  */
 class PetChatRepository private constructor(
     private val chatDao: ChatDao,
-    private val client: OkHttpClient = OkHttpClient(),
+    private val client: OkHttpClient = OkHttpClient.Builder()
+        .connectTimeout(60, TimeUnit.SECONDS)  // 连接超时时间
+        .readTimeout(60, TimeUnit.SECONDS)     // 读取超时时间
+        .writeTimeout(30, TimeUnit.SECONDS)    // 写入超时时间
+        .build(),
     private val gson: Gson = Gson()
 ) {
     companion object {
@@ -41,8 +47,8 @@ class PetChatRepository private constructor(
     }
 
     private val JSON = "application/json; charset=utf-8".toMediaType()
-    private val API_KEY = "sk-df188b66229341b6aa6886c4d1853ff6"  // API密钥
-    private val BASE_URL = "https://api.deepseek.com/v1/chat/completions"  // API基础URL
+    private val API_KEY = "sk-cfa895f6201a4c6ab6b0036bf14ddeb4"  // API密钥
+    private val BASE_URL = "https://dashscope.aliyuncs.com/compatible-mode/v1"  // API基础URL
 
     /**
      * 宠物角色的系统提示词配置
@@ -70,7 +76,7 @@ class PetChatRepository private constructor(
     private var currentSessionId: String = UUID.randomUUID().toString()
 
     // 新增：消息历史限制
-    private val contextMessageLimit = 5  // 只保留最近5条消息作为上下文
+    private val contextMessageLimit = 3  // 只保留最近5条消息作为上下文
 
     // 新增：系统消息压缩
     private val compressedPrompts = mapOf(
@@ -86,16 +92,16 @@ class PetChatRepository private constructor(
      */
     suspend fun getPetResponseWithPictureInfo(petType: PetTypes, message: String): Pair<String, PictureInfo> {
         val fullResponse = getPetResponse(petType, message)
-        
+
         // 分离回复内容和系统指令部分
         val systemNoteStart = fullResponse.indexOf("<system_note>")
         val systemNoteEnd = fullResponse.indexOf("</system_note>")
-        
+
         return if (systemNoteStart != -1 && systemNoteEnd != -1) {
             // 只返回系统指令之前的内容
             val response = fullResponse.substring(0, systemNoteStart).trim()
             val jsonStr = fullResponse.substring(systemNoteStart + 13, systemNoteEnd)
-            
+
             try {
                 val pictureInfo = gson.fromJson(jsonStr, PictureInfo::class.java)
                 Pair(response, pictureInfo)
@@ -114,7 +120,7 @@ class PetChatRepository private constructor(
     private suspend fun getEnhancedPrompt(petType: PetTypes): String {
         val basePrompt = prompts[petType] ?: ""
         val analysis = chatDao.getLatestAnalysis(petType.name)
-        
+
         return if (analysis != null) {
             """
             $basePrompt
@@ -136,38 +142,72 @@ class PetChatRepository private constructor(
      */
     private suspend fun makeApiRequest(request: DeepseekRequest): DeepseekResponse {
         return suspendCoroutine { continuation ->
-            val requestBody = gson.toJson(request).toRequestBody(JSON)
+            try {
+                // 记录请求内容
+                val requestJson = gson.toJson(request)
+                Log.d("API_REQUEST", "请求体: $request")
 
-            val httpRequest = Request.Builder()
-                .url(BASE_URL)
-                .header("Authorization", "Bearer $API_KEY")
-                .post(requestBody)
-                .build()
+                val requestBody = requestJson.toRequestBody(JSON)
 
-            client.newCall(httpRequest).enqueue(object : Callback {
-                override fun onFailure(call: Call, e: IOException) {
-                    continuation.resumeWithException(e)
-                }
+                // 使用完整的API URL
+                val apiUrl = "$BASE_URL/chat/completions"
+                Log.d("API_REQUEST", "请求URL: $apiUrl")
 
-                override fun onResponse(call: Call, response: Response) {
-                    response.use {
-                        if (!response.isSuccessful) {
-                            continuation.resumeWithException(
-                                IOException("API请求失败: ${response.code}")
-                            )
-                            return
-                        }
+                val httpRequest = Request.Builder()
+                    .url(apiUrl)
+                    .addHeader("Authorization", "Bearer $API_KEY")
+                    .addHeader("Content-Type", "application/json")
+                    .post(requestBody)
+                    .build()
 
+                val requestBodyLog = gson.toJson(requestBody)
+                Log.d("API_REQUEST", "请求体: $requestBodyLog")
+
+                Log.d("API_REQUEST", "请求头: ${httpRequest.headers}")
+
+                client.newCall(httpRequest).enqueue(object : Callback {
+                    override fun onFailure(call: Call, e: IOException) {
+                        Log.e("API_ERROR", "请求失败: ${e.message}", e)
+                        continuation.resumeWithException(e)
+                    }
+
+                    override fun onResponse(call: Call, response: Response) {
                         try {
                             val responseBody = response.body?.string()
-                            val deepseekResponse = gson.fromJson(responseBody, DeepseekResponse::class.java)
-                            continuation.resume(deepseekResponse)
+                            Log.d("API_RESPONSE", "状态码: ${response.code}")
+                            Log.d("API_RESPONSE", "响应体: $responseBody")
+
+                            if (!response.isSuccessful) {
+                                Log.e("API_ERROR", "API错误: ${response.code} $responseBody")
+                                continuation.resumeWithException(
+                                    IOException("API请求失败: ${response.code} $responseBody")
+                                )
+                                return
+                            }
+
+                            if (responseBody == null) {
+                                Log.e("API_ERROR", "响应体为空")
+                                continuation.resumeWithException(IOException("响应体为空"))
+                                return
+                            }
+
+                            // 解析响应
+                            val apiResponse = gson.fromJson(responseBody, DeepseekResponse::class.java)
+                            Log.d("API_RESPONSE", "解析后的响应: $apiResponse")
+                            continuation.resume(apiResponse)
                         } catch (e: Exception) {
+                            Log.e("API_ERROR", "解析错误: ${e.message}", e)
                             continuation.resumeWithException(e)
+                        } finally {
+                            response.close()
                         }
                     }
-                }
-            })
+                })
+            } catch (e: Exception) {
+                Log.e("API_ERROR", "请求构建错误: ${e.message}", e)
+                e.printStackTrace()
+                continuation.resumeWithException(e)
+            }
         }
     }
 
@@ -177,6 +217,8 @@ class PetChatRepository private constructor(
      */
     suspend fun analyzeChats() {
         val unprocessedChats = chatDao.getUnprocessedChats()
+        Log.d("API_CHAT_ANALYSIS", "未处理聊天记录：$unprocessedChats")
+
         if (unprocessedChats.size < 10) return
 
         // 构建分析提示词
@@ -202,20 +244,21 @@ class PetChatRepository private constructor(
 
         // 调用API进行分析
         val request = DeepseekRequest(
-            messages = listOf(Message("user", analysisPrompt)),
-            model = "deepseek-chat",  // 添加model参数
-            temperature = 0.7,
-            max_tokens = 1000
+            model = "deepseek-r1",  // 添加model参数
+            messages = listOf(
+                Message("assistant", "我是一个聊天分析助手，可以帮你分析聊天记录。"),
+                Message("user", analysisPrompt)
+            )
         )
 
         try {
             // 发送API请求
             val response = makeApiRequest(request)
             val analysisText = response.choices.firstOrNull()?.message?.content ?: return
-            
+
             // 解析JSON响应
             val analysis = gson.fromJson(analysisText, ChatAnalysisResult::class.java)
-            
+
             // 保存分析结果到数据库
             val analysisEntity = ChatAnalysisEntity(
                 petType = unprocessedChats.first().petType,
@@ -224,7 +267,7 @@ class PetChatRepository private constructor(
                 patterns = gson.toJson(analysis.patterns)
             )
             chatDao.insertAnalysis(analysisEntity)
-            
+
             // 将已分析的消息标记为已处理
             chatDao.update(unprocessedChats.map { it.copy(isProcessed = true) })
         } catch (e: Exception) {
@@ -353,10 +396,13 @@ class PetChatRepository private constructor(
      * @param message 用户输入的消息
      * @return String AI的回复内容
      */
-    suspend fun getPetResponse(petType: PetTypes, message: String): String {
+    suspend fun getPetResponse(petType: PetTypes, userMessage: String): String {
         try {
-            // 获取增强的提示词（压缩版）
-            val enhancedPrompt = getCompressedPrompt(petType)
+            Log.d("PET_RESPONSE", "开始获取宠物回复，宠物类型: $petType, 用户消息: $userMessage")
+
+            // 获取增强的提示词
+            val enhancedPrompt = getEnhancedPrompt(petType)
+            Log.d("PET_RESPONSE", "增强提示词: $enhancedPrompt")
 
             // 获取最近的对话历史（限制数量）
             val recentMessages = chatDao.getRecentSessionMessages(
@@ -364,41 +410,55 @@ class PetChatRepository private constructor(
                 petType.name,
                 contextMessageLimit
             )
+            Log.d("PET_RESPONSE", "获取到${recentMessages.size}条历史消息")
 
-            // 获取重要消息（关键上下文）
-            val importantMessages = chatDao.getImportantMessages(currentSessionId)
-
-            // 构建消息列表，优先添加系统提示和重要消息
+            // 构建消息列表
             val messages = mutableListOf<Message>()
-            messages.add(Message("system", enhancedPrompt))
 
-            // 添加重要消息（如果不在最近消息中）
-            val recentIds = recentMessages.map { it.id }
-            importantMessages
-                .filter { it.id !in recentIds }
-                .forEach {
-                    messages.add(Message(it.role, it.content))
+            // 添加助手角色的系统提示（作为第一条消息）
+            messages.add(Message("user", enhancedPrompt))
+
+            // 处理历史消息，确保用户和助手消息交替出现
+            val processedMessages = recentMessages
+                .distinctBy { "${it.role}:${it.content}" }
+                .sortedBy { it.timestamp }
+                .groupBy { it.isFromUser } // 按用户/助手分组
+
+            // 构建交替的消息序列
+            val userMessages = processedMessages[true] ?: listOf()
+            val assistantMessages = processedMessages[false] ?: listOf()
+
+            // 按时间顺序交替添加消息
+            val maxIndex = maxOf(userMessages.size, assistantMessages.size)
+            for (i in 0 until maxIndex) {
+                if (i < assistantMessages.size) {
+                    messages.add(Message("assistant", assistantMessages[i].content))
                 }
-
-            // 添加最近消息
-            recentMessages.forEach {
-                messages.add(Message(it.role, it.content))
+                if (i < userMessages.size) {
+                    messages.add(Message("user", userMessages[i].content))
+                }
             }
 
             // 添加当前用户消息
-            messages.add(Message("user", message))
+            messages.add(Message("user", userMessage))
+            Log.d("PET_RESPONSE", "构建了${messages.size}条消息")
 
-            // 调用API获取响应
+            // 构建请求
             val request = DeepseekRequest(
-                messages = messages,
-                model = "deepseek-chat",
-                temperature = 1.0,
-                max_tokens = 150  // 限制返回长度
+                model = "deepseek-r1",
+                messages = messages
             )
 
+            // 调用API获取响应
+            Log.d("PET_RESPONSE", "开始调用API")
             val response = makeApiRequest(request)
-            return response.choices.firstOrNull()?.message?.content ?: throw IOException("AI响应为空")
+
+            val responseContent = response.choices.firstOrNull()?.message?.content
+            Log.d("PET_RESPONSE", "API响应内容: $responseContent")
+
+            return responseContent ?: throw IOException("AI响应为空")
         } catch (e: Exception) {
+            Log.e("PET_RESPONSE", "获取宠物回复出错", e)
             e.printStackTrace()
             return "抱歉，我现在有点累了，待会再聊吧。" // 返回友好的错误信息
         }

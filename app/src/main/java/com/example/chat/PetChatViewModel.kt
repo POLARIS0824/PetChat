@@ -22,6 +22,9 @@ class PetChatViewModel(application: Application) : AndroidViewModel(application)
         ChatDatabase.getDatabase(application).chatDao()
     )
 
+    private val _isForegroundLoading = mutableStateOf(false)
+    val isForegroundLoading: Boolean get() = _isForegroundLoading.value
+
     // 当前选择的宠物类型，默认为猫咪
     private var currentPetType by mutableStateOf(PetTypes.CAT)
         private set
@@ -92,7 +95,10 @@ class PetChatViewModel(application: Application) : AndroidViewModel(application)
         if (message.isBlank()) return
 
         viewModelScope.launch {
+            // 设置前台和通用加载状态为true
+            _isForegroundLoading.value = true
             isLoading = true
+
             try {
                 // 添加用户消息
                 val userMessage = ChatMessage(
@@ -103,7 +109,7 @@ class PetChatViewModel(application: Application) : AndroidViewModel(application)
                 chatHistory = chatHistory + userMessage
                 repository.saveChatMessage(userMessage, currentPetType)
 
-                // 获取AI响应
+                // 获取AI响应 - 这是前台请求
                 val (response, pictureInfo) = repository.getPetResponseWithPictureInfo(currentPetType, message)
                 val petMessage = ChatMessage(
                     content = response,
@@ -116,17 +122,24 @@ class PetChatViewModel(application: Application) : AndroidViewModel(application)
                 // 更新图片信息
                 lastPictureInfo = pictureInfo
 
-                // 检查是否需要进行分析
-                val unprocessedCount = repository.getUnprocessedChatsCount()
-                if (unprocessedCount >= 10) {
-                    repository.analyzeChats()
-                }
+                // 前台请求完成，关闭前台加载状态
+                _isForegroundLoading.value = false
 
                 // 触发滚动到底部
                 _shouldScrollToBottom.value = true
 
+                // 检查是否需要进行分析 - 这是后台任务，不影响前台加载状态
+                val unprocessedCount = repository.getUnprocessedChatsCount()
+                if (unprocessedCount >= 10) {
+                    repository.analyzeChats()
+                } else {
+                    isLoading = false
+                }
+
             } catch (e: Exception) {
                 e.printStackTrace()
+                _isForegroundLoading.value = false
+                isLoading = false
             } finally {
                 isLoading = false
             }

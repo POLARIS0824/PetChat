@@ -1,5 +1,6 @@
 package com.example.chat.ui
 
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
@@ -18,6 +19,12 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
+import com.example.chat.R
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -58,9 +65,12 @@ fun NotesScreen(
             onClick = { showAddDialog = true },
             modifier = Modifier
                 .padding(16.dp)
-                .align(Alignment.End)
+                .align(Alignment.End),
+            containerColor = Color(255,143, 45),
+            contentColor = Color.White
         ) {
-            Icon(Icons.Default.Add, contentDescription = "添加便利贴")
+            Icon(Icons.Default.Add,
+                contentDescription = "添加便利贴")
         }
     }
 
@@ -109,37 +119,68 @@ private fun NoteCard(
     onDelete: () -> Unit,
     onEdit: (NoteEntity) -> Unit
 ) {
+    val background = R.drawable.notebackground
+
     Card(
         modifier = Modifier.fillMaxWidth(),
         elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
     ) {
-        Column(modifier = Modifier.padding(16.dp)) {
-            Text(
-                text = note.content,
-                style = MaterialTheme.typography.bodyLarge
+        Box(
+            modifier = Modifier.fillMaxSize(),
+            contentAlignment = Alignment.Center
+        ) {
+            Image(
+                painter = painterResource(id = background),
+                contentDescription = null,
+                contentScale = ContentScale.Crop,
+                modifier = Modifier.fillMaxSize()
             )
-            Spacer(modifier = Modifier.height(8.dp))
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween
+
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(16.dp),
+                contentAlignment = Alignment.Center
             ) {
-                Text(
-                    text = "#${note.petType}",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.secondary
-                )
-                Row(
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                Column(modifier = Modifier.padding(16.dp),
+                    verticalArrangement = Arrangement.Center,
+                    horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-                    IconButton(onClick = onDelete) {
-                        Icon(Icons.Default.Delete, "删除")
-                    }
-                    IconButton(onClick = { /* 显示编辑对话框 */ }) {
-                        Icon(Icons.Default.Edit, "编辑")
+                    Text(
+                        text = note.content,
+                        style = MaterialTheme.typography.bodyLarge,
+                        modifier = Modifier.fillMaxWidth(),
+                        fontWeight = FontWeight.Bold,
+                        textAlign = TextAlign.Center
+                    )
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        // 放在最中间
+                        horizontalArrangement = Arrangement.Center
+                    ) {
+                        Text(
+                            text = "#${note.petType}",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.secondary,
+                            textAlign = TextAlign.Start
+                        )
+//                    Row(
+//                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+//                    ) {
+//                        IconButton(onClick = onDelete) {
+//                            Icon(Icons.Default.Delete, "删除")
+//                        }
+//                        IconButton(onClick = { /* 显示编辑对话框 */ }) {
+//                            Icon(Icons.Default.Edit, "编辑")
+//                        }
+//                    }
                     }
                 }
             }
+
         }
+
     }
 }
 

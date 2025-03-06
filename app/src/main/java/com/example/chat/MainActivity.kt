@@ -66,6 +66,7 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.unit.sp
 import androidx.compose.ui.zIndex
 import com.example.chat.viewmodel.CardsViewModel
 import kotlinx.coroutines.delay
@@ -145,43 +146,80 @@ fun PetChatApp(
             scrimColor = Color.Black.copy(alpha = 0.32f) // Material 3 的标准值
         ) {
             Scaffold(
-                modifier = Modifier.
-                systemBarsPadding(),
+                modifier = Modifier
+                    .systemBarsPadding()
+                    .background(Color(246,246,246)),
+                containerColor = Color(246,246,246),
                 topBar = {
                     when (currentScreen) {
                         Screen.Chat -> {
                             TopAppBar(
-                                title = { Text("聊天") },
+                                title = { Text("") },
                                 navigationIcon = {
                                     IconButton(onClick = {
                                         scope.launch { drawerState.open() }
-                                    }) {
-                                        Icon(Icons.Filled.Menu, contentDescription = "打开抽屉菜单")
+                                    },
+                                        modifier = Modifier.padding(start = 8.dp)
+                                    ) {
+                                        Icon(
+                                            painter = painterResource(id = R.drawable.sidebar),
+                                            contentDescription = "打开抽屉菜单",
+                                            modifier = Modifier.size(24.dp),
+                                            tint = Color.Unspecified
+                                        )
                                     }
                                 },
                                 actions = {
-                                    IconButton(onClick = { /* 打开设置 */ }) {
-                                        Icon(Icons.Filled.Settings, contentDescription = "设置")
+                                    IconButton(onClick = { /* 切换宠物 */ },
+                                        modifier = Modifier.padding(end = 8.dp)
+                                    ) {
+                                        Icon(
+                                            painter = painterResource(id = R.drawable.arrow),
+                                            contentDescription = "切换宠物",
+                                            modifier = Modifier.size(24.dp),
+                                            tint = Color.Unspecified
+                                        )
                                     }
                                 },
                                 colors = TopAppBarDefaults.topAppBarColors(
                                     containerColor = Color.White,
                                     titleContentColor = MaterialTheme.colorScheme.onPrimaryContainer,
-                                    navigationIconContentColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                                    navigationIconContentColor = Color.Unspecified,
                                     actionIconContentColor = MaterialTheme.colorScheme.onPrimaryContainer
-                                )
+                                ),
+//                                modifier = Modifier.padding(horizontal = 16.dp)
                             )
                         }
                         Screen.Cards -> {
                             TopAppBar(
-                                title = { Text("名片夹") },
+                                title = {
+                                    Row(
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .padding(end = 8.dp),
+                                        horizontalArrangement = Arrangement.End
+                                    ) {
+                                        Text(
+                                            "名片夹",
+                                            modifier = Modifier.padding(end = 8.dp),
+                                            fontWeight = FontWeight.Bold,
+                                            fontSize = 18.sp,
+                                            color = Color(255,143, 45)
+                                        )
+                                    }
+                                },
                                 navigationIcon = {
                                     IconButton(onClick = {
-                                        // 处理返回或其他导航
-                                        // 例如，返回到聊天界面
-                                        currentScreen = Screen.Chat
-                                    }) {
-                                        Icon(Icons.Filled.ArrowBack, contentDescription = "返回")
+                                        scope.launch { drawerState.open() }
+                                    },
+                                        modifier = Modifier.padding(start = 8.dp)
+                                    ) {
+                                        Icon(
+                                            painter = painterResource(id = R.drawable.sidebar),
+                                            contentDescription = "打开抽屉菜单",
+                                            modifier = Modifier.size(24.dp),
+                                            tint = Color.Unspecified
+                                        )
                                     }
                                 },
                                 actions = { /* 其他操作 */ },
@@ -195,15 +233,34 @@ fun PetChatApp(
                         }
                         Screen.Notes -> {
                             TopAppBar(
-                                title = { Text("便利贴") },
+                                title = {
+                                    Row(
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .padding(end = 8.dp),
+                                        horizontalArrangement = Arrangement.End
+                                    ) {
+                                        Text(
+                                            "便利贴",
+                                            modifier = Modifier.padding(end = 8.dp),
+                                            fontWeight = FontWeight.Bold,
+                                            fontSize = 18.sp,
+                                            color = Color(255,143, 45)
+                                        )
+                                    }
+                                },
                                 navigationIcon = {
                                     IconButton(onClick = {
-                                        // 处理返回或其他导航
-                                        // 例如，返回到聊天界面
-                                        currentScreen = Screen.Chat
-                                    }) {
-                                        Icon(Icons.Filled.ArrowBack, contentDescription = "返回")
-                                    }
+                                        scope.launch { drawerState.open() }
+                                    },
+                                        modifier = Modifier.padding(start = 8.dp)
+                                    ) {
+                                        Icon(
+                                            painter = painterResource(id = R.drawable.sidebar),
+                                            contentDescription = "打开抽屉菜单",
+                                            modifier = Modifier.size(24.dp),
+                                            tint = Color.Unspecified
+                                        )                                    }
                                 },
                                 actions = { /* 其他操作 */ },
                                 colors = TopAppBarDefaults.topAppBarColors(
@@ -216,15 +273,34 @@ fun PetChatApp(
                         }
                         Screen.Social -> {
                             TopAppBar(
-                                title = { Text("萌友圈") },
+                                title = {
+                                    Row(
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .padding(end = 8.dp),
+                                        horizontalArrangement = Arrangement.End
+                                    ) {
+                                        Text(
+                                            "萌友圈",
+                                            modifier = Modifier.padding(end = 8.dp),
+                                            fontWeight = FontWeight.Bold,
+                                            fontSize = 18.sp,
+                                            color = Color(255,143, 45)
+                                        )
+                                    }
+                                },
                                 navigationIcon = {
                                     IconButton(onClick = {
-                                        // 处理返回或其他导航
-                                        // 例如，返回到聊天界面
-                                        currentScreen = Screen.Chat
-                                    }) {
-                                        Icon(Icons.Filled.ArrowBack, contentDescription = "返回")
-                                    }
+                                        scope.launch { drawerState.open() }
+                                    },
+                                        modifier = Modifier.padding(start = 8.dp)
+                                    ) {
+                                        Icon(
+                                            painter = painterResource(id = R.drawable.sidebar),
+                                            contentDescription = "打开抽屉菜单",
+                                            modifier = Modifier.size(24.dp),
+                                            tint = Color.Unspecified
+                                        )                                    }
                                 },
                                 actions = { /* 其他操作 */ },
                                 colors = TopAppBarDefaults.topAppBarColors(
@@ -252,12 +328,24 @@ fun PetChatApp(
                                             else
                                                 item.unselectedIcon
                                         ),
-                                        contentDescription = item.title
+                                        contentDescription = item.title,
+                                        tint = if(currentScreen == item.screen)
+                                            Color(255,143, 45)
+                                        else
+                                            Color.Gray
                                     )
                                 },
                                 label = { Text(item.title) },
                                 selected = currentScreen == item.screen,
-                                onClick = { currentScreen = item.screen }
+                                onClick = { currentScreen = item.screen },
+                                // 设置选中和未选中的颜色
+                                colors = NavigationBarItemDefaults.colors(
+                                    selectedIconColor = Color.Transparent,
+                                    unselectedIconColor = Color(237,133, 42),
+                                    selectedTextColor = Color(237,133, 42),
+                                    unselectedTextColor = Color(237,133, 42),
+                                    indicatorColor = Color.Transparent
+                                )
                             )
                         }
                     }
@@ -266,7 +354,7 @@ fun PetChatApp(
                 Box(modifier = Modifier
                     .fillMaxSize()
                     .padding(padding)
-                    .imeNestedScroll()
+//                    .imeNestedScroll()
                 ) {
                     when (currentScreen) {
                         Screen.Chat -> {
@@ -310,8 +398,8 @@ private val BottomNavItems = listOf(
     NavItem(
         Screen.Social,
         "萌友圈",
-        R.drawable.bag_outline,
-        R.drawable.bag_fill)
+        R.drawable.adopt_outline,
+        R.drawable.adopt_fill)
 )
 
 // 导航项数据类
@@ -390,19 +478,6 @@ fun ChatSessionItemPreview() {
     }
 }
 
-// Dummy data for the preview (You can reuse from previous example or define new)
-enum class PetTypes {
-    CAT, DOG
-}
-
-data class ChatSession(
-    val id: String,
-    val petType: PetTypes,
-    val displayName: String,
-    val avatarRes: Int,
-    val lastMessage: String = "" // Added lastMessage for this preview
-)
-
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun ChatScreen(
@@ -414,6 +489,8 @@ fun ChatScreen(
     var message by remember { mutableStateOf("") }
     val listState = rememberLazyListState()
     val coroutineScope = rememberCoroutineScope()
+
+    val isForegroundLoading = viewModel.isForegroundLoading
 
     val frames = listOf(
         R.drawable.frame1,
@@ -432,8 +509,7 @@ fun ChatScreen(
         modifier = Modifier.fillMaxSize()
     ) {
         Column(
-            modifier = Modifier
-                .fillMaxSize()
+            modifier = Modifier.fillMaxSize()
         ) {
             AnimatedAvatar(
                 frameResIds = frames,
@@ -441,14 +517,14 @@ fun ChatScreen(
                     .padding(start = 24.dp, top = 24.dp)
                     .size(48.dp)
                     .clip(CircleShape)
-                    .zIndex(1f) // 保证头像在顶部
+                    .zIndex(1f)
             )
 
             // 聊天消息列表
             LazyColumn(
                 state = listState,
                 modifier = Modifier
-                    .weight(1f) // 占据剩余空间
+                    .weight(1f)
                     .fillMaxWidth(),
                 contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp)
             ) {
@@ -463,23 +539,24 @@ fun ChatScreen(
                 }
             }
 
-                ChatInput(
-                    message = message,
-                    onMessageChange = { message = it },
-                    onSendClick = {
-                        if (message.isNotEmpty()) {
-                            viewModel.sendMessage(message)
-                            message = ""
-                            coroutineScope.launch {
-                                listState.animateScrollToItem(viewModel.getChatHistory(petType).size - 1)
-                            }
+            // 直接在这里添加ChatInput，不使用Scaffold的bottomBar
+            ChatInput(
+                message = message,
+                onMessageChange = { message = it },
+                onSendClick = {
+                    if (message.isNotEmpty()) {
+                        viewModel.sendMessage(message)
+                        message = ""
+                        coroutineScope.launch {
+                            listState.animateScrollToItem(viewModel.getChatHistory(petType).size - 1)
                         }
-                    },
-                    isLoading = viewModel.isLoading,
-                    modifier = Modifier
-                        .imePadding() // 使用 imePadding
-                        .navigationBarsPadding() // 添加导航栏 padding
-                )
+                    }
+                },
+                isLoading = viewModel.isForegroundLoading,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .imePadding() // 只使用imePadding
+            )
         }
     }
 
@@ -535,20 +612,20 @@ fun ChatBubble(
 ) {
     val isFromUser = message.isFromUser
     val backgroundColor = if (isFromUser)
-        Color(239,243,255)
+        Color(255,143, 45)
     else
-        Color(243,243,243)
+        Color(255, 255, 255)
 
     val textColor = if (isFromUser)
-        MaterialTheme.colorScheme.onSurface
+        Color.White
     else
-        MaterialTheme.colorScheme.onSurfaceVariant
+        Color.Black
 
     val arrangement = if (isFromUser)
         Arrangement.End else Arrangement.Start
 
     val bubbleShape = if (isFromUser)
-        RoundedCornerShape(16.dp, 4.dp, 16.dp, 16.dp)
+        RoundedCornerShape(16.dp, 16.dp, 4.dp, 16.dp)
     else
         RoundedCornerShape(4.dp, 16.dp, 16.dp, 16.dp)
 
