@@ -518,14 +518,14 @@ fun ChatScreen(
         Column(
             modifier = Modifier.fillMaxSize()
         ) {
-            AnimatedAvatar(
-                frameResIds = frames,
-                modifier = Modifier
-                    .padding(start = 24.dp, top = 24.dp)
-                    .size(48.dp)
-                    .clip(CircleShape)
-                    .zIndex(1f)
-            )
+//            AnimatedAvatar(
+//                frameResIds = frames,
+//                modifier = Modifier
+//                    .padding(start = 24.dp, top = 24.dp)
+//                    .size(48.dp)
+//                    .clip(CircleShape)
+//                    .zIndex(1f)
+//            )
 
             // 聊天消息列表
             LazyColumn(
