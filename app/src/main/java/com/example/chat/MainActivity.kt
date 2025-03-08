@@ -47,8 +47,10 @@ import androidx.compose.animation.core.keyframes
 import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.core.updateTransition
+import androidx.compose.animation.expandVertically
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
+import androidx.compose.animation.shrinkVertically
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.Canvas
@@ -136,7 +138,7 @@ fun PetChatApp(
     val scope = rememberCoroutineScope()
     var showPetSelector by remember { mutableStateOf(false) }
     val chatScreenOffset by animateFloatAsState(
-        targetValue = if (showPetSelector) 48f else 0f,
+        targetValue = if (showPetSelector) 80f else 0f,
         animationSpec = tween(300), label = ""
     )
 
@@ -160,53 +162,57 @@ fun PetChatApp(
             gesturesEnabled = true,
             scrimColor = Color.Black.copy(alpha = 0.32f) // Material 3 的标准值
         ) {
-            Scaffold(
-                modifier = Modifier
-                    .systemBarsPadding()
-                    .background(Color(246,246,246)),
-                containerColor = Color(246,246,246),
-                topBar = {
+            Column(modifier = Modifier.fillMaxSize()) {
+                // 顶部栏和宠物选择器作为一个整体
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .background(if (showPetSelector) Color(255, 178, 110) else Color.White)
+                        .zIndex(1f)
+                ) {
                     when (currentScreen) {
                         Screen.Chat -> {
                             TopAppBar(
                                 title = { Text("") },
                                 navigationIcon = {
-                                    IconButton(onClick = {
-                                        scope.launch { drawerState.open() }
-                                    },
+                                    IconButton(
+                                        onClick = {
+                                            scope.launch { drawerState.open() }
+                                        },
                                         modifier = Modifier.padding(start = 8.dp)
                                     ) {
                                         Icon(
                                             painter = painterResource(id = R.drawable.sidebar),
                                             contentDescription = "打开抽屉菜单",
                                             modifier = Modifier.size(24.dp),
-                                            tint = Color.Unspecified
+                                            tint = if (showPetSelector) Color.White else Color.Unspecified
                                         )
                                     }
                                 },
                                 actions = {
-                                    IconButton(onClick = {
-                                        showPetSelector = true
-                                    },
+                                    IconButton(
+                                        onClick = {
+                                            showPetSelector = !showPetSelector
+                                        },
                                         modifier = Modifier.padding(end = 8.dp)
                                     ) {
                                         Icon(
                                             painter = painterResource(id = R.drawable.arrow),
                                             contentDescription = "切换宠物",
                                             modifier = Modifier.size(24.dp),
-                                            tint = Color.Unspecified
+                                            tint = if (showPetSelector) Color.White else Color.Unspecified
                                         )
                                     }
                                 },
                                 colors = TopAppBarDefaults.topAppBarColors(
-                                    containerColor = Color.White,
-                                    titleContentColor = MaterialTheme.colorScheme.onPrimaryContainer,
-                                    navigationIconContentColor = Color.Unspecified,
-                                    actionIconContentColor = MaterialTheme.colorScheme.onPrimaryContainer
+                                    containerColor = if (showPetSelector) Color(255,178,110) else Color.White,
+                                    titleContentColor = if (showPetSelector) Color.White else MaterialTheme.colorScheme.onPrimaryContainer,
+                                    navigationIconContentColor = if (showPetSelector) Color.White else Color.Unspecified,
+                                    actionIconContentColor = if (showPetSelector) Color.White else MaterialTheme.colorScheme.onPrimaryContainer
                                 ),
-//                                modifier = Modifier.padding(horizontal = 16.dp)
                             )
                         }
+
                         Screen.Cards -> {
                             TopAppBar(
                                 title = {
@@ -221,14 +227,15 @@ fun PetChatApp(
                                             modifier = Modifier.padding(end = 8.dp),
                                             fontWeight = FontWeight.Bold,
                                             fontSize = 18.sp,
-                                            color = Color(255,143, 45)
+                                            color = Color(255, 143, 45)
                                         )
                                     }
                                 },
                                 navigationIcon = {
-                                    IconButton(onClick = {
-                                        scope.launch { drawerState.open() }
-                                    },
+                                    IconButton(
+                                        onClick = {
+                                            scope.launch { drawerState.open() }
+                                        },
                                         modifier = Modifier.padding(start = 8.dp)
                                     ) {
                                         Icon(
@@ -248,6 +255,7 @@ fun PetChatApp(
                                 )
                             )
                         }
+
                         Screen.Notes -> {
                             TopAppBar(
                                 title = {
@@ -262,14 +270,15 @@ fun PetChatApp(
                                             modifier = Modifier.padding(end = 8.dp),
                                             fontWeight = FontWeight.Bold,
                                             fontSize = 18.sp,
-                                            color = Color(255,143, 45)
+                                            color = Color(255, 143, 45)
                                         )
                                     }
                                 },
                                 navigationIcon = {
-                                    IconButton(onClick = {
-                                        scope.launch { drawerState.open() }
-                                    },
+                                    IconButton(
+                                        onClick = {
+                                            scope.launch { drawerState.open() }
+                                        },
                                         modifier = Modifier.padding(start = 8.dp)
                                     ) {
                                         Icon(
@@ -277,7 +286,8 @@ fun PetChatApp(
                                             contentDescription = "打开抽屉菜单",
                                             modifier = Modifier.size(24.dp),
                                             tint = Color.Unspecified
-                                        )                                    }
+                                        )
+                                    }
                                 },
                                 actions = { /* 其他操作 */ },
                                 colors = TopAppBarDefaults.topAppBarColors(
@@ -288,6 +298,7 @@ fun PetChatApp(
                                 )
                             )
                         }
+
                         Screen.Social -> {
                             TopAppBar(
                                 title = {
@@ -302,14 +313,15 @@ fun PetChatApp(
                                             modifier = Modifier.padding(end = 8.dp),
                                             fontWeight = FontWeight.Bold,
                                             fontSize = 18.sp,
-                                            color = Color(255,143, 45)
+                                            color = Color(255, 143, 45)
                                         )
                                     }
                                 },
                                 navigationIcon = {
-                                    IconButton(onClick = {
-                                        scope.launch { drawerState.open() }
-                                    },
+                                    IconButton(
+                                        onClick = {
+                                            scope.launch { drawerState.open() }
+                                        },
                                         modifier = Modifier.padding(start = 8.dp)
                                     ) {
                                         Icon(
@@ -317,7 +329,8 @@ fun PetChatApp(
                                             contentDescription = "打开抽屉菜单",
                                             modifier = Modifier.size(24.dp),
                                             tint = Color.Unspecified
-                                        )                                    }
+                                        )
+                                    }
                                 },
                                 actions = { /* 其他操作 */ },
                                 colors = TopAppBarDefaults.topAppBarColors(
@@ -329,96 +342,136 @@ fun PetChatApp(
                             )
                         }
                     }
-                },
-                bottomBar = {
-                    NavigationBar(
-                        containerColor = Color.White,
-                        contentColor = Color(250,142, 57),
+
+                    // 宠物选择器部分，根据showPetSelector状态显示或隐藏
+                    AnimatedVisibility(
+                        visible = showPetSelector,
+                        enter = fadeIn() + expandVertically(),
+                        exit = fadeOut() + shrinkVertically()
                     ) {
-                        BottomNavItems.forEach { item ->
-                            NavigationBarItem(
-                                icon = {
-                                    Icon(
-                                        painter = painterResource(
-                                            id = if (currentScreen == item.screen)
-                                                item.selectedIcon
-                                            else
-                                                item.unselectedIcon
-                                        ),
-                                        contentDescription = item.title,
-                                        tint = if(currentScreen == item.screen)
-                                            Color(255,143, 45)
-                                        else
-                                            Color.Gray
-                                    )
-                                },
-                                label = { Text(item.title) },
-                                selected = currentScreen == item.screen,
-                                onClick = { currentScreen = item.screen },
-                                // 设置选中和未选中的颜色
-                                colors = NavigationBarItemDefaults.colors(
-                                    selectedIconColor = Color.Transparent,
-                                    unselectedIconColor = Color(237,133, 42),
-                                    selectedTextColor = Color(237,133, 42),
-                                    unselectedTextColor = Color(237,133, 42),
-                                    indicatorColor = Color.Transparent
-                                )
+                        Column(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(16.dp)
+                        ) {
+                            // 顶部文字
+                            Text(
+                                text = "专属萌宠，随时陪伴！",
+                                style = MaterialTheme.typography.titleMedium,
+                                color = Color.White,
+                                modifier = Modifier.padding(bottom = 16.dp)
                             )
+
+                            // 宠物头像行
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(vertical = 16.dp),
+                                horizontalArrangement = Arrangement.SpaceEvenly
+                            ) {
+                                // 大白 (萨摩耶)
+                                PetAvatar(
+                                    name = "大白",
+                                    imageRes = R.drawable.pet_samoyed,
+                                    onClick = {
+                                        currentPetType = PetTypes.DOG
+                                        showPetSelector = false
+                                    }
+                                )
+                                // 布丁 (猫咪)
+                                PetAvatar(
+                                    name = "布丁",
+                                    imageRes = R.drawable.pet_cat,
+                                    onClick = {
+                                        currentPetType = PetTypes.CAT
+                                        showPetSelector = false
+                                    }
+                                )
+
+                                // 豆豆 (柴犬)
+                                PetAvatar(
+                                    name = "豆豆",
+                                    imageRes = R.drawable.pet_shiba,
+                                    onClick = {
+                                        currentPetType = PetTypes.DOG
+                                        showPetSelector = false
+                                    }
+                                )
+
+                                // 团绒 (仓鼠)
+                                PetAvatar(
+                                    name = "团绒",
+                                    imageRes = R.drawable.pet_hamster,
+                                    onClick = {
+                                        currentPetType = PetTypes.HAMSTER
+                                        showPetSelector = false
+                                    }
+                                )
+                            }
                         }
                     }
                 }
-            ) { contentPadding ->
-                Box(modifier = Modifier
-                    .fillMaxSize()
-                    .padding(contentPadding)
-                    .consumeWindowInsets(contentPadding)
-                    .imePadding()
-                    .offset(y = chatScreenOffset.dp)
-
-//                    .imeNestedScroll()
-                ) {
-                    when (currentScreen) {
-                        Screen.Chat -> {
-                            ChatScreen(
+                Scaffold(
+                    modifier = Modifier
+                        .weight(1f)
+                        .offset(y = chatScreenOffset.dp),
+                    containerColor = Color(246,246,246),
+                    bottomBar = {
+                        NavigationBar(
+                            containerColor = Color.White,
+                            contentColor = Color(250,142, 57),
+                        ) {
+                            BottomNavItems.forEach { item ->
+                                NavigationBarItem(
+                                    icon = {
+                                        Icon(
+                                            painter = painterResource(
+                                                id = if (currentScreen == item.screen)
+                                                    item.selectedIcon
+                                                else
+                                                    item.unselectedIcon
+                                            ),
+                                            contentDescription = item.title,
+                                            tint = if(currentScreen == item.screen)
+                                                Color(255,143, 45)
+                                            else
+                                                Color.Gray
+                                        )
+                                    },
+                                    label = { Text(item.title) },
+                                    selected = currentScreen == item.screen,
+                                    onClick = { currentScreen = item.screen },
+                                )
+                            }
+                        }
+                    }
+                ) { innerPadding ->
+                    // 主内容区域
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(innerPadding)
+                    ) {
+                        when (currentScreen) {
+                            Screen.Chat -> ChatScreen(
                                 viewModel = viewModel,
                                 petType = currentPetType,
-                                onDrawerClick = {
-                                    scope.launch { drawerState.open() }
-                                },
-                                contentPadding = contentPadding
+                                onDrawerClick = { scope.launch { drawerState.open() } },
+                                contentPadding = innerPadding
                             )
+                            Screen.Cards -> {
+                                PetList(cardsViewModel.pets)
+                            }
+                            Screen.Notes -> {
+                                // 便利贴屏幕
+                                NotesScreen()
+                            }
+                            Screen.Social -> {
+                                // 萌友圈屏幕
+                                SocialScreen()
+                            }
                         }
-                        Screen.Cards -> {
-                            PetList(cardsViewModel.pets)
-                        }
-                        Screen.Notes -> NotesScreen()
-                        Screen.Social -> SocialScreen()
                     }
-
-//                    if (showPetSelector) {
-//                        PetSelectorOverlay(
-//                            onPetSelected = { petType ->
-//                                currentPetType = petType
-//                                showPetSelector = false
-//                            },
-//                            onDismiss = { showPetSelector = false }
-//                        )
-//                    }
-                }
-
-                // 宠物选择器，固定在顶部
-                AnimatedVisibility(
-                    visible = showPetSelector,
-                    enter = slideInVertically(initialOffsetY = { -it }) + fadeIn(),
-                    exit = slideOutVertically(targetOffsetY = { -it }) + fadeOut()
-                ) {
-                    PetSelectorBar(
-                        onPetSelected = { petType ->
-                            currentPetType = petType
-                            showPetSelector = false
-                        },
-                        onDismiss = { showPetSelector = false }
-                    )
                 }
             }
         }
@@ -518,7 +571,7 @@ fun PetAvatar(
             painter = painterResource(id = imageRes),
             contentDescription = name,
             modifier = Modifier
-                .size(60.dp)
+                .size(80.dp)
                 .clip(CircleShape)
                 .border(2.dp, Color.White, CircleShape)
         )
