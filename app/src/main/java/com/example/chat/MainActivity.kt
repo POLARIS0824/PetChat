@@ -74,6 +74,7 @@ import androidx.compose.ui.draw.blur
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
@@ -244,6 +245,12 @@ fun PetChatApp(
                         },
                         actions = {
                             if (currentScreen == Screen.Chat) {
+                                // 添加旋转动画
+                                val rotation by animateFloatAsState(
+                                    targetValue = if (showPetSelector) 180f else 0f,
+                                    animationSpec = tween(durationMillis = 300)
+                                )
+
                                 IconButton(
                                     onClick = {
                                         showPetSelector = !showPetSelector
@@ -255,7 +262,7 @@ fun PetChatApp(
                                         contentDescription = if (showPetSelector) "关闭宠物选择器" else "切换宠物",
                                         modifier = Modifier
                                             .size(24.dp)
-                                            .rotate(if (showPetSelector) 180f else 0f), // 旋转180度
+                                            .rotate(rotation), // 使用动画旋转值
                                         tint = if (showPetSelector) Color.White else Color.Unspecified
                                     )
                                 }
@@ -283,8 +290,12 @@ fun PetChatApp(
                 },
                 bottomBar = {
                     NavigationBar(
-                        containerColor = Color.White,
+                        containerColor = Color(255,253,246),
                         contentColor = Color(250,142, 57),
+                        modifier = Modifier
+                            .height(96.dp)
+                            .padding(vertical = 0.dp),
+//                        windowInsets = WindowInsets(0, 0, 0, 0) // 移除系统默认的内边距
                     ) {
                         BottomNavItems.forEach { item ->
                             NavigationBarItem(
@@ -298,14 +309,32 @@ fun PetChatApp(
                                         ),
                                         contentDescription = item.title,
                                         tint = if(currentScreen == item.screen)
-                                            Color(255,143, 45)
+                                            Color(255, 143, 45)
                                         else
-                                            Color.Gray
+                                            Color.Gray,
+                                        modifier = Modifier
+                                            .size(26.dp) // 调整图标大小
                                     )
                                 },
-                                label = { Text(item.title) },
+                                label = {
+                                    Text(
+                                        item.title,
+                                        fontSize = 12.sp, // 调整文字大小
+                                        fontWeight = if(currentScreen == item.screen)
+                                            FontWeight.Bold
+                                        else
+                                            FontWeight.Normal
+                                    )
+                                },
                                 selected = currentScreen == item.screen,
                                 onClick = { currentScreen = item.screen },
+                                colors = NavigationBarItemDefaults.colors(
+                                    selectedIconColor = Color(255, 143, 45),
+                                    unselectedIconColor = Color.Gray,
+                                    selectedTextColor = Color(255, 143, 45),
+                                    unselectedTextColor = Color.Gray,
+                                    indicatorColor = Color.Transparent // 移除指示器背景
+                                )
                             )
                         }
                     }
@@ -320,6 +349,7 @@ fun PetChatApp(
                         exit = fadeOut() + shrinkVertically(shrinkTowards = Alignment.Top),
                         modifier = Modifier
                             .fillMaxWidth()
+                            .clip(RoundedCornerShape(bottomStart= 20.dp, bottomEnd = 20.dp))
                             .background(Color(255, 178, 110))
                             .zIndex(2f) // 提高z-index确保在最上层
                             .offset(y = 0.dp) // 确保从顶部开始
@@ -336,22 +366,24 @@ fun PetChatApp(
                                     .padding(vertical = 16.dp),
                                 horizontalArrangement = Arrangement.SpaceEvenly
                             ) {
-                                // 大白 (萨摩耶)
-                                PetAvatar(
-                                    name = "大白",
-                                    imageRes = R.drawable.pet_samoyed,
-                                    onClick = {
-                                        currentPetType = PetTypes.DOG
-                                        showPetSelector = false
-                                    }
-                                )
-
                                 // 布丁 (猫咪)
                                 PetAvatar(
                                     name = "布丁",
                                     imageRes = R.drawable.pet_cat,
+                                    isSelected = currentPetType == PetTypes.CAT,
                                     onClick = {
                                         currentPetType = PetTypes.CAT
+                                        showPetSelector = false
+                                    }
+                                )
+
+                                // 大白 (萨摩耶)
+                                PetAvatar(
+                                    name = "大白",
+                                    imageRes = R.drawable.pet_samoyed,
+                                    isSelected = currentPetType == PetTypes.DOG,
+                                    onClick = {
+                                        currentPetType = PetTypes.DOG
                                         showPetSelector = false
                                     }
                                 )
@@ -360,8 +392,9 @@ fun PetChatApp(
                                 PetAvatar(
                                     name = "豆豆",
                                     imageRes = R.drawable.pet_shiba,
+                                    isSelected = currentPetType == PetTypes.DOG2,
                                     onClick = {
-                                        currentPetType = PetTypes.DOG
+                                        currentPetType = PetTypes.DOG2
                                         showPetSelector = false
                                     }
                                 )
@@ -370,6 +403,7 @@ fun PetChatApp(
                                 PetAvatar(
                                     name = "团绒",
                                     imageRes = R.drawable.pet_hamster,
+                                    isSelected = currentPetType == PetTypes.HAMSTER,
                                     onClick = {
                                         currentPetType = PetTypes.HAMSTER
                                         showPetSelector = false
@@ -409,109 +443,124 @@ fun PetChatApp(
     }
 }
 
-// 添加宠物选择器覆盖层组件
-@Composable
-fun PetSelectorBar(
-    onPetSelected: (PetTypes) -> Unit,
-    onDismiss: () -> Unit
-) {
-    // 半透明背景
-    Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .clickable(onClick = onDismiss)
-    ) {
-        // 宠物选择器卡片
-        Card(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp)
-                .align(Alignment.TopCenter)
-                .clickable(enabled = false) { /* 防止点击事件传递到背景 */ },
-            shape = RoundedCornerShape(16.dp),
-            colors = CardDefaults.cardColors(
-                containerColor = Color(255,178,110) // 橙色背景
-            )
-        ) {
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(16.dp)
-            ) {
-                // 顶部文字
-                Text(
-                    text = "专属萌宠，随时陪伴！",
-                    style = MaterialTheme.typography.titleMedium,
-                    color = Color.White,
-                    modifier = Modifier.padding(bottom = 16.dp)
-                )
-
-                // 宠物头像行
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(vertical = 8.dp),
-                    horizontalArrangement = Arrangement.SpaceEvenly
-                ) {
-                    // 大白 (萨摩耶)
-                    PetAvatar(
-                        name = "大白",
-                        imageRes = R.drawable.pet_samoyed,
-                        onClick = { onPetSelected(PetTypes.DOG) }
-                    )
-
-                    // 布丁 (猫咪)
-                    PetAvatar(
-                        name = "布丁",
-                        imageRes = R.drawable.pet_cat,
-                        onClick = { onPetSelected(PetTypes.CAT) }
-                    )
-
-                    // 豆豆 (柴犬)
-                    PetAvatar(
-                        name = "豆豆",
-                        imageRes = R.drawable.pet_shiba,
-                        onClick = { onPetSelected(PetTypes.DOG) }
-                    )
-
-                    // 团绒 (仓鼠)
-                    PetAvatar(
-                        name = "团绒",
-                        imageRes = R.drawable.pet_hamster,
-                        onClick = { onPetSelected(PetTypes.HAMSTER) }
-                    )
-                }
-            }
-        }
-    }
-}
+//// 添加宠物选择器覆盖层组件
+//@Composable
+//fun PetSelectorBar(
+//    onPetSelected: (PetTypes) -> Unit,
+//    onDismiss: () -> Unit
+//) {
+//    // 半透明背景
+//    Box(
+//        modifier = Modifier
+//            .fillMaxSize()
+//            .clickable(onClick = onDismiss)
+//    ) {
+//        // 宠物选择器卡片
+//        Card(
+//            modifier = Modifier
+//                .fillMaxWidth()
+//                .padding(16.dp)
+//                .align(Alignment.TopCenter)
+//                .clickable(enabled = false) { /* 防止点击事件传递到背景 */ },
+//            shape = RoundedCornerShape(16.dp),
+//            colors = CardDefaults.cardColors(
+//                containerColor = Color(255,178,110) // 橙色背景
+//            )
+//        ) {
+//            Column(
+//                modifier = Modifier
+//                    .fillMaxWidth()
+//                    .padding(16.dp)
+//            ) {
+//                // 顶部文字
+//                Text(
+//                    text = "专属萌宠，随时陪伴！",
+//                    style = MaterialTheme.typography.titleMedium,
+//                    color = Color.White,
+//                    modifier = Modifier.padding(bottom = 16.dp)
+//                )
+//
+//                // 宠物头像行
+//                Row(
+//                    modifier = Modifier
+//                        .fillMaxWidth()
+//                        .padding(vertical = 8.dp),
+//                    horizontalArrangement = Arrangement.SpaceEvenly
+//                ) {
+//                    // 大白 (萨摩耶)
+//                    PetAvatar(
+//                        name = "大白",
+//                        imageRes = R.drawable.pet_samoyed,
+//                        onClick = { onPetSelected(PetTypes.DOG) }
+//                    )
+//
+//                    // 布丁 (猫咪)
+//                    PetAvatar(
+//                        name = "布丁",
+//                        imageRes = R.drawable.pet_cat,
+//                        onClick = { onPetSelected(PetTypes.CAT) }
+//                    )
+//
+//                    // 豆豆 (柴犬)
+//                    PetAvatar(
+//                        name = "豆豆",
+//                        imageRes = R.drawable.pet_shiba,
+//                        onClick = { onPetSelected(PetTypes.DOG) }
+//                    )
+//
+//                    // 团绒 (仓鼠)
+//                    PetAvatar(
+//                        name = "团绒",
+//                        imageRes = R.drawable.pet_hamster,
+//                        onClick = { onPetSelected(PetTypes.HAMSTER) }
+//                    )
+//                }
+//            }
+//        }
+//    }
+//}
 
 // 宠物头像组件
 @Composable
 fun PetAvatar(
     name: String,
     imageRes: Int,
-    onClick: () -> Unit
+    onClick: () -> Unit,
+    isSelected: Boolean = false  // 添加选中状态参数
 ) {
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
         modifier = Modifier.clickable(onClick = onClick)
     ) {
         // 圆形头像
-        Image(
-            painter = painterResource(id = imageRes),
-            contentDescription = name,
-            modifier = Modifier
-                .size(80.dp)
-                .clip(CircleShape)
-                .border(2.dp, Color.White, CircleShape)
-        )
+        Box {
+            Image(
+                painter = painterResource(id = imageRes),
+                contentDescription = name,
+                modifier = Modifier
+                    .size(80.dp)
+                    .clip(CircleShape)
+                    .border(2.dp, Color.White, CircleShape)
+            )
 
+            // 如果被选中，显示右下角的圆点指示器
+            if (isSelected) {
+                Box(
+                    modifier = Modifier
+                        .size(20.dp)
+                        .align(Alignment.BottomEnd)
+                        .offset(x = (-4).dp, y = (-4).dp)  // 稍微向内偏移
+                        .background(Color(255,143, 45), CircleShape)  // 橙色圆点
+                        .border(1.dp, Color.White, CircleShape)  // 白色边框
+                )
+            }
+        }
         // 宠物名称
         Text(
             text = name,
             style = MaterialTheme.typography.bodyMedium,
-            color = Color.White,
+            color = if (isSelected) Color.Yellow else Color.White,  // 选中时文字变黄
+            fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,  // 选中时文字加粗
             modifier = Modifier.padding(top = 4.dp)
         )
     }
@@ -660,6 +709,10 @@ fun ChatScreen(
 //                    .zIndex(1f)
 //            )
 
+            LaunchedEffect(petType) {
+                viewModel.selectPetType(petType)
+            }
+
             // 聊天消息列表
             LazyColumn(
                 state = listState,
@@ -669,7 +722,7 @@ fun ChatScreen(
                 contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp)
             ) {
                 items(
-                    items = viewModel.getChatHistory(petType),
+                    items = viewModel.chatHistory,
                     key = { it.hashCode() }
                 ) { message ->
                     ChatBubble(
@@ -817,7 +870,7 @@ fun ChatBubble(
 fun LoadingAnimation(
     modifier: Modifier = Modifier,
     dotSize: Float = 36f,
-    dotColor: Color = MaterialTheme.colorScheme.primary,
+    dotColor: Color = Color(255, 143, 45),
     animationDuration: Int = 1000, // Total duration for one up-and-down cycle
     delayBetweenDots: Int = 200    // Delay between the start of each dot's animation
 ) {
@@ -924,7 +977,7 @@ fun ChatInput(
                 onValueChange = onMessageChange,
                 modifier = Modifier
                     .weight(1f)
-                    .padding(horizontal = 4.dp),
+                    .padding(horizontal = 4.dp, vertical = 10.dp),
                 textStyle = MaterialTheme.typography.bodyLarge.copy(
                     color = MaterialTheme.colorScheme.onSurface
                 ),
@@ -945,8 +998,8 @@ fun ChatInput(
                     }
                 ),
                 colors = TextFieldDefaults.colors(
-                    focusedContainerColor = Color.Transparent,
-                    unfocusedContainerColor = Color.Transparent,
+                    focusedContainerColor = Color(247,247,252),
+                    unfocusedContainerColor = Color(247,247,252),
                     disabledContainerColor = Color.Transparent,
                     cursorColor = MaterialTheme.colorScheme.primary,
                     focusedIndicatorColor = Color.Transparent,
@@ -963,7 +1016,7 @@ fun ChatInput(
                 Icon(
                     painter = painterResource(id = R.drawable.ic_send), // Replace with your send icon
                     contentDescription = "Send",
-                    tint = Color(0xFFE9673A) // Adjust the color as needed
+                    tint = Color(255,143, 45) // Adjust the color as needed
                 )
             }
         }

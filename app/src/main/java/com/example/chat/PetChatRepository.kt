@@ -376,7 +376,12 @@ class PetChatRepository private constructor(
      * @return 当前会话的消息列表
      */
     suspend fun getSessionMessages(petType: PetTypes): List<ChatEntity> {
-        return chatDao.getSessionMessages(currentSessionId, petType.name)
+        return try {
+            chatDao.getSessionMessages(currentSessionId, petType.name)
+        } catch (e: Exception) {
+            Log.e("PetChatRepository", "获取会话消息出错: ${e.message}", e)
+            emptyList()
+        }
     }
 
     /**

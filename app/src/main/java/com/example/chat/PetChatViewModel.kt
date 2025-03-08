@@ -1,6 +1,7 @@
 package com.example.chat
 
 import android.app.Application
+import android.util.Log
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
@@ -30,7 +31,7 @@ class PetChatViewModel(application: Application) : AndroidViewModel(application)
         private set
 
     // 聊天历史记录列表
-    private var chatHistory by mutableStateOf<List<ChatMessage>>(emptyList())
+    var chatHistory by mutableStateOf<List<ChatMessage>>(emptyList())
         private set
 
     // 最后一次AI返回的图片信息
@@ -166,7 +167,22 @@ class PetChatViewModel(application: Application) : AndroidViewModel(application)
         return info
     }
 
+    // 获取指定宠物类型的聊天历史
     fun getChatHistory(petType: PetTypes): List<ChatMessage> {
-        return chatHistory.filter { it.petType == petType }
+        return try {
+            // 如果当前选择的宠物类型与请求的类型相同，直接返回缓存的聊天历史
+            if (currentPetType == petType) {
+                chatHistory
+            } else {
+                // 切换宠物类型并触发加载
+                selectPetType(petType)
+                // 返回空列表，等待 loadChatHistory 完成后会自动更新 UI
+                return emptyList()
+            }
+        } catch (e: Exception) {
+            // 记录错误并返回空列表
+            Log.e("PetChatViewModel", "获取聊天历史出错: ${e.message}", e)
+            emptyList()
+        }
     }
 }

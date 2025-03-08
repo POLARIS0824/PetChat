@@ -8,6 +8,7 @@ enum class PetTypes(val displayName: String) {
     CAT("猫咪"),
     DOG("狗狗"),
     HAMSTER("仓鼠"),
+    DOG2("柴犬"),
 }
 
 /**

@@ -2,6 +2,7 @@ package com.example.chat.ui
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
@@ -36,6 +37,8 @@ fun NotesScreen(
 ) {
     val notes by viewModel.notes.collectAsState()
     var showAddDialog by remember { mutableStateOf(false) }
+    var showEditDialog by remember { mutableStateOf(false) }
+    var currentEditingNote by remember { mutableStateOf<NoteEntity?>(null) }
 
     Column(
         modifier = modifier
@@ -60,8 +63,10 @@ fun NotesScreen(
             items(notes) { note ->
                 NoteCard(
                     note = note,
-                    onDelete = { viewModel.deleteNote(note) },
-                    onEdit = { viewModel.updateNote(it) }
+                    onClick = {
+                        currentEditingNote = note
+                        showEditDialog = true
+                    }
                 )
             }
         }
@@ -90,6 +95,130 @@ fun NotesScreen(
             }
         )
     }
+
+    // 编辑便利贴对话框
+    if (showEditDialog && currentEditingNote != null) {
+        EditNoteDialog(
+            note = currentEditingNote!!,
+            onDismiss = {
+                showEditDialog = false
+                currentEditingNote = null
+            },
+            onUpdate = { updatedNote ->
+                viewModel.updateNote(updatedNote)
+                showEditDialog = false
+                currentEditingNote = null
+            },
+            onDelete = {
+                viewModel.deleteNote(currentEditingNote!!)
+                showEditDialog = false
+                currentEditingNote = null
+            }
+        )
+    }
+}
+
+@Composable
+private fun EditNoteDialog(
+    note: NoteEntity,
+    onDismiss: () -> Unit,
+    onUpdate: (NoteEntity) -> Unit,
+    onDelete: () -> Unit
+) {
+    var content by remember { mutableStateOf(note.content) }
+    var selectedType by remember { mutableStateOf(PetTypes.valueOf(note.petType)) }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("编辑便利贴") },
+        text = {
+            Column(
+                modifier = Modifier.fillMaxWidth(),
+                verticalArrangement = Arrangement.spacedBy(16.dp)
+            ) {
+                OutlinedTextField(
+                    value = content,
+                    onValueChange = { content = it },
+                    label = { Text("内容") },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(180.dp),
+                    minLines = 5,
+                    maxLines = 10
+                )
+
+                Text("选择宠物类型:", style = MaterialTheme.typography.labelLarge)
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(16.dp)
+                ) {
+                    PetTypes.values().forEach { type ->
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier.clickable { selectedType = type }
+                        ) {
+                            RadioButton(
+                                selected = selectedType == type,
+                                onClick = { selectedType = type }
+                            )
+                            Text(
+                                text = when(type) {
+                                    PetTypes.CAT -> "猫咪"
+                                    PetTypes.DOG -> "萨摩耶"
+                                    PetTypes.DOG2 -> "柴犬"
+                                    PetTypes.HAMSTER -> "仓鼠"
+                                },
+                                modifier = Modifier.padding(start = 4.dp)
+                            )
+                        }
+                    }
+                }
+            }
+        },
+        confirmButton = {
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                // 删除按钮
+                Button(
+                    onClick = onDelete,
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = Color.Red.copy(alpha = 0.8f)
+                    )
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Delete,
+                        contentDescription = "删除",
+                        tint = Color.White
+                    )
+                    Spacer(modifier = Modifier.width(4.dp))
+                    Text("删除")
+                }
+
+                // 保存按钮
+                Button(
+                    onClick = {
+                        // 创建更新后的便利贴对象，保留原ID和时间戳
+                        val updatedNote = note.copy(
+                            content = content,
+                            petType = selectedType.name
+                        )
+                        onUpdate(updatedNote)
+                    },
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = Color(255, 143, 45)
+                    )
+                ) {
+                    Text("保存")
+                }
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text("取消")
+            }
+        }
+    )
 }
 
 @Composable
@@ -132,13 +261,14 @@ private fun FilterChips(
 @Composable
 private fun NoteCard(
     note: NoteEntity,
-    onDelete: () -> Unit,
-    onEdit: (NoteEntity) -> Unit
+    onClick: () -> Unit
 ) {
     val background = R.drawable.notebackground
 
     Card(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(onClick = onClick),
         elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
     ) {
         Box(
@@ -159,44 +289,16 @@ private fun NoteCard(
                 contentAlignment = Alignment.Center
             ) {
                 Column(modifier = Modifier.padding(16.dp),
-                    verticalArrangement = Arrangement.Center,
-                    horizontalAlignment = Alignment.CenterHorizontally
-                ) {
+                    horizontalAlignment = Alignment.CenterHorizontally) {
+                    // 便利贴内容
                     Text(
                         text = note.content,
                         style = MaterialTheme.typography.bodyLarge,
-                        modifier = Modifier.fillMaxWidth(),
-                        fontWeight = FontWeight.Bold,
-                        textAlign = TextAlign.Center
+                        modifier = Modifier.weight(1f)
                     )
-                    Spacer(modifier = Modifier.height(8.dp))
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        // 放在最中间
-                        horizontalArrangement = Arrangement.Center
-                    ) {
-                        Text(
-                            text = "#${note.petType}",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.secondary,
-                            textAlign = TextAlign.Start
-                        )
-//                    Row(
-//                        horizontalArrangement = Arrangement.spacedBy(8.dp)
-//                    ) {
-//                        IconButton(onClick = onDelete) {
-//                            Icon(Icons.Default.Delete, "删除")
-//                        }
-//                        IconButton(onClick = { /* 显示编辑对话框 */ }) {
-//                            Icon(Icons.Default.Edit, "编辑")
-//                        }
-//                    }
-                    }
                 }
             }
-
         }
-
     }
 }
 
