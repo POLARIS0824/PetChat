@@ -37,16 +37,24 @@ import androidx.compose.ui.text.style.TextOverflow
 import com.example.chat.model.ChatSession
 import java.text.SimpleDateFormat
 import android.view.WindowManager
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.StartOffset
 import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.keyframes
 import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.core.updateTransition
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.ModalNavigationDrawer
@@ -126,6 +134,11 @@ fun PetChatApp(
     var currentPetType by remember { mutableStateOf(PetTypes.CAT) }
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
     val scope = rememberCoroutineScope()
+    var showPetSelector by remember { mutableStateOf(false) }
+    val chatScreenOffset by animateFloatAsState(
+        targetValue = if (showPetSelector) 48f else 0f,
+        animationSpec = tween(300), label = ""
+    )
 
     MaterialTheme {
         ModalNavigationDrawer(
@@ -172,7 +185,9 @@ fun PetChatApp(
                                     }
                                 },
                                 actions = {
-                                    IconButton(onClick = { /* 切换宠物 */ },
+                                    IconButton(onClick = {
+                                        showPetSelector = true
+                                    },
                                         modifier = Modifier.padding(end = 8.dp)
                                     ) {
                                         Icon(
@@ -358,6 +373,7 @@ fun PetChatApp(
                     .padding(contentPadding)
                     .consumeWindowInsets(contentPadding)
                     .imePadding()
+                    .offset(y = chatScreenOffset.dp)
 
 //                    .imeNestedScroll()
                 ) {
@@ -378,9 +394,142 @@ fun PetChatApp(
                         Screen.Notes -> NotesScreen()
                         Screen.Social -> SocialScreen()
                     }
+
+//                    if (showPetSelector) {
+//                        PetSelectorOverlay(
+//                            onPetSelected = { petType ->
+//                                currentPetType = petType
+//                                showPetSelector = false
+//                            },
+//                            onDismiss = { showPetSelector = false }
+//                        )
+//                    }
+                }
+
+                // 宠物选择器，固定在顶部
+                AnimatedVisibility(
+                    visible = showPetSelector,
+                    enter = slideInVertically(initialOffsetY = { -it }) + fadeIn(),
+                    exit = slideOutVertically(targetOffsetY = { -it }) + fadeOut()
+                ) {
+                    PetSelectorBar(
+                        onPetSelected = { petType ->
+                            currentPetType = petType
+                            showPetSelector = false
+                        },
+                        onDismiss = { showPetSelector = false }
+                    )
                 }
             }
         }
+    }
+}
+
+// 添加宠物选择器覆盖层组件
+@Composable
+fun PetSelectorBar(
+    onPetSelected: (PetTypes) -> Unit,
+    onDismiss: () -> Unit
+) {
+    // 半透明背景
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .clickable(onClick = onDismiss)
+    ) {
+        // 宠物选择器卡片
+        Card(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp)
+                .align(Alignment.TopCenter)
+                .clickable(enabled = false) { /* 防止点击事件传递到背景 */ },
+            shape = RoundedCornerShape(16.dp),
+            colors = CardDefaults.cardColors(
+                containerColor = Color(255,178,110) // 橙色背景
+            )
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp)
+            ) {
+                // 顶部文字
+                Text(
+                    text = "专属萌宠，随时陪伴！",
+                    style = MaterialTheme.typography.titleMedium,
+                    color = Color.White,
+                    modifier = Modifier.padding(bottom = 16.dp)
+                )
+
+                // 宠物头像行
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 8.dp),
+                    horizontalArrangement = Arrangement.SpaceEvenly
+                ) {
+                    // 大白 (萨摩耶)
+                    PetAvatar(
+                        name = "大白",
+                        imageRes = R.drawable.pet_samoyed,
+                        onClick = { onPetSelected(PetTypes.DOG) }
+                    )
+
+                    // 布丁 (猫咪)
+                    PetAvatar(
+                        name = "布丁",
+                        imageRes = R.drawable.pet_cat,
+                        onClick = { onPetSelected(PetTypes.CAT) }
+                    )
+
+                    // 豆豆 (柴犬)
+                    PetAvatar(
+                        name = "豆豆",
+                        imageRes = R.drawable.pet_shiba,
+                        onClick = { onPetSelected(PetTypes.DOG) }
+                    )
+
+                    // 团绒 (仓鼠)
+                    PetAvatar(
+                        name = "团绒",
+                        imageRes = R.drawable.pet_hamster,
+                        onClick = { onPetSelected(PetTypes.HAMSTER) }
+                    )
+                }
+            }
+        }
+    }
+}
+
+// 宠物头像组件
+@Composable
+fun PetAvatar(
+    name: String,
+    imageRes: Int,
+    onClick: () -> Unit
+) {
+    Column(
+        horizontalAlignment = Alignment.CenterHorizontally,
+        modifier = Modifier.clickable(onClick = onClick)
+    ) {
+        // 圆形头像
+        Image(
+            painter = painterResource(id = imageRes),
+            contentDescription = name,
+            modifier = Modifier
+                .size(60.dp)
+                .clip(CircleShape)
+                .border(2.dp, Color.White, CircleShape)
+        )
+
+        // 宠物名称
+        Text(
+            text = name,
+            style = MaterialTheme.typography.bodyMedium,
+            color = Color.White,
+            modifier = Modifier.padding(top = 4.dp)
+        )
     }
 }
 

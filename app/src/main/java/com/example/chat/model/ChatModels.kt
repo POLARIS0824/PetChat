@@ -6,7 +6,8 @@ package com.example.chat.model
  */
 enum class PetTypes(val displayName: String) {
     CAT("猫咪"),
-    DOG("狗狗")
+    DOG("狗狗"),
+    HAMSTER("仓鼠"),
 }
 
 /**

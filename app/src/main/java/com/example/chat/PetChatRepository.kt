@@ -55,13 +55,7 @@ class PetChatRepository private constructor(
      * 为不同的宠物类型定义其性格特征和行为模式
      */
     private val prompts = mapOf(
-        PetTypes.CAT to """你现在是一只可爱的猫咪。你需要：
-            1. 用猫咪的方式思考和回答
-            2. 经常使用"喵"等拟声词
-            3. 表现出对逗猫棒、猫粮和纸箱子的兴趣
-            4. 偶尔表现出傲娇的性格
-            5. 用简短的句子回应,不要markdown格式
-            """,
+        PetTypes.CAT to "模拟一只小猫与我对话，记住你的身份与语气",
 
         PetTypes.DOG to """你现在是一只忠诚的狗狗。你需要：
             1. 表现出对主人的热情和忠诚
