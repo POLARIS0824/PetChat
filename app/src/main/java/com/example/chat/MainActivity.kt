@@ -1149,12 +1149,12 @@ fun PetCard(
                         )
 
                         InfoTag(
-                            text = "${pet.age} (人类约24岁)",
+                            text = "${pet.age}",
                             backgroundColor = Color(0xFFF0E4BD)
                         )
                     }
 
-                    Spacer(modifier = Modifier.height(min(24.dp, LocalConfiguration.current.screenWidthDp.dp * 0.04f)))
+                    Spacer(modifier = Modifier.height(min(8.dp, LocalConfiguration.current.screenWidthDp.dp * 0.04f)))
 
                     // 活动和性格特点
                     Row(
@@ -1165,8 +1165,7 @@ fun PetCard(
                         InfoTag(
                             text = "爱好:${pet.hobby}",
                             backgroundColor = Color(0xFFBDE4F0),
-                            modifier = Modifier
-                                .padding(end = 24.dp)
+                            Modifier.padding(end = min(12.dp, LocalConfiguration.current.screenWidthDp.dp * 0.03f)) // 减小间距
                         )
 
                         InfoTag(
@@ -1175,7 +1174,7 @@ fun PetCard(
                         )
                     }
 
-                    Spacer(modifier = Modifier.height(16.dp))
+                    Spacer(modifier = Modifier.height(min(8.dp, LocalConfiguration.current.screenWidthDp.dp * 0.03f))) // 减小间距
 
                     // 删除和去对话按钮
                     Row(
