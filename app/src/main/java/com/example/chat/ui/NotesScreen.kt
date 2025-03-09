@@ -246,24 +246,26 @@ private fun FilterChips(
     selectedType: String?,
     onFilterSelected: (String?) -> Unit
 ) {
-    Row(
+    LazyRow(
         modifier = Modifier
             .fillMaxWidth()
             .padding(16.dp),
         horizontalArrangement = Arrangement.spacedBy(8.dp)
     ) {
-        FilterChip(
-            selected = selectedType == null,
-            
-            onClick = { onFilterSelected(null) },
-            label = { Text("全部") },
-            colors = FilterChipDefaults.filterChipColors(
-                selectedContainerColor = Color(255, 143, 45),
-                selectedLabelColor = Color.White
-            ),
-            shape = RoundedCornerShape(16.dp)
-        )
-        PetTypes.values().forEach { type ->
+        item {
+            FilterChip(
+                selected = selectedType == null,
+                onClick = { onFilterSelected(null) },
+                label = { Text("全部") },
+                colors = FilterChipDefaults.filterChipColors(
+                    selectedContainerColor = Color(255, 143, 45),
+                    selectedLabelColor = Color.White
+                ),
+                shape = RoundedCornerShape(16.dp)
+            )
+        }
+
+        items(PetTypes.values()) { type ->
             FilterChip(
                 selected = selectedType == type.name,
                 onClick = { onFilterSelected(type.name) },

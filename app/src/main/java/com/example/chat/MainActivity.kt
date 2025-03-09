@@ -1013,12 +1013,12 @@ fun PetCard(
     // 获取卡片尺寸
     var cardSize by remember { mutableStateOf(IntSize.Zero) }
 
-    // 计算卡片高度
-    val cardHeight = with(density) { 320.dp.toPx() }
+//    // 计算卡片高度
+//    val cardHeight = with(density) { 320.dp.toPx() }
 
     // 计算从卡片底部四分之一处开始的偏移量
-    val startOffsetY = cardHeight * 0.67f // 底部四分之一处
-    val maxOffsetY = cardHeight * 0.5f // 最大偏移为卡片高度的一半
+    val startOffsetY = cardSize.height * 0.67f // 底部四分之一处
+    val maxOffsetY = cardSize.height * 0.5f // 最大偏移为卡片高度的一半
 
     // 修改偏移量计算方式
     val offsetY = startOffsetY - (startOffsetY * visiblePercentage).coerceIn(0f, maxOffsetY)
