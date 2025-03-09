@@ -1030,7 +1030,7 @@ fun PetCard(
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .heightIn(min = 280.dp, max = 320.dp),  // 使用heightIn替代固定height
+            .aspectRatio(1.3f),  // 设置宽高比
         shape = RoundedCornerShape(16.dp),
         elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
     ) {
@@ -1264,7 +1264,9 @@ private fun InfoTag(
             text = text,
             style = MaterialTheme.typography.bodyMedium,
 //            fontSize = min(14.sp, LocalConfiguration.current.screenWidthDp.sp * 0.035f),  // 根据屏幕宽度调整字体大小
-            color = Color.Black
+            color = Color.Black,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis
         )
     }
 }
