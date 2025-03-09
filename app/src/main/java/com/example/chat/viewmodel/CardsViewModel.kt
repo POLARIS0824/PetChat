@@ -23,7 +23,9 @@ class CardsViewModel : ViewModel() {
                     Pet(
                         name = "咪咪",
                         status = "可爱的猫咪",
-                        imageRes = R.drawable.cat1,
+                        imageRes = R.drawable.card_cat,
+                        initalRes = R.drawable.card_cat_inital,
+                        finalRes = R.drawable.card_cat_final,
                         breed = "英短",
                         age = "2岁",
                         gender = "母"
@@ -31,7 +33,9 @@ class CardsViewModel : ViewModel() {
                     Pet(
                         name = "旺财", 
                         status = "活泼的狗狗",
-                        imageRes = R.drawable.dog1,
+                        imageRes = R.drawable.card_dog,
+                        initalRes = R.drawable.card_dog_inital,
+                        finalRes = R.drawable.card_dog_final,
                         breed = "柴犬",
                         age = "1岁",
                         gender = "公"

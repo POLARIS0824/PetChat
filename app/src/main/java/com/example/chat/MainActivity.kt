@@ -57,6 +57,7 @@ import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.Settings
@@ -76,15 +77,19 @@ import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.zIndex
 import androidx.core.content.contentValuesOf
 import com.example.chat.ui.social.SocialScreen
 import com.example.chat.viewmodel.CardsViewModel
 import kotlinx.coroutines.delay
+import kotlin.math.roundToInt
 
 class MainActivity : ComponentActivity() {
     private val requestPermissionLauncher: ActivityResultLauncher<String> = registerForActivityResult(
@@ -1029,6 +1034,20 @@ fun PetList(pets: List<com.example.chat.model.Pet>, modifier: Modifier = Modifie
 
 @Composable
 fun PetCard(pet: com.example.chat.model.Pet) {
+    // 记录拖拽状态
+    var offsetY by remember { mutableStateOf(0f) }
+    // 定义最大拖拽距离
+    val maxDragDistance = 200.dp
+    // 使用LocalDensity获取density转换器
+    val density = LocalDensity.current
+    // 计算初始偏移量
+    val initialOffset = with(density) { maxDragDistance.toPx() * 6 / 10 }
+
+    // 初始化偏移量
+    LaunchedEffect(Unit) {
+        offsetY = initialOffset
+    }
+
     Card(
         modifier = Modifier
             .fillMaxWidth()
@@ -1036,89 +1055,144 @@ fun PetCard(pet: com.example.chat.model.Pet) {
         shape = RoundedCornerShape(16.dp),
         elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
     ) {
-        Box(modifier = Modifier.fillMaxSize()) {
-            // 左上角的橙色圆点装饰
-            Canvas(
-                modifier = Modifier
-                    .size(60.dp)
-                    .align(Alignment.TopStart)
-            ) {
-                drawCircle(
-                    color = Color(255, 143, 45, 40),
-                    radius = 80.dp.toPx(),
-                    center = Offset(0f, 0f)
-                )
-            }
-
-            // 右下角的橙色圆点装饰
-            Canvas(
-                modifier = Modifier
-                    .size(80.dp)
-                    .align(Alignment.BottomEnd)
-            ) {
-                drawCircle(
-                    color = Color(255, 143, 45, 30),
-                    radius = 180.dp.toPx(),
-                    center = Offset(size.width, size.height)
-                )
-            }
-
-            // 背景图片
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .pointerInput(Unit) {
+                    detectDragGestures(
+                        onDragEnd = {
+                            // 拖拽结束时，根据拖拽距离决定是否回弹
+                            offsetY = if (offsetY > initialOffset / 2) {
+                                initialOffset // 回弹到初始位置
+                            } else {
+                                0f // 保持完全展开
+                            }
+                        },
+                        onDrag = { change, dragAmount ->
+                            change.consume()
+                            // 限制拖拽范围在0到初始偏移量之间
+                            offsetY = (offsetY + dragAmount.y).coerceIn(0f, initialOffset)
+                        }
+                    )
+                }
+        ) {
+            // 底层图片 - 宠物图片
             Image(
                 painter = painterResource(id = pet.imageRes),
                 contentDescription = "Pet Image",
-                modifier = Modifier.size(300.dp),
+                modifier = Modifier.fillMaxSize(),
                 contentScale = ContentScale.Crop
             )
 
-            // 毛玻璃效果底层
+            // 上层图片 - 可以是宠物的另一张照片或信息卡片背景
             Box(
                 modifier = Modifier
-                    .align(Alignment.BottomCenter)
                     .fillMaxWidth()
-                    .height(100.dp) // 固定高度
-                    .background(
-                        brush = Brush.verticalGradient(
-                            colors = listOf(
-                                Color.Transparent,
-                                Color.White.copy(alpha = 0.5f)
-                            ),
-                            startY = 0f,
-                            endY = 50f
-                        )
-                    )
-                    .blur(radius = 20.dp) // 增加模糊半径
-            )
-
-            // 信息内容层(在毛玻璃效果之上)
-            Column(
-                modifier = Modifier
-                    .align(Alignment.BottomCenter)
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 12.dp)
+                    .fillMaxHeight()
+                    .offset { IntOffset(0, offsetY.roundToInt()) }
             ) {
-                // 名字和品种行
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
+                // 使用blur图片作为背景
+                Image(
+                    painter = painterResource(id = R.drawable.blur),
+                    contentDescription = "Blur Overlay",
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .blur(radius = 15.dp),
+                    contentScale = ContentScale.Crop
+                )
+
+                // 宠物信息内容
+                Column(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(horizontal = 16.dp, vertical = 12.dp)
                 ) {
+                    // 名字和品种行
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = pet.name,
+                            style = MaterialTheme.typography.titleLarge,
+                            fontWeight = FontWeight.Bold,
+                            color = Color.White
+                        )
+                        Text(
+                            text = pet.breed,
+                            style = MaterialTheme.typography.bodyLarge,
+                            color = Color.White.copy(alpha = 0.8f)
+                        )
+                    }
+
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    // 宠物描述
                     Text(
-                        text = pet.name,
-                        style = MaterialTheme.typography.titleLarge,
-                        fontWeight = FontWeight.Bold,
-                        color = Color.Black // 确保文字在毛玻璃背景上清晰可见
+                        text = "向上拖动查看更多信息",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = Color.White.copy(alpha = 0.7f)
                     )
-                    Text(
-                        text = pet.breed,
-                        style = MaterialTheme.typography.bodyLarge,
-                        color = Color.White.copy(alpha = 0.8f)
-                    )
+
+                    // 额外信息区域 - 只有在拖拽时才会显示
+                    AnimatedVisibility(
+                        visible = offsetY < -50f,
+                        enter = fadeIn() + expandVertically(),
+                        exit = fadeOut() + shrinkVertically()
+                    ) {
+                        Column(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(top = 16.dp)
+                        ) {
+                            Text(
+                                text = "年龄: ${pet.age}岁",
+                                style = MaterialTheme.typography.bodyLarge,
+                                color = Color.White
+                            )
+
+                            Spacer(modifier = Modifier.height(8.dp))
+
+//                            Text(
+//                                text = "性格: ${pet.personality}",
+//                                style = MaterialTheme.typography.bodyLarge,
+//                                color = Color.White
+//                            )
+
+                            Spacer(modifier = Modifier.height(8.dp))
+
+//                            Text(
+//                                text = "喜好: ${pet.likes}",
+//                                style = MaterialTheme.typography.bodyLarge,
+//                                color = Color.White
+//                            )
+
+                            Spacer(modifier = Modifier.height(16.dp))
+
+                            Button(
+                                onClick = { /* 查看详情 */ },
+                                colors = ButtonDefaults.buttonColors(
+                                    containerColor = Color.White,
+                                    contentColor = Color(255, 143, 45)
+                                ),
+                                modifier = Modifier.align(Alignment.CenterHorizontally)
+                            ) {
+                                Text("查看详情")
+                            }
+                        }
+
+                    }
                 }
 
-                Spacer(modifier = Modifier.height(8.dp))
-
-                // 其他信息...
+                // 拖拽指示器
+                Box(
+                    modifier = Modifier
+                        .align(Alignment.TopCenter)
+                        .padding(top = 8.dp)
+                        .size(width = 40.dp, height = 4.dp)
+                        .background(Color.White.copy(alpha = 0.6f), RoundedCornerShape(2.dp))
+                )
             }
         }
     }
