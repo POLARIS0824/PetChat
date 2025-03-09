@@ -83,12 +83,14 @@ import androidx.compose.ui.graphics.asComposeRenderEffect
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.IntOffset
+import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.min
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.zIndex
@@ -997,7 +999,7 @@ fun PetCard(
     onChatClick: (PetTypes) -> Unit = {}
 ) {
     // 定义最大拖拽距离
-    val maxDragDistance = 160.dp
+    val maxDragDistance = 120.dp
     // 使用LocalDensity获取density转换器
     val density = LocalDensity.current
     val maxOffsetPx = with(density) { maxDragDistance.toPx() }
@@ -1007,6 +1009,9 @@ fun PetCard(
 
     // 记录当前可见百分比
     var visiblePercentage by remember { mutableFloatStateOf(initialVisiblePercentage) }
+
+    // 获取卡片尺寸
+    var cardSize by remember { mutableStateOf(IntSize.Zero) }
 
     // 计算卡片高度
     val cardHeight = with(density) { 320.dp.toPx() }
@@ -1030,7 +1035,8 @@ fun PetCard(
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .aspectRatio(1.3f),  // 设置宽高比
+            .aspectRatio(1.3f)  // 设置宽高比
+            .onSizeChanged { cardSize = it },  // 获取卡片实际尺寸
         shape = RoundedCornerShape(16.dp),
         elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
     ) {
@@ -1042,7 +1048,7 @@ fun PetCard(
                         onDragEnd = {
                             // 拖拽结束时，根据可见百分比决定是否回弹
                             visiblePercentage = if (visiblePercentage < 0.5f) {
-                                initialVisiblePercentage // 回弹到初始位置
+                                0f // 回弹到初始位置
                             } else {
                                 1f // 保持完全展开
                             }
