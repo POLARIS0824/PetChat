@@ -1110,7 +1110,7 @@ fun PetCard(
                             top = min(24.dp, LocalConfiguration.current.screenWidthDp.dp * 0.06f),
                             bottom = min(24.dp, LocalConfiguration.current.screenWidthDp.dp * 0.06f)
                         )
-                        .verticalScroll(rememberScrollState())
+//                        .verticalScroll(rememberScrollState())
                 ) {
                     // 宠物名称和状态
                     Text(
