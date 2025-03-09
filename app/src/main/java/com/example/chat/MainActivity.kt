@@ -1097,7 +1097,7 @@ fun PetCard(
                         .fillMaxWidth() // 确保宽度填满父容器
                         .wrapContentHeight() // 高度根据比例自适应
                         .align(Alignment.TopCenter), // 顶部对齐
-                    contentScale = ContentScale.FillWidth // 填充宽度，保持宽高比
+//                    contentScale = ContentScale.FillWidth // 填充宽度，保持宽高比
                 )
 
                 // 宠物信息内容
@@ -1125,10 +1125,10 @@ fun PetCard(
                         text = pet.status,
                         style = MaterialTheme.typography.bodyLarge,
                         color = Color.Black.copy(alpha = 0.7f),
-                        modifier = Modifier.padding(top = 2.dp, start = 16.dp, end = 16.dp) // 添加左右padding并保留顶部padding
+                        modifier = Modifier.padding(start = 16.dp, end = 16.dp) // 添加左右padding并保留顶部padding
                     )
 
-                    Spacer(modifier = Modifier.height(min(24.dp, LocalConfiguration.current.screenWidthDp.dp * 0.06f)))
+                    Spacer(modifier = Modifier.height(min(24.dp, LocalConfiguration.current.screenWidthDp.dp * 0.05f)))
 
                     // 宠物信息标签
                     Row(
@@ -1153,28 +1153,28 @@ fun PetCard(
                             backgroundColor = Color(0xFFF0E4BD)
                         )
                     }
+//
+//                    Spacer(modifier = Modifier.height(min(12.dp, LocalConfiguration.current.screenWidthDp.dp * 0.04f)))
+//
+//                    // 活动和性格特点
+//                    Row(
+//                        modifier = Modifier.fillMaxWidth(),
+//                        horizontalArrangement = Arrangement.Center,
+////                        verticalAlignment = Alignment.CenterVertically
+//                    ) {
+//                        InfoTag(
+//                            text = "爱好:${pet.hobby}",
+//                            backgroundColor = Color(0xFFBDE4F0),
+//                            Modifier.padding(end = min(12.dp, LocalConfiguration.current.screenWidthDp.dp * 0.03f)) // 减小间距
+//                        )
+//
+//                        InfoTag(
+//                            text = pet.character,
+//                            backgroundColor = Color(0xFFD0BDF0),
+//                        )
+//                    }
 
-                    Spacer(modifier = Modifier.height(min(8.dp, LocalConfiguration.current.screenWidthDp.dp * 0.04f)))
-
-                    // 活动和性格特点
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.Center,
-//                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        InfoTag(
-                            text = "爱好:${pet.hobby}",
-                            backgroundColor = Color(0xFFBDE4F0),
-                            Modifier.padding(end = min(12.dp, LocalConfiguration.current.screenWidthDp.dp * 0.03f)) // 减小间距
-                        )
-
-                        InfoTag(
-                            text = pet.character,
-                            backgroundColor = Color(0xFFD0BDF0),
-                        )
-                    }
-
-                    Spacer(modifier = Modifier.height(min(8.dp, LocalConfiguration.current.screenWidthDp.dp * 0.03f))) // 减小间距
+                    Spacer(modifier = Modifier.height(min(24.dp, LocalConfiguration.current.screenWidthDp.dp * 0.04f))) // 减小间距
 
                     // 删除和去对话按钮
                     Row(
