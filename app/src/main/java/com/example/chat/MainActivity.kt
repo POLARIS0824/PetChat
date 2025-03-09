@@ -83,11 +83,13 @@ import androidx.compose.ui.graphics.asComposeRenderEffect
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.IntOffset
+import androidx.compose.ui.unit.min
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.zIndex
 import androidx.core.content.contentValuesOf
@@ -305,7 +307,7 @@ fun PetChatApp(
                         containerColor = Color(255,253,246),
                         contentColor = Color(250,142, 57),
                         modifier = Modifier
-                            .height(96.dp)
+                            .heightIn(min = 72.dp, max = 96.dp)
                             .padding(vertical = 0.dp),
 //                        windowInsets = WindowInsets(0, 0, 0, 0) // 移除系统默认的内边距
                     ) {
@@ -492,7 +494,7 @@ fun PetAvatar(
                 painter = painterResource(id = imageRes),
                 contentDescription = name,
                 modifier = Modifier
-                    .size(80.dp)
+                    .size(LocalConfiguration.current.screenWidthDp.dp * 0.2f)
                     .clip(CircleShape)
                     .border(2.dp, Color.White, CircleShape)
             )
@@ -855,7 +857,7 @@ fun ChatInput(
                 LoadingAnimation(
                     modifier = Modifier
                         .height(36.dp)
-                        .width(128.dp)
+                        .fillMaxWidth(0.3f)
 //                        .size(128.dp) // 设置合理的大小，避免超出屏幕
                         .align(Alignment.CenterVertically) // 垂直居中对齐
                 )
@@ -1028,7 +1030,7 @@ fun PetCard(
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .height(320.dp),
+            .heightIn(min = 280.dp, max = 320.dp),  // 使用heightIn替代固定height
         shape = RoundedCornerShape(16.dp),
         elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
     ) {
@@ -1094,14 +1096,18 @@ fun PetCard(
                 Column(
                     modifier = Modifier
                         .fillMaxSize()
-                        .padding(24.dp)
+                        .padding(
+                            start = min(24.dp, LocalConfiguration.current.screenWidthDp.dp * 0.06f),
+                            end = min(24.dp, LocalConfiguration.current.screenWidthDp.dp * 0.06f),
+                            top = min(24.dp, LocalConfiguration.current.screenWidthDp.dp * 0.06f),
+                            bottom = min(24.dp, LocalConfiguration.current.screenWidthDp.dp * 0.06f)
+                        )
                 ) {
                     // 宠物名称和状态
                     Text(
                         text = pet.name,
                         style = MaterialTheme.typography.headlineMedium,
                         fontWeight = FontWeight.Bold,
-                        fontSize = 24.sp,
                         color = Color.Black,
                         modifier = Modifier.padding(horizontal = 16.dp)
                     )
@@ -1113,7 +1119,7 @@ fun PetCard(
                         modifier = Modifier.padding(top = 2.dp, start = 16.dp, end = 16.dp) // 添加左右padding并保留顶部padding
                     )
 
-                    Spacer(modifier = Modifier.height(24.dp))
+                    Spacer(modifier = Modifier.height(min(24.dp, LocalConfiguration.current.screenWidthDp.dp * 0.06f)))
 
                     // 宠物信息标签
                     Row(
@@ -1139,7 +1145,7 @@ fun PetCard(
                         )
                     }
 
-                    Spacer(modifier = Modifier.height(16.dp))
+                    Spacer(modifier = Modifier.height(min(24.dp, LocalConfiguration.current.screenWidthDp.dp * 0.04f)))
 
                     // 活动和性格特点
                     Row(
@@ -1176,6 +1182,7 @@ fun PetCard(
                             shape = RoundedCornerShape(10.dp),
                             modifier = Modifier
                                 .padding(end = 24.dp)
+                                .weight(1f)
                                 .width(160.dp)
                         ) {
                             Text("删除", color = Color.Black)
@@ -1190,7 +1197,9 @@ fun PetCard(
                                 containerColor = Color(255,166, 88)
                             ),
                             shape = RoundedCornerShape(10.dp),
-                            modifier = Modifier.width(160.dp)
+                            modifier = Modifier
+                                .width(160.dp)
+                                .weight(1f)
 //                            modifier = Modifier.weight(1f)
                         ) {
                             Text("去对话", color = Color.White)
@@ -1246,11 +1255,15 @@ private fun InfoTag(
                 color = backgroundColor,
                 shape = RoundedCornerShape(10)
             )
-            .padding(horizontal = 12.dp, vertical = 8.dp)
+            .padding(
+                horizontal = min(12.dp, LocalConfiguration.current.screenWidthDp.dp * 0.03f),
+                vertical = min(8.dp, LocalConfiguration.current.screenWidthDp.dp * 0.02f)
+            )
     ) {
         Text(
             text = text,
             style = MaterialTheme.typography.bodyMedium,
+//            fontSize = min(14.sp, LocalConfiguration.current.screenWidthDp.sp * 0.035f),  // 根据屏幕宽度调整字体大小
             color = Color.Black
         )
     }
