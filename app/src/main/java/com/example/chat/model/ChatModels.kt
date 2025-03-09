@@ -5,10 +5,10 @@ package com.example.chat.model
  * 定义支持的宠物类型及其显示名称
  */
 enum class PetTypes(val displayName: String) {
-    CAT("猫咪"),
-    DOG("狗狗"),
-    HAMSTER("仓鼠"),
-    DOG2("柴犬"),
+    CAT("布丁"),
+    DOG("大白"),
+    HAMSTER("团绒"),
+    DOG2("豆豆"),
 }
 
 /**

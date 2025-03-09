@@ -157,7 +157,7 @@ fun SocialPostItem(
                         ),
                         contentDescription = "点赞",
                         tint = if (post.isLiked) Color(0xFFFF4D4D) else Color.Gray,
-                        modifier = Modifier.size(20.dp)
+                        modifier = Modifier.size(24.dp)
                     )
                 }
                 Text(
@@ -174,7 +174,7 @@ fun SocialPostItem(
                         painter = painterResource(id = R.drawable.ic_comment),
                         contentDescription = "评论",
                         tint = Color.Gray,
-                        modifier = Modifier.size(20.dp)
+                        modifier = Modifier.size(16.dp)
                     )
                 }
                 Text(
@@ -192,7 +192,7 @@ fun SocialPostItem(
                     ),
                     contentDescription = "收藏",
                     tint = if (post.isSaved) Color(255, 143, 45) else Color.Gray,
-                    modifier = Modifier.size(20.dp)
+                    modifier = Modifier.size(24.dp)
                 )
             }
         }

@@ -57,6 +57,7 @@ import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.ModalNavigationDrawer
@@ -418,13 +419,24 @@ fun PetChatApp(
                         modifier = Modifier
                             .fillMaxSize()
                             .padding(innerPadding)
+                            .clickable(
+                                enabled = showPetSelector,
+                                onClick = { showPetSelector = false },
+                                indication = null,
+                                interactionSource = remember {
+                                    MutableInteractionSource()
+                                }
+                            )
                     ) {
                         when (currentScreen) {
                             Screen.Chat -> ChatScreen(
                                 viewModel = viewModel,
                                 petType = currentPetType,
                                 onDrawerClick = { scope.launch { drawerState.open() } },
-                                contentPadding = innerPadding
+                                contentPadding = innerPadding,
+                                // 传递宠物选择器状态和关闭函数
+                                showPetSelector = showPetSelector,
+                                onHidePetSelector = { showPetSelector = false }
                             )
                             Screen.Cards -> {
                                 PetList(cardsViewModel.pets)
@@ -442,83 +454,6 @@ fun PetChatApp(
         }
     }
 }
-
-//// 添加宠物选择器覆盖层组件
-//@Composable
-//fun PetSelectorBar(
-//    onPetSelected: (PetTypes) -> Unit,
-//    onDismiss: () -> Unit
-//) {
-//    // 半透明背景
-//    Box(
-//        modifier = Modifier
-//            .fillMaxSize()
-//            .clickable(onClick = onDismiss)
-//    ) {
-//        // 宠物选择器卡片
-//        Card(
-//            modifier = Modifier
-//                .fillMaxWidth()
-//                .padding(16.dp)
-//                .align(Alignment.TopCenter)
-//                .clickable(enabled = false) { /* 防止点击事件传递到背景 */ },
-//            shape = RoundedCornerShape(16.dp),
-//            colors = CardDefaults.cardColors(
-//                containerColor = Color(255,178,110) // 橙色背景
-//            )
-//        ) {
-//            Column(
-//                modifier = Modifier
-//                    .fillMaxWidth()
-//                    .padding(16.dp)
-//            ) {
-//                // 顶部文字
-//                Text(
-//                    text = "专属萌宠，随时陪伴！",
-//                    style = MaterialTheme.typography.titleMedium,
-//                    color = Color.White,
-//                    modifier = Modifier.padding(bottom = 16.dp)
-//                )
-//
-//                // 宠物头像行
-//                Row(
-//                    modifier = Modifier
-//                        .fillMaxWidth()
-//                        .padding(vertical = 8.dp),
-//                    horizontalArrangement = Arrangement.SpaceEvenly
-//                ) {
-//                    // 大白 (萨摩耶)
-//                    PetAvatar(
-//                        name = "大白",
-//                        imageRes = R.drawable.pet_samoyed,
-//                        onClick = { onPetSelected(PetTypes.DOG) }
-//                    )
-//
-//                    // 布丁 (猫咪)
-//                    PetAvatar(
-//                        name = "布丁",
-//                        imageRes = R.drawable.pet_cat,
-//                        onClick = { onPetSelected(PetTypes.CAT) }
-//                    )
-//
-//                    // 豆豆 (柴犬)
-//                    PetAvatar(
-//                        name = "豆豆",
-//                        imageRes = R.drawable.pet_shiba,
-//                        onClick = { onPetSelected(PetTypes.DOG) }
-//                    )
-//
-//                    // 团绒 (仓鼠)
-//                    PetAvatar(
-//                        name = "团绒",
-//                        imageRes = R.drawable.pet_hamster,
-//                        onClick = { onPetSelected(PetTypes.HAMSTER) }
-//                    )
-//                }
-//            }
-//        }
-//    }
-//}
 
 // 宠物头像组件
 @Composable
@@ -549,7 +484,7 @@ fun PetAvatar(
                     modifier = Modifier
                         .size(20.dp)
                         .align(Alignment.BottomEnd)
-                        .offset(x = (-4).dp, y = (-4).dp)  // 稍微向内偏移
+                        .offset(x = (-2).dp, y = (-2).dp)  // 稍微向内偏移
                         .background(Color(255,143, 45), CircleShape)  // 橙色圆点
                         .border(1.dp, Color.White, CircleShape)  // 白色边框
                 )
@@ -603,68 +538,68 @@ private enum class Screen {
     Chat, Cards, Notes, Social
 }
 
-@Composable
-fun ChatSessionItem(
-    session: ChatSession,
-    onClick: (ChatSession) -> Unit
-) {
-    Surface(
-        onClick = { onClick(session) },
-        modifier = Modifier.fillMaxWidth()
-    ) {
-        Row(
-            modifier = Modifier
-                .padding(16.dp)
-                .height(72.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            // 头像
-            Image(
-                painter = painterResource(id = session.avatarRes),
-                contentDescription = null,
-                modifier = Modifier
-                    .size(56.dp)
-                    .clip(CircleShape)
-            )
-
-            Spacer(modifier = Modifier.width(16.dp))
-
-            // 会话信息
-            Column {
-                Text(
-                    text = session.displayName,
-                    style = MaterialTheme.typography.titleMedium
-                )
-                if (session.lastMessage.isNotEmpty()) {
-                    Text(
-                        text = session.lastMessage,
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
-                    )
-                }
-            }
-        }
-    }
-}
-
-@Preview(showBackground = true)
-@Composable
-fun ChatSessionItemPreview() {
-    MaterialTheme {
-        ChatSessionItem(
-            session = ChatSession(
-                id = "cat",
-                petType = PetTypes.CAT, // Assuming you have the PetTypes enum from the previous example
-                displayName = "Cat Session",
-                avatarRes = R.drawable.ic_cat_avatar, // Replace with your actual drawable
-                lastMessage = "This is a preview message."
-            ),
-            onClick = { session -> println("Clicked on ${session.displayName}") }
-        )
-    }
-}
+//@Composable
+//fun ChatSessionItem(
+//    session: ChatSession,
+//    onClick: (ChatSession) -> Unit
+//) {
+//    Surface(
+//        onClick = { onClick(session) },
+//        modifier = Modifier.fillMaxWidth()
+//    ) {
+//        Row(
+//            modifier = Modifier
+//                .padding(16.dp)
+//                .height(72.dp),
+//            verticalAlignment = Alignment.CenterVertically
+//        ) {
+//            // 头像
+//            Image(
+//                painter = painterResource(id = session.avatarRes),
+//                contentDescription = null,
+//                modifier = Modifier
+//                    .size(56.dp)
+//                    .clip(CircleShape)
+//            )
+//
+//            Spacer(modifier = Modifier.width(16.dp))
+//
+//            // 会话信息
+//            Column {
+//                Text(
+//                    text = session.displayName,
+//                    style = MaterialTheme.typography.titleMedium
+//                )
+//                if (session.lastMessage.isNotEmpty()) {
+//                    Text(
+//                        text = session.lastMessage,
+//                        style = MaterialTheme.typography.bodyMedium,
+//                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+//                        maxLines = 1,
+//                        overflow = TextOverflow.Ellipsis
+//                    )
+//                }
+//            }
+//        }
+//    }
+//}
+//
+//@Preview(showBackground = true)
+//@Composable
+//fun ChatSessionItemPreview() {
+//    MaterialTheme {
+//        ChatSessionItem(
+//            session = ChatSession(
+//                id = "cat",
+//                petType = PetTypes.CAT, // Assuming you have the PetTypes enum from the previous example
+//                displayName = "Cat Session",
+//                avatarRes = R.drawable.ic_cat_avatar, // Replace with your actual drawable
+//                lastMessage = "This is a preview message."
+//            ),
+//            onClick = { session -> println("Clicked on ${session.displayName}") }
+//        )
+//    }
+//}
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
@@ -672,7 +607,9 @@ fun ChatScreen(
     viewModel: PetChatViewModel,
     petType: PetTypes,
     onDrawerClick: () -> Unit,
-    contentPadding: PaddingValues = PaddingValues(0.dp)
+    contentPadding: PaddingValues = PaddingValues(0.dp),
+    showPetSelector: Boolean = false, // 添加宠物选择器状态参数
+    onHidePetSelector: () -> Unit = {} // 添加关闭宠物选择器的回调
 ) {
     var showSettings by remember { mutableStateOf(false) }
     var message by remember { mutableStateOf("") }
@@ -718,7 +655,15 @@ fun ChatScreen(
                 state = listState,
                 modifier = Modifier
                     .weight(1f)
-                    .fillMaxWidth(),
+                    .fillMaxWidth()
+                    .clickable(
+                        enabled = showPetSelector,
+                        onClick = onHidePetSelector,
+                        indication = null,
+                        interactionSource = remember {
+                            MutableInteractionSource()
+                        }
+                    ),
                 contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp)
             ) {
                 items(
@@ -921,12 +866,22 @@ fun ChatInput(
     onMessageChange: (String) -> Unit,
     onSendClick: () -> Unit,
     isLoading: Boolean = false,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    showPetSelector: Boolean = false, // 添加宠物选择器状态参数
+    onHidePetSelector: () -> Unit = {} // 添加关闭宠物选择器的回调
 ) {
     Column(
         modifier = modifier
             .fillMaxWidth()
-            .padding(horizontal = 4.dp),
+            .padding(horizontal = 4.dp)
+            .clickable(
+                enabled = showPetSelector,
+                onClick = onHidePetSelector,
+                indication = null,
+                interactionSource = remember {
+                    MutableInteractionSource()
+                }
+            ),
         horizontalAlignment = Alignment.Start
     ) {
         if (isLoading) {
@@ -977,7 +932,15 @@ fun ChatInput(
                 onValueChange = onMessageChange,
                 modifier = Modifier
                     .weight(1f)
-                    .padding(horizontal = 4.dp, vertical = 10.dp),
+                    .padding(horizontal = 4.dp, vertical = 10.dp)
+                    .clickable(
+                        enabled = showPetSelector,
+                        onClick = onHidePetSelector,
+                        indication = null,
+                        interactionSource = remember {
+                            MutableInteractionSource()
+                        }
+                    ),
                 textStyle = MaterialTheme.typography.bodyLarge.copy(
                     color = MaterialTheme.colorScheme.onSurface
                 ),

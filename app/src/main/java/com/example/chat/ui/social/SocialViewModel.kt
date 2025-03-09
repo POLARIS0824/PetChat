@@ -24,6 +24,17 @@ class SocialViewModel : ViewModel() {
         val dummyPosts = listOf(
             SocialPost(
                 id = UUID.randomUUID().toString(),
+                authorName = "橘座",
+                authorAvatar = R.drawable.avatar1,
+                authorUsername = "@spicyyuanroll",
+                content = "凌晨三点的人类卧室探险成功！花瓶碎片×1，尖叫分贝+10086，本喵荣获本月拆家MVP",
+                timestamp = dateFormat.parse("2021-06-20 11:18:00") ?: Date(),
+                likeCount = 45,
+                commentCount = 0,
+                isLiked = true
+            ),
+            SocialPost(
+                id = UUID.randomUUID().toString(),
                 authorName = "奥利奥",
                 authorAvatar = R.drawable.avatar1,
                 authorUsername = "@spicyyuanroll",

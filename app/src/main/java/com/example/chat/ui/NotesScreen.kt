@@ -4,10 +4,12 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.grid.rememberLazyGridState
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -24,6 +26,7 @@ import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.node.ModifierNodeElement
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -54,9 +57,9 @@ fun NotesScreen(
         // 便利贴网格
         LazyVerticalGrid(
             columns = GridCells.Fixed(2),
-            contentPadding = PaddingValues(16.dp),
-            horizontalArrangement = Arrangement.spacedBy(16.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp),
+            contentPadding = PaddingValues(horizontal = 24.dp, vertical = 16.dp), // 增加水平内边距
+            horizontalArrangement = Arrangement.spacedBy(24.dp),
+            verticalArrangement = Arrangement.spacedBy(24.dp),
             modifier = Modifier.weight(1f),
             state = rememberLazyGridState(),
         ) {
@@ -148,29 +151,33 @@ private fun EditNoteDialog(
                 )
 
                 Text("选择宠物类型:", style = MaterialTheme.typography.labelLarge)
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(16.dp)
+                // 使用LazyRow和FilterChip替换原来的选择器
+                LazyRow(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 8.dp),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    PetTypes.values().forEach { type ->
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            modifier = Modifier.clickable { selectedType = type }
-                        ) {
-                            RadioButton(
-                                selected = selectedType == type,
-                                onClick = { selectedType = type }
-                            )
-                            Text(
-                                text = when(type) {
-                                    PetTypes.CAT -> "猫咪"
-                                    PetTypes.DOG -> "萨摩耶"
-                                    PetTypes.DOG2 -> "柴犬"
-                                    PetTypes.HAMSTER -> "仓鼠"
-                                },
-                                modifier = Modifier.padding(start = 4.dp)
-                            )
+                    items(PetTypes.values()) { type ->
+                        val petName = when(type) {
+                            PetTypes.CAT -> "布丁"
+                            PetTypes.DOG -> "大白"
+                            PetTypes.DOG2 -> "豆豆"
+                            PetTypes.HAMSTER -> "团绒"
                         }
+
+                        FilterChip(
+                            selected = selectedType == type,
+                            onClick = { selectedType = type },
+                            label = { Text(petName) },
+                            colors = FilterChipDefaults.filterChipColors(
+                                selectedContainerColor = Color(255, 143, 45),
+                                selectedLabelColor = Color.White,
+                                containerColor = Color.Transparent,
+                                labelColor = Color(255, 143, 45)
+                            ),
+                            shape = RoundedCornerShape(16.dp)
+                        )
                     }
                 }
             }
@@ -179,21 +186,29 @@ private fun EditNoteDialog(
             Row(
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                // 删除按钮
-                Button(
+                FilledTonalButton(
                     onClick = onDelete,
                     colors = ButtonDefaults.buttonColors(
-                        containerColor = Color.Red.copy(alpha = 0.8f)
+                        containerColor = Color(252,219,193)
                     )
                 ) {
-                    Icon(
-                        imageVector = Icons.Default.Delete,
-                        contentDescription = "删除",
-                        tint = Color.White
-                    )
-                    Spacer(modifier = Modifier.width(4.dp))
-                    Text("删除")
+                    Text("删除", color = Color.Black)
                 }
+//                // 删除按钮
+//                Button(
+//                    onClick = onDelete,
+//                    colors = ButtonDefaults.buttonColors(
+//                        containerColor = Color.Red.copy(alpha = 0.8f)
+//                    )
+//                ) {
+//                    Icon(
+//                        imageVector = Icons.Default.Delete,
+//                        contentDescription = "删除",
+//                        tint = Color.White
+//                    )
+//                    Spacer(modifier = Modifier.width(4.dp))
+//                    Text("删除")
+//                }
 
                 // 保存按钮
                 Button(
@@ -250,7 +265,9 @@ private fun FilterChips(
                 label = { Text("#${type.displayName}") },
                 colors = FilterChipDefaults.filterChipColors(
                     selectedContainerColor = Color(255, 143, 45),
-                    selectedLabelColor = Color.White
+                    selectedLabelColor = Color.White,
+                    containerColor = Color.Transparent,
+                    labelColor = Color(255, 143, 45)
                 ),
                 shape = RoundedCornerShape(16.dp)
             )
@@ -268,8 +285,10 @@ private fun NoteCard(
     Card(
         modifier = Modifier
             .fillMaxWidth()
+            .aspectRatio(0.9f) // 设置固定宽高比，确保便签有足够空间显示背景
             .clickable(onClick = onClick),
-        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
+//        shape = RoundedCornerShape(8.dp) // 添加圆角
     ) {
         Box(
             modifier = Modifier.fillMaxSize(),
@@ -278,14 +297,14 @@ private fun NoteCard(
             Image(
                 painter = painterResource(id = background),
                 contentDescription = null,
-                contentScale = ContentScale.Crop,
+                contentScale = ContentScale.FillBounds, // 修改为FillBounds确保背景填充整个区域
                 modifier = Modifier.fillMaxSize()
             )
 
             Box(
                 modifier = Modifier
                     .fillMaxSize()
-                    .padding(16.dp),
+                    .padding(12.dp),
                 contentAlignment = Alignment.Center
             ) {
                 Column(modifier = Modifier.padding(16.dp),
@@ -296,16 +315,29 @@ private fun NoteCard(
                         style = MaterialTheme.typography.bodyLarge,
                         modifier = Modifier.weight(1f)
                     )
+
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    // 添加宠物类型标签
+                    Text(
+                        text = "#${PetTypes.valueOf(note.petType).displayName}",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = Color.Black,
+                        fontWeight = FontWeight.Bold,
+                        modifier = Modifier
+                            .padding(vertical = 4.dp)
+                    )
                 }
             }
         }
     }
 }
 
+// 修改添加便利贴对话框，使用LazyRow和FilterChip
 @Composable
 private fun AddNoteDialog(
     onDismiss: () -> Unit,
-    onAdd: (String, PetTypes) -> Unit
+    onAdd: (String, String) -> Unit
 ) {
     var content by remember { mutableStateOf("") }
     var selectedType by remember { mutableStateOf(PetTypes.CAT) }
@@ -315,48 +347,66 @@ private fun AddNoteDialog(
         title = { Text("添加便利贴") },
         text = {
             Column(
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 8.dp),
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
                 OutlinedTextField(
                     value = content,
                     onValueChange = { content = it },
                     label = { Text("内容") },
-                    modifier = Modifier.fillMaxWidth(),
-                    minLines = 3
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(180.dp),
+                    minLines = 5,
+                    maxLines = 10
                 )
-                
+
                 Text("选择宠物类型:", style = MaterialTheme.typography.labelLarge)
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(16.dp)
+
+                // 使用LazyRow和FilterChip替换原来的选择器
+                LazyRow(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 8.dp),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    PetTypes.values().forEach { type ->
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            modifier = Modifier.weight(1f)
-                        ) {
-                            RadioButton(
-                                selected = selectedType == type,
-                                onClick = { selectedType = type }
-                            )
-                            Text(
-                                text = type.displayName,
-                                modifier = Modifier.padding(start = 8.dp)
-                            )
+                    items(PetTypes.values()) { type ->
+                        val petName = when(type) {
+                            PetTypes.CAT -> "布丁"
+                            PetTypes.DOG -> "大白"
+                            PetTypes.DOG2 -> "豆豆"
+                            PetTypes.HAMSTER -> "团绒"
                         }
+
+                        FilterChip(
+                            selected = selectedType == type,
+                            onClick = { selectedType = type },
+                            label = { Text(petName) },
+                            colors = FilterChipDefaults.filterChipColors(
+                                selectedContainerColor = Color(255, 143, 45),
+                                selectedLabelColor = Color.White,
+                                containerColor = Color.Transparent,
+                                labelColor = Color(255, 143, 45)
+                            ),
+                            shape = RoundedCornerShape(16.dp)
+                        )
                     }
                 }
             }
         },
         confirmButton = {
-            TextButton(
+            Button(
                 onClick = {
                     if (content.isNotEmpty()) {
-                        onAdd(content, selectedType)
+                        onAdd(content, selectedType.name)
                     }
                 },
-                enabled = content.isNotEmpty()
+                enabled = content.isNotEmpty(),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = Color(255, 143, 45)
+                )
             ) {
                 Text("添加")
             }
@@ -367,4 +417,4 @@ private fun AddNoteDialog(
             }
         }
     )
-} 
+}

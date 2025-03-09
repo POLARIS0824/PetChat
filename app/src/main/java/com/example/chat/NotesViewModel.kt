@@ -40,10 +40,16 @@ class NotesViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     // 添加便利贴
-    fun addNote(content: String, petType: PetTypes) {
+    fun addNote(content: String, petType: String) {
         viewModelScope.launch {
-            dao.insertNote(NoteEntity(content = content, petType = petType.name))
-            loadNotes()
+            // 确保创建的 NoteEntity 对象与数据库表结构匹配
+            val note = NoteEntity(
+                content = content,
+                petType = petType,
+                timestamp = System.currentTimeMillis() // 添加时间戳
+            )
+            dao.insertNote(note)
+            loadNotes() // 重新加载便利贴列表
         }
     }
 
