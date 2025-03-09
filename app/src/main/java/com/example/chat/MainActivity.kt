@@ -71,8 +71,10 @@ import androidx.core.view.WindowCompat
 import androidx.compose.ui.graphics.Color
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.blur
 import androidx.compose.ui.draw.rotate
@@ -999,7 +1001,7 @@ fun PetCard(
     onChatClick: (PetTypes) -> Unit = {}
 ) {
     // 定义最大拖拽距离
-    val maxDragDistance = 120.dp
+    val maxDragDistance = 200.dp
     // 使用LocalDensity获取density转换器
     val density = LocalDensity.current
     val maxOffsetPx = with(density) { maxDragDistance.toPx() }
@@ -1108,6 +1110,7 @@ fun PetCard(
                             top = min(24.dp, LocalConfiguration.current.screenWidthDp.dp * 0.06f),
                             bottom = min(24.dp, LocalConfiguration.current.screenWidthDp.dp * 0.06f)
                         )
+                        .verticalScroll(rememberScrollState())
                 ) {
                     // 宠物名称和状态
                     Text(
