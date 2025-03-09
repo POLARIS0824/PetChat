@@ -5,6 +5,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.chat.R
 import com.example.chat.model.Pet
+import com.example.chat.model.PetTypes
 import kotlinx.coroutines.launch
 
 class CardsViewModel : ViewModel() {
@@ -21,24 +22,30 @@ class CardsViewModel : ViewModel() {
             _pets.addAll(
                 listOf(
                     Pet(
-                        name = "咪咪",
-                        status = "可爱的猫咪",
+                        name = "布丁",
+                        status = "懒洋洋地趴着，享受阳光中",
                         imageRes = R.drawable.card_cat,
                         initalRes = R.drawable.card_cat_inital,
                         finalRes = R.drawable.card_cat_final,
                         breed = "英短",
                         age = "2岁",
-                        gender = "母"
+                        gender = "母",
+                        character = "慵懒，爱睡觉，吃货",
+                        hobby = "日光浴，吃鱼",
+                        petType = PetTypes.CAT
                     ),
                     Pet(
-                        name = "旺财", 
-                        status = "活泼的狗狗",
+                        name = "大白",
+                        status = "今天状态很好活力满满",
                         imageRes = R.drawable.card_dog,
                         initalRes = R.drawable.card_dog_inital,
                         finalRes = R.drawable.card_dog_final,
-                        breed = "柴犬",
+                        breed = "萨摩耶",
                         age = "1岁",
-                        gender = "公"
+                        gender = "公",
+                        character = "活泼，粘人，爱笑",
+                        hobby = "追球，吃骨头",
+                        petType = PetTypes.DOG
                     )
                 )
             )

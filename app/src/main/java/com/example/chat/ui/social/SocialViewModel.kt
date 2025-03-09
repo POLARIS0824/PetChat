@@ -25,7 +25,7 @@ class SocialViewModel : ViewModel() {
             SocialPost(
                 id = UUID.randomUUID().toString(),
                 authorName = "橘座",
-                authorAvatar = R.drawable.avatar1,
+                authorAvatar = R.drawable.pet_shiba,
                 authorUsername = "@spicyyuanroll",
                 content = "凌晨三点的人类卧室探险成功！花瓶碎片×1，尖叫分贝+10086，本喵荣获本月拆家MVP",
                 timestamp = dateFormat.parse("2021-06-20 11:18:00") ?: Date(),

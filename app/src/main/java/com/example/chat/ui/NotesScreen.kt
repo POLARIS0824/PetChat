@@ -174,7 +174,6 @@ private fun EditNoteDialog(
                                 selectedContainerColor = Color(255, 143, 45),
                                 selectedLabelColor = Color.White,
                                 containerColor = Color.Transparent,
-                                labelColor = Color(255, 143, 45)
                             ),
                             shape = RoundedCornerShape(16.dp)
                         )
@@ -189,10 +188,13 @@ private fun EditNoteDialog(
                 FilledTonalButton(
                     onClick = onDelete,
                     colors = ButtonDefaults.buttonColors(
-                        containerColor = Color(252,219,193)
+                        containerColor = Color(245,181,134)
                     )
                 ) {
-                    Text("删除", color = Color.Black)
+                    Text(
+                        "删除",
+                        color = Color.White
+                    )
                 }
 //                // 删除按钮
 //                Button(
@@ -230,7 +232,10 @@ private fun EditNoteDialog(
         },
         dismissButton = {
             TextButton(onClick = onDismiss) {
-                Text("取消")
+                Text(
+                    "取消",
+                    color = Color(255, 143, 45)
+                )
             }
         }
     )
@@ -267,7 +272,7 @@ private fun FilterChips(
                     selectedContainerColor = Color(255, 143, 45),
                     selectedLabelColor = Color.White,
                     containerColor = Color.Transparent,
-                    labelColor = Color(255, 143, 45)
+                    labelColor = Color(255, 143, 45),
                 ),
                 shape = RoundedCornerShape(16.dp)
             )
@@ -388,7 +393,6 @@ private fun AddNoteDialog(
                                 selectedContainerColor = Color(255, 143, 45),
                                 selectedLabelColor = Color.White,
                                 containerColor = Color.Transparent,
-                                labelColor = Color(255, 143, 45)
                             ),
                             shape = RoundedCornerShape(16.dp)
                         )
@@ -413,7 +417,10 @@ private fun AddNoteDialog(
         },
         dismissButton = {
             TextButton(onClick = onDismiss) {
-                Text("取消")
+                Text(
+                    "取消",
+                    color = Color(255, 143, 45)
+                )
             }
         }
     )

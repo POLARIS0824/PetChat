@@ -2,6 +2,7 @@ package com.example.chat
 
 import android.Manifest
 import android.content.pm.PackageManager
+import android.graphics.RenderEffect
 import android.os.Build
 import android.os.Bundle
 import androidx.activity.ComponentActivity
@@ -37,6 +38,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import com.example.chat.model.ChatSession
 import java.text.SimpleDateFormat
 import android.view.WindowManager
+import android.widget.Toast
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.StartOffset
@@ -77,8 +79,11 @@ import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.asComposeRenderEffect
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
@@ -86,6 +91,7 @@ import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.zIndex
 import androidx.core.content.contentValuesOf
+import com.example.chat.model.Pet
 import com.example.chat.ui.social.SocialScreen
 import com.example.chat.viewmodel.CardsViewModel
 import kotlinx.coroutines.delay
@@ -444,7 +450,15 @@ fun PetChatApp(
                                 onHidePetSelector = { showPetSelector = false }
                             )
                             Screen.Cards -> {
-                                PetList(cardsViewModel.pets)
+                                PetList(
+                                    pets = cardsViewModel.pets,
+                                    onNavigateToChat = { petType ->
+                                        // 设置当前宠物类型
+                                        currentPetType = petType
+                                        // 切换到聊天界面
+                                        currentScreen = Screen.Chat
+                                    }
+                                )
                             }
                             Screen.Notes -> {
                                 NotesScreen()
@@ -489,7 +503,7 @@ fun PetAvatar(
                     modifier = Modifier
                         .size(20.dp)
                         .align(Alignment.BottomEnd)
-                        .offset(x = (-2).dp, y = (-2).dp)  // 稍微向内偏移
+                        .offset(x = (-1).dp, y = (-1).dp)  // 稍微向内偏移
                         .background(Color(255,143, 45), CircleShape)  // 橙色圆点
                         .border(1.dp, Color.White, CircleShape)  // 白色边框
                 )
@@ -542,69 +556,6 @@ private data class NavItem(
 private enum class Screen {
     Chat, Cards, Notes, Social
 }
-
-//@Composable
-//fun ChatSessionItem(
-//    session: ChatSession,
-//    onClick: (ChatSession) -> Unit
-//) {
-//    Surface(
-//        onClick = { onClick(session) },
-//        modifier = Modifier.fillMaxWidth()
-//    ) {
-//        Row(
-//            modifier = Modifier
-//                .padding(16.dp)
-//                .height(72.dp),
-//            verticalAlignment = Alignment.CenterVertically
-//        ) {
-//            // 头像
-//            Image(
-//                painter = painterResource(id = session.avatarRes),
-//                contentDescription = null,
-//                modifier = Modifier
-//                    .size(56.dp)
-//                    .clip(CircleShape)
-//            )
-//
-//            Spacer(modifier = Modifier.width(16.dp))
-//
-//            // 会话信息
-//            Column {
-//                Text(
-//                    text = session.displayName,
-//                    style = MaterialTheme.typography.titleMedium
-//                )
-//                if (session.lastMessage.isNotEmpty()) {
-//                    Text(
-//                        text = session.lastMessage,
-//                        style = MaterialTheme.typography.bodyMedium,
-//                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-//                        maxLines = 1,
-//                        overflow = TextOverflow.Ellipsis
-//                    )
-//                }
-//            }
-//        }
-//    }
-//}
-//
-//@Preview(showBackground = true)
-//@Composable
-//fun ChatSessionItemPreview() {
-//    MaterialTheme {
-//        ChatSessionItem(
-//            session = ChatSession(
-//                id = "cat",
-//                petType = PetTypes.CAT, // Assuming you have the PetTypes enum from the previous example
-//                displayName = "Cat Session",
-//                avatarRes = R.drawable.ic_cat_avatar, // Replace with your actual drawable
-//                lastMessage = "This is a preview message."
-//            ),
-//            onClick = { session -> println("Clicked on ${session.displayName}") }
-//        )
-//    }
-//}
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
@@ -1018,7 +969,10 @@ fun ChatInputLoadingPreview() {
 }
 
 @Composable
-fun PetList(pets: List<com.example.chat.model.Pet>, modifier: Modifier = Modifier) {
+fun PetList(pets: List<com.example.chat.model.Pet>,
+            modifier: Modifier = Modifier,
+            onNavigateToChat: (PetTypes) -> Unit = {}
+) {
     LazyColumn(
         modifier = modifier
             .fillMaxSize()
@@ -1027,31 +981,54 @@ fun PetList(pets: List<com.example.chat.model.Pet>, modifier: Modifier = Modifie
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
         items(pets) { pet ->
-            PetCard(pet)
+            PetCard(
+                pet = pet,
+                onChatClick = onNavigateToChat
+            )
         }
     }
 }
 
 @Composable
-fun PetCard(pet: com.example.chat.model.Pet) {
-    // 记录拖拽状态
-    var offsetY by remember { mutableStateOf(0f) }
+fun PetCard(
+    pet: com.example.chat.model.Pet,
+    onChatClick: (PetTypes) -> Unit = {}
+) {
     // 定义最大拖拽距离
-    val maxDragDistance = 200.dp
+    val maxDragDistance = 160.dp
     // 使用LocalDensity获取density转换器
     val density = LocalDensity.current
-    // 计算初始偏移量
-    val initialOffset = with(density) { maxDragDistance.toPx() * 6 / 10 }
+    val maxOffsetPx = with(density) { maxDragDistance.toPx() }
 
-    // 初始化偏移量
+    // 计算初始偏移量
+    val initialVisiblePercentage = 0f
+
+    // 记录当前可见百分比
+    var visiblePercentage by remember { mutableFloatStateOf(initialVisiblePercentage) }
+
+    // 计算卡片高度
+    val cardHeight = with(density) { 320.dp.toPx() }
+
+    // 计算从卡片底部四分之一处开始的偏移量
+    val startOffsetY = cardHeight * 0.67f // 底部四分之一处
+    val maxOffsetY = cardHeight * 0.5f // 最大偏移为卡片高度的一半
+
+    // 修改偏移量计算方式
+    val offsetY = startOffsetY - (startOffsetY * visiblePercentage).coerceIn(0f, maxOffsetY)
+
+    // 计算模糊半径 - 根据可见百分比动态变化
+    val blurRadius = (50f * visiblePercentage).coerceAtLeast(0.01f)
+
+
+    // 初始化
     LaunchedEffect(Unit) {
-        offsetY = initialOffset
+        visiblePercentage = initialVisiblePercentage
     }
 
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .height(280.dp),
+            .height(320.dp),
         shape = RoundedCornerShape(16.dp),
         elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
     ) {
@@ -1061,140 +1038,221 @@ fun PetCard(pet: com.example.chat.model.Pet) {
                 .pointerInput(Unit) {
                     detectDragGestures(
                         onDragEnd = {
-                            // 拖拽结束时，根据拖拽距离决定是否回弹
-                            offsetY = if (offsetY > initialOffset / 2) {
-                                initialOffset // 回弹到初始位置
+                            // 拖拽结束时，根据可见百分比决定是否回弹
+                            visiblePercentage = if (visiblePercentage < 0.5f) {
+                                initialVisiblePercentage // 回弹到初始位置
                             } else {
-                                0f // 保持完全展开
+                                1f // 保持完全展开
                             }
                         },
                         onDrag = { change, dragAmount ->
                             change.consume()
-                            // 限制拖拽范围在0到初始偏移量之间
-                            offsetY = (offsetY + dragAmount.y).coerceIn(0f, initialOffset)
+                            // 计算新的可见百分比，并限制在0-1之间
+                            val dragDelta = -dragAmount.y / maxOffsetPx // 向上拖动为正
+                            visiblePercentage = (visiblePercentage + dragDelta).coerceIn(0f, 1f)
                         }
                     )
                 }
         ) {
-            // 底层图片 - 宠物图片
+            // 底层图片 - 宠物图片（应用模糊效果）
             Image(
-                painter = painterResource(id = pet.imageRes),
+                painter = painterResource(id = pet.initalRes),
                 contentDescription = "Pet Image",
-                modifier = Modifier.fillMaxSize(),
+                modifier = Modifier
+                    .fillMaxSize()
+                    .graphicsLayer {
+                        // 根据可见百分比应用模糊效果
+                        renderEffect = RenderEffect
+                            .createBlurEffect(
+                                blurRadius, blurRadius,
+                                android.graphics.Shader.TileMode.DECAL
+                            )
+                            .asComposeRenderEffect()
+                    },
                 contentScale = ContentScale.Crop
             )
 
-            // 上层图片 - 可以是宠物的另一张照片或信息卡片背景
+            // 上层图片 - 使用blur.png
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
                     .fillMaxHeight()
                     .offset { IntOffset(0, offsetY.roundToInt()) }
             ) {
-                // 使用blur图片作为背景
+                // 使用blur.png作为上层图片
                 Image(
                     painter = painterResource(id = R.drawable.blur),
                     contentDescription = "Blur Overlay",
                     modifier = Modifier
-                        .fillMaxSize()
-                        .blur(radius = 15.dp),
-                    contentScale = ContentScale.Crop
+                        .fillMaxWidth() // 确保宽度填满父容器
+                        .wrapContentHeight() // 高度根据比例自适应
+                        .align(Alignment.TopCenter), // 顶部对齐
+                    contentScale = ContentScale.FillWidth // 填充宽度，保持宽高比
                 )
 
                 // 宠物信息内容
                 Column(
                     modifier = Modifier
                         .fillMaxSize()
-                        .padding(horizontal = 16.dp, vertical = 12.dp)
+                        .padding(24.dp)
                 ) {
-                    // 名字和品种行
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Text(
-                            text = pet.name,
-                            style = MaterialTheme.typography.titleLarge,
-                            fontWeight = FontWeight.Bold,
-                            color = Color.White
-                        )
-                        Text(
-                            text = pet.breed,
-                            style = MaterialTheme.typography.bodyLarge,
-                            color = Color.White.copy(alpha = 0.8f)
-                        )
-                    }
-
-                    Spacer(modifier = Modifier.height(8.dp))
-
-                    // 宠物描述
+                    // 宠物名称和状态
                     Text(
-                        text = "向上拖动查看更多信息",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = Color.White.copy(alpha = 0.7f)
+                        text = pet.name,
+                        style = MaterialTheme.typography.headlineMedium,
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 24.sp,
+                        color = Color.Black,
+                        modifier = Modifier.padding(horizontal = 16.dp)
                     )
 
-                    // 额外信息区域 - 只有在拖拽时才会显示
-                    AnimatedVisibility(
-                        visible = offsetY < -50f,
-                        enter = fadeIn() + expandVertically(),
-                        exit = fadeOut() + shrinkVertically()
+                    Text(
+                        text = pet.status,
+                        style = MaterialTheme.typography.bodyLarge,
+                        color = Color.Black.copy(alpha = 0.7f),
+                        modifier = Modifier.padding(top = 2.dp, start = 16.dp, end = 16.dp) // 添加左右padding并保留顶部padding
+                    )
+
+                    Spacer(modifier = Modifier.height(24.dp))
+
+                    // 宠物信息标签
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.Center,
+//                        verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Column(
+                        InfoTag(
+                            text = "${pet.breed}·雄性",
+                            backgroundColor = Color(0xFFD8F0D7),
+                            modifier = Modifier.padding(end = 24.dp)
+                        )
+
+                        InfoTag(
+                            text = "28kg",
+                            backgroundColor = Color(0xFFF0C0BD),
+                            modifier = Modifier.padding(end = 24.dp)
+                        )
+
+                        InfoTag(
+                            text = "${pet.age} (人类约24岁)",
+                            backgroundColor = Color(0xFFF0E4BD)
+                        )
+                    }
+
+                    Spacer(modifier = Modifier.height(16.dp))
+
+                    // 活动和性格特点
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.Center,
+//                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        InfoTag(
+                            text = "爱好:${pet.hobby}",
+                            backgroundColor = Color(0xFFBDE4F0),
                             modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(top = 16.dp)
+                                .padding(end = 24.dp)
+                        )
+
+                        InfoTag(
+                            text = pet.character,
+                            backgroundColor = Color(0xFFD0BDF0),
+                        )
+                    }
+
+                    Spacer(modifier = Modifier.height(16.dp))
+
+                    // 删除和去对话按钮
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.Center
+                    ) {
+                        // 删除按钮
+                        Button(
+                            onClick = { /* Handle delete click */ },
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = Color.White
+                            ),
+                            shape = RoundedCornerShape(10.dp),
+                            modifier = Modifier
+                                .padding(end = 24.dp)
+                                .width(160.dp)
                         ) {
-                            Text(
-                                text = "年龄: ${pet.age}岁",
-                                style = MaterialTheme.typography.bodyLarge,
-                                color = Color.White
-                            )
-
-                            Spacer(modifier = Modifier.height(8.dp))
-
-//                            Text(
-//                                text = "性格: ${pet.personality}",
-//                                style = MaterialTheme.typography.bodyLarge,
-//                                color = Color.White
-//                            )
-
-                            Spacer(modifier = Modifier.height(8.dp))
-
-//                            Text(
-//                                text = "喜好: ${pet.likes}",
-//                                style = MaterialTheme.typography.bodyLarge,
-//                                color = Color.White
-//                            )
-
-                            Spacer(modifier = Modifier.height(16.dp))
-
-                            Button(
-                                onClick = { /* 查看详情 */ },
-                                colors = ButtonDefaults.buttonColors(
-                                    containerColor = Color.White,
-                                    contentColor = Color(255, 143, 45)
-                                ),
-                                modifier = Modifier.align(Alignment.CenterHorizontally)
-                            ) {
-                                Text("查看详情")
-                            }
+                            Text("删除", color = Color.Black)
                         }
 
+                        // 去对话按钮
+                        Button(
+                            onClick = {
+                                onChatClick(pet.petType)
+                            },
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = Color(255,166, 88)
+                            ),
+                            shape = RoundedCornerShape(10.dp),
+                            modifier = Modifier.width(160.dp)
+//                            modifier = Modifier.weight(1f)
+                        ) {
+                            Text("去对话", color = Color.White)
+                        }
                     }
+
                 }
 
-                // 拖拽指示器
-                Box(
+                // 右上角表情图标
+                Row(
                     modifier = Modifier
-                        .align(Alignment.TopCenter)
-                        .padding(top = 8.dp)
-                        .size(width = 40.dp, height = 4.dp)
-                        .background(Color.White.copy(alpha = 0.6f), RoundedCornerShape(2.dp))
-                )
+                        .align(Alignment.TopEnd)
+                        .padding(top = 32.dp,
+                            end = 16.dp)
+                ) {
+                    // 使用Box组合布局来叠加背景和图标
+                    Box(
+                        contentAlignment = Alignment.Center
+                    ) {
+                        // 背景图片
+                        Image(
+                            painter = painterResource(id = R.drawable.background_icon), // 替换为你的背景图片资源
+                            contentDescription = null,
+                            modifier = Modifier.size(50.dp),
+                            contentScale = ContentScale.Crop
+                        )
+
+                        // 前景图标
+                        Icon(
+                            painter = painterResource(id = R.drawable.card_icon),
+                            contentDescription = "表情",
+                            tint = Color.Black,
+                            modifier = Modifier.size(42.dp)
+                        )
+                    }
+                }
             }
         }
+    }
+}
+
+// 信息标签组件
+@Composable
+private fun InfoTag(
+    text: String,
+    backgroundColor: Color,
+    modifier: Modifier = Modifier
+) {
+    Box(
+        modifier = modifier
+            .wrapContentSize()
+            .background(
+                color = backgroundColor,
+                shape = RoundedCornerShape(10)
+            )
+            .padding(horizontal = 12.dp, vertical = 8.dp)
+    ) {
+        Text(
+            text = text,
+            style = MaterialTheme.typography.bodyMedium,
+            color = Color.Black
+        )
     }
 }
 

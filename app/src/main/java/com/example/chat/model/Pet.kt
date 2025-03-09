@@ -8,5 +8,8 @@ data class Pet(
     val finalRes: Int,
     val breed: String,     // 品种
     val age: String,       // 年龄
-    val gender: String     // 性别
+    val gender: String,     // 性别
+    val character: String,
+    val hobby: String,
+    val petType: PetTypes
 )
