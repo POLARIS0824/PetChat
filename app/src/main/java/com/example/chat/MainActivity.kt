@@ -42,6 +42,7 @@ import android.widget.Toast
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedContentTransitionScope
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.StartOffset
 import androidx.compose.animation.core.animateFloat
@@ -460,7 +461,6 @@ fun PetChatApp(
                                 }
                             )
                     ) {
-                        // 使用AnimatedContent替换原来的when语句
                         AnimatedContent(
                             targetState = currentScreen,
                             transitionSpec = {
@@ -473,8 +473,11 @@ fun PetChatApp(
                                     AnimatedContentTransitionScope.SlideDirection.Right
                                 }
 
-                                // 创建滑动动画
-                                val animationSpec = tween<IntOffset>(durationMillis = 300)
+                                // 创建滑动动画，使用FastOutSlowInEasing实现fastThenSlow效果
+                                val animationSpec = tween<IntOffset>(
+                                    durationMillis = 300,
+                                    easing = FastOutSlowInEasing
+                                )
                                 slideIntoContainer(
                                     towards = direction,
                                     animationSpec = animationSpec
