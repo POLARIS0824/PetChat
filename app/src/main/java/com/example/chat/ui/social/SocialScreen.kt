@@ -233,7 +233,10 @@ fun AddPostDialog(
         },
         dismissButton = {
             TextButton(onClick = onDismiss) {
-                Text("取消")
+                Text(
+                    "取消",
+                    color = Color(255, 143, 45)
+                )
             }
         }
     )

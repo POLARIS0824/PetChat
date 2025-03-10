@@ -893,7 +893,7 @@ fun ChatInput(
     Column(
         modifier = modifier
             .fillMaxWidth()
-            .padding(horizontal = 4.dp)
+            .padding(horizontal = 4.dp, vertical = 2.dp)
             .clickable(
                 enabled = showPetSelector,
                 onClick = onHidePetSelector,
@@ -913,12 +913,12 @@ fun ChatInput(
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(vertical = 8.dp),
+                    .padding(vertical = 4.dp),
                 horizontalArrangement = Arrangement.Start
             ) {
                 LoadingAnimation(
                     modifier = Modifier
-                        .height(36.dp)
+                        .height(30.dp)
                         .fillMaxWidth(0.3f)
 //                        .size(128.dp) // 设置合理的大小，避免超出屏幕
                         .align(Alignment.CenterVertically) // 垂直居中对齐
@@ -931,7 +931,7 @@ fun ChatInput(
                 .fillMaxWidth()
                 .background(color = Color.White)
                 .height(IntrinsicSize.Min)
-                .padding(horizontal = 12.dp, vertical = 4.dp),
+                .padding(horizontal = 12.dp, vertical = 2.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
             // "+" Icon Button
@@ -952,7 +952,7 @@ fun ChatInput(
                 onValueChange = onMessageChange,
                 modifier = Modifier
                     .weight(1f)
-                    .padding(horizontal = 4.dp, vertical = 6.dp)
+                    .padding(horizontal = 4.dp, vertical = 3.dp)
                     .clickable(
                         enabled = showPetSelector,
                         onClick = onHidePetSelector,
