@@ -1376,7 +1376,7 @@ private fun DrawerContent(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Text(
-                            text = "Mrh Raju",
+                            text = "POLARIS",
                             style = MaterialTheme.typography.titleLarge
                         )
                         Spacer(modifier = Modifier.width(4.dp))
@@ -1388,7 +1388,7 @@ private fun DrawerContent(
 //                        )
                     }
                     Text(
-                        text = "Verified Profile",
+                        text = "Unique Studio",
                         style = MaterialTheme.typography.bodyMedium,
                         color = Color.Gray
                     )
