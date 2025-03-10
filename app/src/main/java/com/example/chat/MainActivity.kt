@@ -464,22 +464,24 @@ fun PetChatApp(
                         AnimatedContent(
                             targetState = currentScreen,
                             transitionSpec = {
-                                // 组合动画：水平滑动 + 淡入淡出
+                                // 判断滑动方向
                                 val direction = if (targetState.ordinal > initialState.ordinal) {
+                                    // 向左滑动（新屏幕从右边进入）
                                     AnimatedContentTransitionScope.SlideDirection.Left
                                 } else {
+                                    // 向右滑动（新屏幕从左边进入）
                                     AnimatedContentTransitionScope.SlideDirection.Right
                                 }
 
+                                // 创建滑动动画
                                 val animationSpec = tween<IntOffset>(durationMillis = 300)
-                                (slideIntoContainer(
+                                slideIntoContainer(
                                     towards = direction,
                                     animationSpec = animationSpec
-                                ) + fadeIn(animationSpec = tween(300))) togetherWith
-                                        (slideOutOfContainer(
-                                            towards = direction,
-                                            animationSpec = animationSpec
-                                        ) + fadeOut(animationSpec = tween(300)))
+                                ) togetherWith slideOutOfContainer(
+                                    towards = direction,
+                                    animationSpec = animationSpec
+                                )
                             },
                             label = "ScreenTransition"
                         ) { screen ->
