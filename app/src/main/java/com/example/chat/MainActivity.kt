@@ -873,7 +873,7 @@ fun ChatInput(
                 .fillMaxWidth()
                 .background(color = Color.White)
                 .height(IntrinsicSize.Min)
-                .padding(horizontal = 16.dp, vertical = 4.dp),
+                .padding(horizontal = 12.dp, vertical = 4.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
             // "+" Icon Button
@@ -894,7 +894,7 @@ fun ChatInput(
                 onValueChange = onMessageChange,
                 modifier = Modifier
                     .weight(1f)
-                    .padding(horizontal = 4.dp, vertical = 10.dp)
+                    .padding(horizontal = 4.dp, vertical = 6.dp)
                     .clickable(
                         enabled = showPetSelector,
                         onClick = onHidePetSelector,
