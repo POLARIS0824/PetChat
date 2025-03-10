@@ -83,6 +83,7 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.asComposeRenderEffect
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.input.key.Key.Companion.Window
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.layout.onSizeChanged
@@ -97,6 +98,7 @@ import androidx.compose.ui.unit.min
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.zIndex
 import androidx.core.content.contentValuesOf
+import androidx.core.view.ViewCompat
 import com.example.chat.model.Pet
 import com.example.chat.ui.social.SocialScreen
 import com.example.chat.viewmodel.CardsViewModel
@@ -112,6 +114,15 @@ class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+        val decorView = window.decorView
+        val wic = ViewCompat.getWindowInsetsController(decorView)
+
+        wic?.let {
+            val isLightBackground = true
+            it.isAppearanceLightStatusBars = isLightBackground
+        }
+
 
         // 设置沉浸式状态栏
         WindowCompat.setDecorFitsSystemWindows(window, false)
@@ -593,6 +604,17 @@ fun ChatScreen(
         R.drawable.frame10
     )
 
+    val emptyStateImages = listOf(
+        R.drawable.greeting,
+        R.drawable.greeting2,
+        R.drawable.greeting3,
+    )
+
+    // 使用remember随机选择一张图片
+    val randomImageRes = remember {
+        emptyStateImages.random()
+    }
+
     Box(
         modifier = Modifier.fillMaxSize()
     ) {
@@ -612,30 +634,66 @@ fun ChatScreen(
                 viewModel.selectPetType(petType)
             }
 
-            // 聊天消息列表
-            LazyColumn(
-                state = listState,
-                modifier = Modifier
-                    .weight(1f)
-                    .fillMaxWidth()
-                    .clickable(
-                        enabled = showPetSelector,
-                        onClick = onHidePetSelector,
-                        indication = null,
-                        interactionSource = remember {
-                            MutableInteractionSource()
-                        }
-                    ),
-                contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp)
-            ) {
-                items(
-                    items = viewModel.chatHistory,
-                    key = { it.hashCode() }
-                ) { message ->
-                    ChatBubble(
-                        message = message,
-                        modifier = Modifier.animateItemPlacement()
-                    )
+            // 检查聊天历史是否为空
+            if (viewModel.chatHistory.isEmpty()) {
+                // 显示空状态图片
+                Box(
+                    modifier = Modifier
+                        .weight(1f)
+                        .fillMaxWidth()
+                        .clickable(
+                            enabled = showPetSelector,
+                            onClick = onHidePetSelector,
+                            indication = null,
+                            interactionSource = remember {
+                                MutableInteractionSource()
+                            }
+                        ),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        Image(
+                            painter = painterResource(id = randomImageRes), // 使用随机选择的图片
+                            contentDescription = "没有消息",
+                            modifier = Modifier
+                                .size(200.dp)
+                                .padding(bottom = 16.dp)
+                        )
+                        Text(
+                            text = "开始和宠物聊天吧！",
+                            style = MaterialTheme.typography.bodyLarge,
+                            color = Color.Gray
+                        )
+                    }
+                }
+            } else {
+                // 聊天消息列表
+                LazyColumn(
+                    state = listState,
+                    modifier = Modifier
+                        .weight(1f)
+                        .fillMaxWidth()
+                        .clickable(
+                            enabled = showPetSelector,
+                            onClick = onHidePetSelector,
+                            indication = null,
+                            interactionSource = remember {
+                                MutableInteractionSource()
+                            }
+                        ),
+                    contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp)
+                ) {
+                    items(
+                        items = viewModel.chatHistory,
+                        key = { it.hashCode() }
+                    ) { message ->
+                        ChatBubble(
+                            message = message,
+                            modifier = Modifier.animateItemPlacement()
+                        )
+                    }
                 }
             }
 
