@@ -39,6 +39,8 @@ import com.example.chat.model.ChatSession
 import java.text.SimpleDateFormat
 import android.view.WindowManager
 import android.widget.Toast
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.AnimatedContentTransitionScope
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.StartOffset
@@ -55,6 +57,7 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.animation.shrinkVertically
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
+import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -165,6 +168,7 @@ fun PetChatApp(
 ) {
     var currentScreen by remember { mutableStateOf(Screen.Chat) }
     var currentPetType by remember { mutableStateOf(PetTypes.CAT) }
+    var previousScreen by remember { mutableStateOf(Screen.Chat) } // 添加记录前一个屏幕的状态
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
     val scope = rememberCoroutineScope()
     var showPetSelector by remember { mutableStateOf(false) }
@@ -456,32 +460,54 @@ fun PetChatApp(
                                 }
                             )
                     ) {
-                        when (currentScreen) {
-                            Screen.Chat -> ChatScreen(
-                                viewModel = viewModel,
-                                petType = currentPetType,
-                                onDrawerClick = { scope.launch { drawerState.open() } },
-                                contentPadding = innerPadding,
-                                // 传递宠物选择器状态和关闭函数
-                                showPetSelector = showPetSelector,
-                                onHidePetSelector = { showPetSelector = false }
-                            )
-                            Screen.Cards -> {
-                                PetList(
-                                    pets = cardsViewModel.pets,
-                                    onNavigateToChat = { petType ->
-                                        // 设置当前宠物类型
-                                        currentPetType = petType
-                                        // 切换到聊天界面
-                                        currentScreen = Screen.Chat
-                                    }
+                        // 使用AnimatedContent替换原来的when语句
+                        AnimatedContent(
+                            targetState = currentScreen,
+                            transitionSpec = {
+                                // 组合动画：水平滑动 + 淡入淡出
+                                val direction = if (targetState.ordinal > initialState.ordinal) {
+                                    AnimatedContentTransitionScope.SlideDirection.Left
+                                } else {
+                                    AnimatedContentTransitionScope.SlideDirection.Right
+                                }
+
+                                val animationSpec = tween<IntOffset>(durationMillis = 300)
+                                (slideIntoContainer(
+                                    towards = direction,
+                                    animationSpec = animationSpec
+                                ) + fadeIn(animationSpec = tween(300))) togetherWith
+                                        (slideOutOfContainer(
+                                            towards = direction,
+                                            animationSpec = animationSpec
+                                        ) + fadeOut(animationSpec = tween(300)))
+                            },
+                            label = "ScreenTransition"
+                        ) { screen ->
+                            when (screen) {
+                                Screen.Chat -> ChatScreen(
+                                    viewModel = viewModel,
+                                    petType = currentPetType,
+                                    onDrawerClick = { scope.launch { drawerState.open() } },
+                                    contentPadding = innerPadding,
+                                    showPetSelector = showPetSelector,
+                                    onHidePetSelector = { showPetSelector = false }
                                 )
-                            }
-                            Screen.Notes -> {
-                                NotesScreen()
-                            }
-                            Screen.Social -> {
-                                SocialScreen()
+                                Screen.Cards -> {
+                                    PetList(
+                                        pets = cardsViewModel.pets,
+                                        onNavigateToChat = { petType ->
+                                            previousScreen = currentScreen
+                                            currentPetType = petType
+                                            currentScreen = Screen.Chat
+                                        }
+                                    )
+                                }
+                                Screen.Notes -> {
+                                    NotesScreen()
+                                }
+                                Screen.Social -> {
+                                    SocialScreen()
+                                }
                             }
                         }
                     }
