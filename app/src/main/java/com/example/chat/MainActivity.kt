@@ -15,8 +15,11 @@ import androidx.core.content.ContextCompat
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import java.util.Calendar
+import java.util.Locale
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.*
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -64,6 +67,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectDragGestures
+import androidx.compose.foundation.gestures.scrollBy
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.Settings
@@ -82,6 +86,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.blur
 import androidx.compose.ui.draw.rotate
+import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Path
@@ -159,9 +164,10 @@ class MainActivity : ComponentActivity() {
     }
 }
 
-@OptIn(
-    ExperimentalMaterial3Api::class
-)
+//@OptIn(
+//    ExperimentalMaterial3Api::class
+//)
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PetChatApp(
     viewModel: PetChatViewModel = viewModel(),
@@ -173,6 +179,13 @@ fun PetChatApp(
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
     val scope = rememberCoroutineScope()
     var showPetSelector by remember { mutableStateOf(false) }
+    
+    // 初始化加载所有会话和聊天历史
+    LaunchedEffect(Unit) {
+        viewModel.loadAllSessions()
+        // 确保首次打开应用时也能滚动到最新消息
+        viewModel.resetScroll()
+    }
 
     MaterialTheme {
         ModalNavigationDrawer(
@@ -185,6 +198,10 @@ fun PetChatApp(
                             scope.launch { drawerState.close() }
                         },
                         onClose = {
+                            scope.launch { drawerState.close() }
+                        },
+                        onNavigateToSessionList = {
+                            currentScreen = Screen.SessionList
                             scope.launch { drawerState.close() }
                         }
                     )
@@ -513,6 +530,15 @@ fun PetChatApp(
                                 Screen.Social -> {
                                     SocialScreen()
                                 }
+                                Screen.SessionList -> {
+                                    SessionListScreen(
+                                        viewModel = viewModel,
+                                        onSessionSelected = { sessionId ->
+                                            viewModel.switchToSession(sessionId)
+                                            currentScreen = Screen.Chat
+                                        }
+                                    )
+                                }
                             }
                         }
                     }
@@ -602,7 +628,7 @@ private data class NavItem(
 
 // 屏幕枚举
 private enum class Screen {
-    Chat, Cards, Notes, Social
+    Chat, Cards, Notes, Social, SessionList
 }
 
 @OptIn(ExperimentalFoundationApi::class)
@@ -619,8 +645,18 @@ fun ChatScreen(
     var message by remember { mutableStateOf("") }
     val listState = rememberLazyListState()
     val coroutineScope = rememberCoroutineScope()
+    
+    // 每次进入聊天页面时自动滚动到最新消息
+    LaunchedEffect(petType) {
+        if (viewModel.chatHistory.isNotEmpty()) {
+            delay(300) // 等待布局完成
+            listState.animateScrollToItem(viewModel.chatHistory.size - 1)
+        }
+    }
 
     val isForegroundLoading = viewModel.isForegroundLoading
+    val isStreaming = viewModel.isStreaming
+    val streamingMessage = viewModel.streamingMessage
 
     val frames = listOf(
         R.drawable.frame1,
@@ -720,10 +756,59 @@ fun ChatScreen(
                         items = viewModel.chatHistory,
                         key = { it.hashCode() }
                     ) { message ->
+                        // 检查这条消息是否是正在流式传输的消息
+                        val isCurrentlyStreaming = isStreaming && 
+                                streamingMessage != null && 
+                                !message.isFromUser && 
+                                message == viewModel.chatHistory.lastOrNull { !it.isFromUser }
+                        
                         ChatBubble(
                             message = message,
-                            modifier = Modifier.animateItemPlacement()
+                            modifier = Modifier.animateItemPlacement(),
+                            isStreaming = isCurrentlyStreaming
                         )
+                    }
+                }
+                
+                // 处理滚动到底部
+                LaunchedEffect(viewModel.shouldScrollToBottom, viewModel.chatHistory.size) {
+                    if ((viewModel.shouldScrollToBottom || viewModel.chatHistory.isNotEmpty()) && viewModel.chatHistory.isNotEmpty()) {
+                        // 先滚动到最后一个项目
+                        listState.animateScrollToItem(viewModel.chatHistory.size - 1)
+                        
+                        // 计算额外滚动距离 - 根据最后一条消息的长度动态调整
+                        val lastMessage = viewModel.chatHistory.last()
+                        val extraScrollDistance = if (!lastMessage.isFromUser) {
+                            // 非用户消息可能较长，需要更多滚动
+                            val contentLength = lastMessage.content.length
+                            // 根据内容长度计算滚动距离，最小200f，最大500f
+                            (200f + contentLength * 0.5f).coerceAtMost(500f)
+                        } else {
+                            // 用户消息通常较短
+                            100f
+                        }
+                        
+                        // 然后使用额外的滚动来确保显示完整的消息
+                        delay(150) // 延长延迟以确保布局完全完成
+                        listState.scrollBy(extraScrollDistance) // 使用动态计算的滚动距离
+                        
+                        // 如果是流式传输中，添加额外的滚动逻辑
+                        if (viewModel.isStreaming && !lastMessage.isFromUser) {
+                            delay(100) // 再次延迟
+                            // 再次滚动以确保显示最新内容
+                            listState.scrollToItem(viewModel.chatHistory.size - 1)
+                        }
+                    }
+                }
+                
+                // 监听流式传输状态，确保在流式传输过程中持续滚动到底部
+                LaunchedEffect(viewModel.streamingMessage) {
+                    viewModel.streamingMessage?.let { message ->
+                        if (!message.isFromUser && message.content.isNotEmpty()) {
+                            delay(100)
+                            // 确保滚动到最新位置
+                            listState.animateScrollToItem(viewModel.chatHistory.size - 1)
+                        }
                     }
                 }
             }
@@ -745,10 +830,24 @@ fun ChatScreen(
                     }
                 },
                 isLoading = viewModel.isForegroundLoading,
+                isStreaming = isStreaming, // 传入流式传输状态
+                onFocusChanged = { isFocused ->
+                    // 当输入框获得焦点时触发滚动到底部
+                    if (isFocused && viewModel.chatHistory.isNotEmpty()) {
+                        viewModel.resetScroll()
+                    }
+                },
                 modifier = Modifier
                     .fillMaxWidth()
                     .consumeWindowInsets(contentPadding)
                     .imePadding()
+                    .clickable(
+                        indication = null,
+                        interactionSource = remember { MutableInteractionSource() }
+                    ) {
+                        // 点击输入框时触发滚动到底部
+                        viewModel.resetScroll()
+                    }
             )
         }
     }
@@ -801,7 +900,8 @@ fun AnimatedAvatar(
 @Composable
 fun ChatBubble(
     message: ChatMessage,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    isStreaming: Boolean = false
 ) {
     val isFromUser = message.isFromUser
     val backgroundColor = if (isFromUser)
@@ -845,11 +945,21 @@ fun ChatBubble(
                         vertical = 8.dp
                     )
                 ) {
-                    Text(
-                        text = message.content,
-                        color = textColor,
-                        style = MaterialTheme.typography.bodyLarge
-                    )
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text(
+                            text = message.content,
+                            color = textColor,
+                            style = MaterialTheme.typography.bodyLarge
+                        )
+                        
+                        // 如果是流式传输中的消息，显示打字指示器
+                        if (isStreaming && !isFromUser) {
+                            Box(modifier = Modifier.size(width = 24.dp, height = 16.dp)) {
+                                TypingIndicator()
+                            }
+                        }
+                    }
+                    
                     Text(
                         text = timeString,
                         color = textColor.copy(alpha = 0.7f),
@@ -858,6 +968,39 @@ fun ChatBubble(
                     )
                 }
             }
+        }
+    }
+}
+
+@Composable
+fun TypingIndicator(modifier: Modifier = Modifier) {
+    val dotSize = 4.dp
+    val dotColor = Color.Gray
+    val animationDuration = 1000
+    val delayBetweenDots = 200
+    
+    Row(modifier = modifier.padding(start = 4.dp), verticalAlignment = Alignment.CenterVertically) {
+        // 创建三个点的动画
+        for (i in 0 until 3) {
+            val infiniteTransition = rememberInfiniteTransition(label = "")
+            val alpha by infiniteTransition.animateFloat(
+                initialValue = 0.2f,
+                targetValue = 1f,
+                animationSpec = infiniteRepeatable(
+                    animation = tween(animationDuration),
+                    repeatMode = RepeatMode.Reverse,
+                    initialStartOffset = StartOffset(delayBetweenDots * i)
+                ),
+                label = ""
+            )
+            
+            Box(
+                modifier = Modifier
+                    .padding(horizontal = 1.dp)
+                    .size(dotSize)
+                    .alpha(alpha)
+                    .background(dotColor, CircleShape)
+            )
         }
     }
 }
@@ -919,7 +1062,9 @@ fun ChatInput(
     isLoading: Boolean = false,
     modifier: Modifier = Modifier,
     showPetSelector: Boolean = false, // 添加宠物选择器状态参数
-    onHidePetSelector: () -> Unit = {} // 添加关闭宠物选择器的回调
+    onHidePetSelector: () -> Unit = {}, // 添加关闭宠物选择器的回调
+    isStreaming: Boolean = false, // 添加流式传输状态参数
+    onFocusChanged: (Boolean) -> Unit = {} // 添加焦点变化回调
 ) {
     Column(
         modifier = modifier
@@ -986,12 +1131,18 @@ fun ChatInput(
                     .padding(horizontal = 4.dp, vertical = 3.dp)
                     .clickable(
                         enabled = showPetSelector,
-                        onClick = onHidePetSelector,
+                        onClick = {
+                            onHidePetSelector()
+                        },
                         indication = null,
                         interactionSource = remember {
                             MutableInteractionSource()
                         }
-                    ),
+                    )
+                    .onFocusChanged { focusState ->
+                        // 当输入框获得焦点时触发回调
+                        onFocusChanged(focusState.isFocused)
+                    },
                 textStyle = MaterialTheme.typography.bodyLarge.copy(
                     color = MaterialTheme.colorScheme.onSurface
                 ),
@@ -1025,7 +1176,7 @@ fun ChatInput(
             IconButton(
                 onClick = onSendClick,
                 modifier = Modifier.padding(start = 4.dp),
-                enabled = message.isNotEmpty()
+                enabled = message.isNotEmpty() && !isStreaming // 在流式传输过程中禁用发送按钮
             ) {
                 Icon(
                     painter = painterResource(id = R.drawable.ic_send), // Replace with your send icon
@@ -1045,7 +1196,8 @@ fun ChatInputPreview() {
             message = "Hello",
             onMessageChange = { /* Handle message change (not used in preview) */ },
             onSendClick = { /* Handle send click (not used in preview) */ },
-            isLoading = false
+            isLoading = false,
+            onFocusChanged = { /* Handle focus change (not used in preview) */ }
         )
     }
 }
@@ -1058,7 +1210,8 @@ fun ChatInputLoadingPreview() {
             message = "",
             onMessageChange = { /* Handle message change (not used in preview) */ },
             onSendClick = { /* Handle send click (not used in preview) */ },
-            isLoading = true
+            isLoading = true,
+            onFocusChanged = { /* Handle focus change (not used in preview) */ }
         )
     }
 }
@@ -1372,7 +1525,8 @@ private fun InfoTag(
 private fun DrawerContent(
     currentPetType: PetTypes,
     onPetTypeSelected: (PetTypes) -> Unit,
-    onClose: () -> Unit
+    onClose: () -> Unit,
+    onNavigateToSessionList: () -> Unit = {}
 ) {
     Column(
         modifier = Modifier
@@ -1459,6 +1613,11 @@ private fun DrawerContent(
         Column(
             modifier = Modifier.fillMaxWidth()
         ) {
+            DrawerMenuItem(
+                icon = R.drawable.ic_account,
+                text = "会话列表",
+                onClick = onNavigateToSessionList
+            )
             DrawerMenuItem(
                 icon = R.drawable.ic_account,
                 text = "账号信息"
@@ -1555,4 +1714,106 @@ private fun SettingsDialog(
             }
         }
     )
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun SessionListScreen(viewModel: PetChatViewModel, onSessionSelected: (String) -> Unit) {
+    val sessions by viewModel.allSessions.collectAsState(initial = emptyList())
+
+    Column(modifier = Modifier.fillMaxSize()) {
+        // 标题栏
+        TopAppBar(
+            title = { Text("我的宠物聊天") },
+            colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.surface)
+        )
+        
+        // 会话列表说明
+        Text(
+            text = "选择一个宠物开始聊天",
+            style = MaterialTheme.typography.bodyLarge,
+            modifier = Modifier.padding(16.dp)
+        )
+        
+        // 会话列表
+        LazyColumn {
+            items(sessions) { session ->
+                SessionItem(
+                    session = session,
+                    onClick = { onSessionSelected(session.sessionId) }
+                )
+            }
+        }
+    }
+}
+
+// 根据宠物类型获取头像资源ID
+fun getPetAvatar(petType: PetTypes): Int {
+    return when (petType) {
+        PetTypes.CAT -> R.drawable.pet_cat
+        PetTypes.DOG -> R.drawable.pet_shiba
+        PetTypes.HAMSTER -> R.drawable.pet_hamster
+        PetTypes.DOG2 -> R.drawable.pet_samoyed
+    }
+}
+
+// 格式化时间戳为可读时间
+fun formatTime(timestamp: Long): String {
+    val now = Calendar.getInstance()
+    val messageTime = Calendar.getInstance().apply { timeInMillis = timestamp }
+
+    return when {
+        now.get(Calendar.YEAR) != messageTime.get(Calendar.YEAR) -> {
+            SimpleDateFormat("yyyy年MM月dd日", Locale.getDefault()).format(timestamp)
+        }
+        now.get(Calendar.DAY_OF_YEAR) != messageTime.get(Calendar.DAY_OF_YEAR) -> {
+            SimpleDateFormat("MM月dd日", Locale.getDefault()).format(timestamp)
+        }
+        else -> {
+            SimpleDateFormat("HH:mm", Locale.getDefault()).format(timestamp)
+        }
+    }
+}
+
+@Composable
+fun SessionItem(session: PetChatViewModel.SessionInfo, onClick: () -> Unit) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(onClick = onClick)
+            .padding(16.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        // 宠物头像
+        Image(
+            painter = painterResource(id = getPetAvatar(session.petType)),
+            contentDescription = "宠物头像",
+            modifier = Modifier
+                .size(50.dp)
+                .clip(CircleShape)
+        )
+
+        Spacer(modifier = Modifier.width(16.dp))
+
+        Column {
+            Text(
+                text = session.petName,
+                style = MaterialTheme.typography.labelMedium
+            )
+
+            Text(
+                text = session.lastMessage,
+                style = MaterialTheme.typography.bodyMedium,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
+            )
+        }
+
+        Spacer(modifier = Modifier.weight(1f))
+
+        Text(
+            text = formatTime(session.timestamp),
+            style = MaterialTheme.typography.labelMedium
+        )
+    }
 }

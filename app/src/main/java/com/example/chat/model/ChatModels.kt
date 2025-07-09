@@ -18,7 +18,8 @@ data class ChatMessage(
     val content: String,    // 消息内容
     val isFromUser: Boolean, // 是否为用户消息
     val petType: PetTypes,  // 宠物类型
-    val timestamp: Long = System.currentTimeMillis() // 消息时间戳
+    val timestamp: Long = System.currentTimeMillis(), // 消息时间戳
+    val role: String = if (isFromUser) "user" else "system", // 消息角色
 )
 
 /**

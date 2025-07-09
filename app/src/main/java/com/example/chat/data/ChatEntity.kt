@@ -36,5 +36,10 @@ data class ChatEntity(
     val role: String = if (isFromUser) "user" else "assistant",
     
     // 新增：是否为重要消息（用于摘要）
-    val isImportant: Boolean = false
+    val isImportant: Boolean = false,
+
+    // 新增：是否为摘要消息（用于区分普通消息和摘要消息）
+    val isSummary: Boolean = false,
+
+    val isSummarized: Boolean = false, // 是否已被摘要处理
 ) 

@@ -160,6 +160,14 @@ class PetChatRepository private constructor(
 
     // 新增：当前会话ID
     private var currentSessionId: String = UUID.randomUUID().toString()
+    
+    /**
+     * 设置当前会话ID
+     * @param sessionId 会话ID
+     */
+    fun setCurrentSessionId(sessionId: String) {
+        currentSessionId = sessionId
+    }
 
     // 新增：消息历史限制
     private val contextMessageLimit = 3  // 只保留最近3条消息作为上下文
@@ -248,7 +256,6 @@ class PetChatRepository private constructor(
 
                 val requestBodyLog = gson.toJson(requestBody)
                 Log.d("API_REQUEST", "请求体: $requestBodyLog")
-
                 Log.d("API_REQUEST", "请求头: ${httpRequest.headers}")
 
                 client.newCall(httpRequest).enqueue(object : Callback {
@@ -294,6 +301,117 @@ class PetChatRepository private constructor(
                 e.printStackTrace()
                 continuation.resumeWithException(e)
             }
+        }
+    }
+    
+    /**
+     * 发送流式API请求并通过回调返回响应
+     */
+    private fun makeStreamingApiRequest(request: DeepseekRequest, listener: com.example.chat.model.StreamResponseListener) {
+        try {
+            // 确保请求启用流式传输
+            val streamingRequest = request.copy(stream = true)
+            
+            // 记录请求内容
+            val requestJson = gson.toJson(streamingRequest)
+            Log.d("API_STREAM_REQUEST", "流式请求体: $streamingRequest")
+
+            val requestBody = requestJson.toRequestBody(JSON)
+
+            // 使用完整的API URL
+            val apiUrl = "$BASE_URL/chat/completions"
+            Log.d("API_STREAM_REQUEST", "请求URL: $apiUrl")
+
+            val httpRequest = Request.Builder()
+                .url(apiUrl)
+                .addHeader("Authorization", "Bearer $API_KEY")
+                .addHeader("Content-Type", "application/json")
+                .addHeader("Accept", "text/event-stream") // 添加SSE支持
+                .post(requestBody)
+                .build()
+
+            client.newCall(httpRequest).enqueue(object : Callback {
+                override fun onFailure(call: Call, e: IOException) {
+                    Log.e("API_STREAM_ERROR", "流式请求失败: ${e.message}", e)
+                    listener.onError(e)
+                }
+
+                override fun onResponse(call: Call, response: Response) {
+                    if (!response.isSuccessful) {
+                        val errorMsg = "API流式请求失败: ${response.code}"
+                        Log.e("API_STREAM_ERROR", errorMsg)
+                        listener.onError(IOException(errorMsg))
+                        response.close()
+                        return
+                    }
+                    
+                    val responseBody = response.body
+                    if (responseBody == null) {
+                        listener.onError(IOException("响应体为空"))
+                        response.close()
+                        return
+                    }
+                    
+                    try {
+                        // 使用BufferedSource处理流式响应
+                        val source = responseBody.source()
+                        val buffer = StringBuilder()
+                        
+                        // 持续读取数据流
+                        while (!source.exhausted()) {
+                            // 读取一行数据
+                            val line = source.readUtf8Line()
+                            
+                            if (line == null) {
+                                // 流结束
+                                break
+                            }
+                            
+                            if (line.isEmpty()) {
+                                continue // 跳过空行
+                            }
+                            
+                            if (line == "[DONE]") {
+                                // 流结束标记
+                                listener.onComplete()
+                                break
+                            }
+                            
+                            // 处理SSE格式的数据行
+                            if (line.startsWith("data: ")) {
+                                val jsonData = line.substring(6) // 去掉"data: "前缀
+                                
+                                try {
+                                    // 解析JSON数据
+                                    val chunkResponse = gson.fromJson(jsonData, DeepseekResponse::class.java)
+                                    
+                                    // 提取内容并发送给监听器
+                                    val content = chunkResponse.choices.firstOrNull()?.delta?.content
+                                    if (content != null) {
+                                        buffer.append(content)
+                                        listener.onContent(content)
+                                    }
+                                } catch (e: Exception) {
+                                    Log.e("API_STREAM_ERROR", "解析流式数据出错: ${e.message}", e)
+                                    // 继续处理下一行，不中断流
+                                }
+                            }
+                        }
+                        
+                        // 确保完成回调被调用
+                        listener.onComplete()
+                        
+                    } catch (e: Exception) {
+                        Log.e("API_STREAM_ERROR", "处理流式响应出错: ${e.message}", e)
+                        listener.onError(e)
+                    } finally {
+                        response.close()
+                    }
+                }
+            })
+        } catch (e: Exception) {
+            Log.e("API_STREAM_ERROR", "构建流式请求出错: ${e.message}", e)
+            listener.onError(e)
         }
     }
 
@@ -383,12 +501,12 @@ class PetChatRepository private constructor(
     // PetChatRepository.saveChatMessage() → Repository.getUnprocessedChatsCount()
     // → Repository.summarizeConversation()
     suspend fun saveChatMessage(message: ChatMessage, petType: PetTypes) {
-        // 保存消息
+        // 保存消息，使用默认会话ID，主要按宠物类型区分
         val entity = ChatEntity(
             content = message.content,
             isFromUser = message.isFromUser,
             petType = petType.name,
-            sessionId = currentSessionId,
+            sessionId = "default_${petType.name}", // 使用宠物类型作为会话ID的一部分
             role = if (message.isFromUser) "user" else "assistant",
             // 自动判断消息重要性
             isImportant = isMessageImportant(message.content)
@@ -457,21 +575,38 @@ class PetChatRepository private constructor(
 
     /**
      * 创建新会话
+     * @return 新创建的会话ID
      */
-    fun createNewSession() {
+    fun createNewSession(): String {
         currentSessionId = UUID.randomUUID().toString()
+        return currentSessionId
     }
 
     /**
      * 获取当前会话的消息
      * @param petType 宠物类型
+     * @param sessionId 会话ID，如果为null则使用当前会话ID
      * @return 当前会话的消息列表
      */
-    suspend fun getSessionMessages(petType: PetTypes): List<ChatEntity> {
+    suspend fun getSessionMessages(petType: PetTypes, sessionId: String? = null): List<ChatEntity> {
+        val targetSessionId = sessionId ?: currentSessionId
         return try {
-            chatDao.getSessionMessages(currentSessionId, petType.name)
+            chatDao.getSessionMessages(targetSessionId, petType.name)
         } catch (e: Exception) {
             Log.e("PetChatRepository", "获取会话消息出错: ${e.message}", e)
+            emptyList()
+        }
+    }
+    
+    /**
+     * 获取指定宠物类型的所有消息，不考虑会话ID
+     * 用于按宠物类型分类显示聊天记录
+     */
+    suspend fun getMessagesByPetType(petType: PetTypes): List<ChatEntity> {
+        return try {
+            chatDao.getMessagesByPetType(petType.name)
+        } catch (e: Exception) {
+            Log.e("PetChatRepository", "按宠物类型获取消息出错: ${e.message}", e)
             emptyList()
         }
     }
@@ -555,6 +690,180 @@ class PetChatRepository private constructor(
             Log.e("PET_RESPONSE", "获取宠物回复出错", e)
             e.printStackTrace()
             return "抱歉，我现在有点累了，待会再聊吧。" // 返回友好的错误信息
+        }
+    }
+    
+    /**
+     * 流式获取宠物回复
+     * @param petType 当前选择的宠物类型
+     * @param userMessage 用户输入的消息
+     * @param listener 流式响应监听器
+     */
+    suspend fun getPetResponseStreaming(petType: PetTypes, userMessage: String, listener: com.example.chat.model.StreamResponseListener) {
+        try {
+            Log.d("PET_RESPONSE_STREAM", "开始流式获取宠物回复，宠物类型: $petType, 用户消息: $userMessage")
+
+            // 获取增强的提示词
+            val enhancedPrompt = getEnhancedPrompt(petType)
+            
+            // 获取最近的对话历史（限制数量）
+            val recentMessages = chatDao.getRecentSessionMessages(
+                currentSessionId,
+                petType.name,
+                contextMessageLimit
+            )
+            
+            // 构建消息列表
+            val messages = mutableListOf<Message>()
+
+            // 添加助手角色的系统提示（作为第一条消息）
+            messages.add(Message("user", enhancedPrompt))
+
+            // 处理历史消息，确保用户和助手消息交替出现
+            val processedMessages = recentMessages
+                .distinctBy { "${it.role}:${it.content}" }
+                .sortedBy { it.timestamp }
+                .groupBy { it.isFromUser } // 按用户/助手分组
+
+            // 构建交替的消息序列
+            val userMessages = processedMessages[true] ?: listOf()
+            val assistantMessages = processedMessages[false] ?: listOf()
+
+            // 按时间顺序交替添加消息
+            val maxIndex = maxOf(userMessages.size, assistantMessages.size)
+            for (i in 0 until maxIndex) {
+                if (i < assistantMessages.size) {
+                    messages.add(Message("assistant", assistantMessages[i].content))
+                }
+                if (i < userMessages.size) {
+                    messages.add(Message("user", userMessages[i].content))
+                }
+            }
+
+            // 添加当前用户消息
+            messages.add(Message("user", userMessage))
+            
+            // 构建请求
+            val request = DeepseekRequest(
+                model = "deepseek-v3",
+                messages = messages,
+                stream = true // 确保启用流式传输
+            )
+
+            // 调用流式API
+            makeStreamingApiRequest(request, listener)
+            
+        } catch (e: Exception) {
+            Log.e("PET_RESPONSE_STREAM", "流式获取宠物回复出错", e)
+            e.printStackTrace()
+            listener.onError(e)
+        }
+    }
+    
+    /**
+     * 流式获取带图片信息的宠物回复
+     * @param petType 当前选择的宠物类型
+     * @param message 用户输入的消息
+     * @param listener 流式响应监听器
+     */
+    suspend fun getPetResponseWithPictureInfoStreaming(petType: PetTypes, message: String, listener: com.example.chat.model.StreamResponseListener) {
+        // 创建一个包装监听器，用于处理图片信息
+        val wrapperListener = object : com.example.chat.model.StreamResponseListener {
+            private val responseBuffer = StringBuilder()
+            
+            override fun onContent(content: String) {
+                responseBuffer.append(content)
+                listener.onContent(content)
+            }
+            
+            override fun onComplete() {
+                // 完成时，尝试解析图片信息
+                val fullResponse = responseBuffer.toString()
+                val pictureInfo = extractPictureInfo(fullResponse)
+                
+                // 将图片信息保存到最后一条消息中
+                lastPictureInfo = pictureInfo.second
+                
+                listener.onComplete()
+            }
+            
+            override fun onError(e: Exception) {
+                listener.onError(e)
+            }
+        }
+        
+        // 调用流式API
+        getPetResponseStreaming(petType, message, wrapperListener)
+    }
+    
+    // 用于存储最后一次API返回的图片信息
+    private var lastPictureInfo: PictureInfo? = null
+    
+    /**
+     * 获取并清除最后的图片信息
+     */
+    fun consumeLastPictureInfo(): PictureInfo? {
+        val info = lastPictureInfo
+        lastPictureInfo = null
+        return info
+    }
+    
+    /**
+     * 从响应中提取图片信息
+     */
+    private fun extractPictureInfo(response: String): Pair<String, PictureInfo> {
+        val systemNoteStart = response.indexOf("<system_note>")
+        val systemNoteEnd = response.indexOf("</system_note>")
+
+        return if (systemNoteStart != -1 && systemNoteEnd != -1) {
+            // 只返回系统指令之前的内容
+            val cleanResponse = response.substring(0, systemNoteStart).trim()
+            val jsonStr = response.substring(systemNoteStart + 13, systemNoteEnd)
+
+            try {
+                val pictureInfo = gson.fromJson(jsonStr, PictureInfo::class.java)
+                Pair(cleanResponse, pictureInfo)
+            } catch (e: Exception) {
+                Pair(cleanResponse, PictureInfo(false, ""))
+            }
+        } else {
+            // 如果没有找到系统指令，返回完整响应和空图片信息
+            Pair(response, PictureInfo(false, ""))
+        }
+    }
+
+    /**
+     * 获取所有会话，按宠物类型分组
+     * 每种宠物类型只返回一个会话，使用该宠物类型的最新消息作为会话信息
+     */
+    suspend fun getAllSessions(): List<PetChatViewModel.SessionInfo> {
+        // 获取所有宠物类型
+        val petTypes = PetTypes.values()
+        
+        // 为每种宠物类型创建一个会话
+        return petTypes.map { petType ->
+            // 获取该宠物类型的最新消息
+            val latestMessages = chatDao.getRecentSessionMessages("default_${petType.name}", petType.name, 1)
+            val lastMessage = if (latestMessages.isNotEmpty()) latestMessages[0].content else ""
+            val timestamp = if (latestMessages.isNotEmpty()) latestMessages[0].timestamp else System.currentTimeMillis()
+            
+            // 创建会话信息
+            PetChatViewModel.SessionInfo(
+                sessionId = "default_${petType.name}",
+                petType = petType,
+                petName = getPetName(petType),
+                lastMessage = lastMessage,
+                timestamp = timestamp
+            )
+        }
+    }
+
+    private fun getPetName(petType: PetTypes): String {
+        return when (petType) {
+            PetTypes.CAT -> "布丁"
+            PetTypes.DOG -> "大白"
+            PetTypes.HAMSTER -> "团绒"
+            PetTypes.DOG2 -> "豆豆"
         }
     }
 }

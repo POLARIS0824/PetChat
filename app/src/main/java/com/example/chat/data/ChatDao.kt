@@ -20,6 +20,12 @@ interface ChatDao {
      */
     @Query("SELECT * FROM chat_history WHERE sessionId = :sessionId AND petType = :petType ORDER BY timestamp ASC")
     suspend fun getSessionMessages(sessionId: String, petType: String): List<ChatEntity>
+    
+    /**
+     * 获取指定宠物类型的所有消息，不考虑会话ID
+     */
+    @Query("SELECT * FROM chat_history WHERE petType = :petType ORDER BY timestamp ASC")
+    suspend fun getMessagesByPetType(petType: String): List<ChatEntity>
 
     /**
      * 获取未处理的聊天记录数量
@@ -77,4 +83,23 @@ interface ChatDao {
 
     @Update
     suspend fun updateNote(note: NoteEntity)
-} 
+
+    // 在 ChatDao.kt 中添加
+    @Query("""
+    SELECT ch.sessionId, ch.petType, ch.content as lastMessage, MAX(ch.timestamp) as timestamp
+    FROM chat_history ch
+    GROUP BY ch.sessionId
+    ORDER BY timestamp DESC
+    """)
+    suspend fun getAllSessions(): List<SessionEntity>
+
+    // 添加 SessionEntity 数据类
+    @Entity
+    data class SessionEntity(
+        val sessionId: String,
+        val petType: String,
+        val lastMessage: String,
+        val timestamp: Long
+    )
+}
+
