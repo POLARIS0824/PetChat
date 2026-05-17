@@ -57,7 +57,7 @@ class PetChatViewModel @Inject constructor(
                 ChatMessage(
                     content = entity.content,
                     isFromUser = entity.isFromUser,
-                    petType = PetTypes.valueOf(entity.petType)
+                    petType = PetTypes.entries.firstOrNull { it.name == entity.petType } ?: PetTypes.CAT
                 )
             }
             _chatUiState.value = ChatUiState.Ready(
@@ -130,7 +130,7 @@ class PetChatViewModel @Inject constructor(
                 updateReady { it.copy(shouldScrollToBottom = true) }
 
                 val responseListener = object : StreamResponseListener {
-                    private val responseBuffer = StringBuilder()
+                    private val responseBuffer = StringBuffer()
 
                     override fun onContent(content: String) {
                         responseBuffer.append(content)

@@ -16,9 +16,9 @@ import okhttp3.RequestBody.Companion.toRequestBody
 import okhttp3.Response
 import java.io.IOException
 import java.util.concurrent.TimeUnit
+import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
-import kotlin.coroutines.suspendCoroutine
 
 class ChatApiService(
     private val client: OkHttpClient = OkHttpClient.Builder()
@@ -40,7 +40,7 @@ class ChatApiService(
     }
 
     suspend fun makeApiRequest(request: DeepseekRequest): DeepseekResponse {
-        return suspendCoroutine { continuation ->
+        return suspendCancellableCoroutine { continuation ->
             try {
                 val requestJson = json.encodeToString(request)
                 val requestBody = requestJson.toRequestBody(jsonMediaType)
@@ -53,35 +53,38 @@ class ChatApiService(
                     .post(requestBody)
                     .build()
 
-                client.newCall(httpRequest).enqueue(object : Callback {
+                val call = client.newCall(httpRequest)
+                continuation.invokeOnCancellation { call.cancel() }
+
+                call.enqueue(object : Callback {
                     override fun onFailure(call: Call, e: IOException) {
                         Log.e("API_ERROR", "请求失败: ${e.message}", e)
-                        continuation.resumeWithException(e)
+                        if (continuation.isActive) continuation.resumeWithException(e)
                     }
 
                     override fun onResponse(call: Call, response: Response) {
                         try {
                             val responseBody = response.body?.string()
                             if (!response.isSuccessful) {
-                                continuation.resumeWithException(
+                                if (continuation.isActive) continuation.resumeWithException(
                                     IOException("API请求失败: ${response.code} $responseBody")
                                 )
                                 return
                             }
                             if (responseBody == null) {
-                                continuation.resumeWithException(IOException("响应体为空"))
+                                if (continuation.isActive) continuation.resumeWithException(IOException("响应体为空"))
                                 return
                             }
-                            continuation.resume(json.decodeFromString<DeepseekResponse>(responseBody))
+                            if (continuation.isActive) continuation.resume(json.decodeFromString<DeepseekResponse>(responseBody))
                         } catch (e: Exception) {
-                            continuation.resumeWithException(e)
+                            if (continuation.isActive) continuation.resumeWithException(e)
                         } finally {
                             response.close()
                         }
                     }
                 })
             } catch (e: Exception) {
-                continuation.resumeWithException(e)
+                if (continuation.isActive) continuation.resumeWithException(e)
             }
         }
     }
@@ -120,10 +123,12 @@ class ChatApiService(
                     }
                     try {
                         val source = responseBody.source()
+                        var completed = false
                         while (!source.exhausted()) {
                             val line = source.readUtf8Line() ?: break
                             if (line.isEmpty()) continue
                             if (line == "[DONE]") {
+                                completed = true
                                 listener.onComplete()
                                 break
                             }
@@ -138,7 +143,7 @@ class ChatApiService(
                                 }
                             }
                         }
-                        listener.onComplete()
+                        if (!completed) listener.onComplete()
                     } catch (e: Exception) {
                         listener.onError(e)
                     } finally {

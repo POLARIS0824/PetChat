@@ -4,7 +4,7 @@ data class Pet(
     val name: String,
     val status: String,
     val imageRes: Int,
-    val initalRes: Int,
+    val initialRes: Int,
     val finalRes: Int,
     val breed: String,     // 品种
     val age: String,       // 年龄

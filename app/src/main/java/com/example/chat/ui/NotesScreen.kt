@@ -27,7 +27,7 @@ import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.node.ModifierNodeElement
+
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -103,9 +103,10 @@ fun NotesScreen(
     }
 
     // 编辑便利贴对话框
-    if (showEditDialog && currentEditingNote != null) {
+    val editingNote = currentEditingNote
+    if (showEditDialog && editingNote != null) {
         EditNoteDialog(
-            note = currentEditingNote!!,
+            note = editingNote,
             onDismiss = {
                 showEditDialog = false
                 currentEditingNote = null
@@ -116,7 +117,7 @@ fun NotesScreen(
                 currentEditingNote = null
             },
             onDelete = {
-                viewModel.deleteNote(currentEditingNote!!)
+                viewModel.deleteNote(editingNote)
                 showEditDialog = false
                 currentEditingNote = null
             }
@@ -132,7 +133,7 @@ private fun EditNoteDialog(
     onDelete: () -> Unit
 ) {
     var content by remember { mutableStateOf(note.content) }
-    var selectedType by remember { mutableStateOf(PetTypes.valueOf(note.petType)) }
+    var selectedType by remember { mutableStateOf(PetTypes.entries.firstOrNull { it.name == note.petType } ?: PetTypes.CAT) }
 
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -161,18 +162,11 @@ private fun EditNoteDialog(
                         .padding(vertical = 8.dp),
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    items(PetTypes.values()) { type ->
-                        val petName = when(type) {
-                            PetTypes.CAT -> "布丁"
-                            PetTypes.DOG -> "大白"
-                            PetTypes.DOG2 -> "豆豆"
-                            PetTypes.HAMSTER -> "团绒"
-                        }
-
+                    items(PetTypes.entries) { type ->
                         FilterChip(
                             selected = selectedType == type,
                             onClick = { selectedType = type },
-                            label = { Text(petName) },
+                            label = { Text(type.displayName) },
                             colors = FilterChipDefaults.filterChipColors(
                                 selectedContainerColor = Color(255, 143, 45),
                                 selectedLabelColor = Color.White,
@@ -268,7 +262,7 @@ private fun FilterChips(
             )
         }
 
-        items(PetTypes.values()) { type ->
+        items(PetTypes.entries) { type ->
             FilterChip(
                 selected = selectedType == type.name,
                 onClick = { onFilterSelected(type.name) },
@@ -330,7 +324,7 @@ private fun NoteCard(
 
                     // 添加宠物类型标签
                     Text(
-                        text = "#${PetTypes.valueOf(note.petType).displayName}",
+                        text = "#${PetTypes.entries.firstOrNull { it.name == note.petType }?.displayName ?: note.petType}",
                         style = MaterialTheme.typography.bodySmall,
                         color = Color.Black,
                         fontWeight = FontWeight.Bold,
@@ -382,18 +376,11 @@ private fun AddNoteDialog(
                         .padding(vertical = 8.dp),
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    items(PetTypes.values()) { type ->
-                        val petName = when(type) {
-                            PetTypes.CAT -> "布丁"
-                            PetTypes.DOG -> "大白"
-                            PetTypes.DOG2 -> "豆豆"
-                            PetTypes.HAMSTER -> "团绒"
-                        }
-
+                    items(PetTypes.entries) { type ->
                         FilterChip(
                             selected = selectedType == type,
                             onClick = { selectedType = type },
-                            label = { Text(petName) },
+                            label = { Text(type.displayName) },
                             colors = FilterChipDefaults.filterChipColors(
                                 selectedContainerColor = Color(255, 143, 45),
                                 selectedLabelColor = Color.White,

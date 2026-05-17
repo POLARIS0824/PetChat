@@ -93,8 +93,7 @@ interface ChatDao {
     """)
     suspend fun getAllSessions(): List<SessionEntity>
 
-    // 添加 SessionEntity 数据类
-    @Entity
+    // SessionEntity 数据类（查询投影用，非数据库表）
     data class SessionEntity(
         val sessionId: String,
         val petType: String,

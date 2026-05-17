@@ -1,6 +1,5 @@
 package com.example.chat.ui.chat
 
-import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -17,10 +16,8 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -41,7 +38,6 @@ import com.example.chat.viewmodel.PetChatViewModel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
-@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun ChatScreen(
     viewModel: PetChatViewModel,
@@ -50,7 +46,6 @@ fun ChatScreen(
     showPetSelector: Boolean = false,
     onHidePetSelector: () -> Unit = {}
 ) {
-    var showSettings by remember { mutableStateOf(false) }
     var message by remember { mutableStateOf("") }
     val listState = rememberLazyListState()
     val coroutineScope = rememberCoroutineScope()
@@ -200,18 +195,5 @@ fun ChatScreen(
                     }
             )
         }
-    }
-
-    if (showSettings) {
-        AlertDialog(
-            onDismissRequest = { showSettings = false },
-            title = { Text("设置") },
-            text = { Text("设置选项将在这里显示") },
-            confirmButton = {
-                TextButton(onClick = { showSettings = false }) {
-                    Text("确定")
-                }
-            }
-        )
     }
 }

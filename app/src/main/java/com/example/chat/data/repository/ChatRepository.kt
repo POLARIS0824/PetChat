@@ -26,8 +26,9 @@ class ChatRepository @Inject constructor(
     private val json = Json { ignoreUnknownKeys = true }
     private val model = com.example.chat.BuildConfig.PETCHAT_MODEL.trim().ifBlank { "deepseek-v3" }
 
-    private var currentSessionId: String = UUID.randomUUID().toString()
+    @Volatile private var currentSessionId: String = UUID.randomUUID().toString()
     private val contextMessageLimit = 3
+    private val pictureInfoLock = Any()
 
     // region Prompt
 
@@ -228,7 +229,8 @@ class ChatRepository @Inject constructor(
         """.trimIndent()
 
         try {
-            val summary = getPetResponse(PetTypes.valueOf(messages.first().petType), summaryPrompt)
+            val petType = PetTypes.entries.firstOrNull { it.name == messages.first().petType } ?: PetTypes.CAT
+            val summary = getPetResponse(petType, summaryPrompt)
             val summaryEntity = ChatEntity(
                 content = "【对话摘要】$summary",
                 isFromUser = false,
@@ -236,7 +238,8 @@ class ChatRepository @Inject constructor(
                 sessionId = currentSessionId,
                 role = "system",
                 isImportant = true,
-                isProcessed = true
+                isProcessed = true,
+                isSummary = true
             )
             chatDao.insert(summaryEntity)
             chatDao.update(messages.map { it.copy(isProcessed = true) })
@@ -259,9 +262,9 @@ class ChatRepository @Inject constructor(
 
     // region Picture Info
 
-    private var lastPictureInfo: PictureInfo? = null
+    @Volatile private var lastPictureInfo: PictureInfo? = null
 
-    fun consumeLastPictureInfo(): PictureInfo? {
+    fun consumeLastPictureInfo(): PictureInfo? = synchronized(pictureInfoLock) {
         val info = lastPictureInfo
         lastPictureInfo = null
         return info
@@ -321,12 +324,7 @@ class ChatRepository @Inject constructor(
         }
     }
 
-    private fun getPetName(petType: PetTypes): String = when (petType) {
-        PetTypes.CAT -> "布丁"
-        PetTypes.DOG -> "大白"
-        PetTypes.HAMSTER -> "团绒"
-        PetTypes.DOG2 -> "豆豆"
-    }
+    private fun getPetName(petType: PetTypes): String = petType.displayName
 
     // endregion
 }

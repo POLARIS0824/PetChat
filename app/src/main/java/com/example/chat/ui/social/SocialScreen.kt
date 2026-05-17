@@ -51,7 +51,7 @@ fun SocialScreen(
                     onLikeClick = { viewModel.likePost(post.id) },
                     onSaveClick = { viewModel.savePost(post.id) }
                 )
-                Divider(
+                HorizontalDivider(
                     color = Color(0xFFEEEEEE),
                     thickness = 1.dp,
                     modifier = Modifier.padding(horizontal = 16.dp)

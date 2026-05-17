@@ -129,7 +129,7 @@ fun PetCard(
                 }
         ) {
             Image(
-                painter = painterResource(id = pet.initalRes),
+                painter = painterResource(id = pet.initialRes),
                 contentDescription = "Pet Image",
                 modifier = Modifier
                     .fillMaxSize()
