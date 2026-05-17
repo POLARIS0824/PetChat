@@ -3,6 +3,7 @@ import java.util.Properties
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
+    alias(libs.plugins.kotlin.serialization)
     id("com.google.devtools.ksp") version "1.9.22-1.0.17"
     id("com.google.dagger.hilt.android")
 }
@@ -135,7 +136,7 @@ dependencies {
     implementation("androidx.compose.ui:ui-tooling-preview:1.7.6")
     implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.8.7")
     implementation("com.squareup.okhttp3:okhttp:4.9.3")
-    implementation("com.google.code.gson:gson:2.8.8")
+    implementation(libs.kotlinx.serialization.json)
     implementation("androidx.compose.ui:ui-graphics:1.7.6")
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)

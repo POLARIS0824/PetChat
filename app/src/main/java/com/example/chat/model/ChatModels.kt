@@ -1,5 +1,7 @@
 package com.example.chat.model
 
+import kotlinx.serialization.Serializable
+
 /**
  * 宠物类型枚举
  * 定义支持的宠物类型及其显示名称
@@ -25,6 +27,7 @@ data class ChatMessage(
 /**
  * AI返回的图片相关信息数据类
  */
+@Serializable
 data class PictureInfo(
     val isPictureNeeded: Boolean,        // 是否需要配图
     val pictureDescription: String = ""   // 图片描述

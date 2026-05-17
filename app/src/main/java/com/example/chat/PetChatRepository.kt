@@ -12,7 +12,8 @@ import com.example.chat.model.Message
 import com.example.chat.model.PetTypes
 import com.example.chat.model.PictureInfo
 
-import com.google.gson.Gson
+import kotlinx.serialization.encodeToString
+import kotlinx.serialization.json.Json
 import okhttp3.*
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.RequestBody.Companion.toRequestBody
@@ -34,8 +35,8 @@ class PetChatRepository private constructor(
         .readTimeout(60, TimeUnit.SECONDS)     // 读取超时时间
         .writeTimeout(30, TimeUnit.SECONDS)    // 写入超时时间
         .build(),
-    private val gson: Gson = Gson()
 ) {
+    private val json = Json { ignoreUnknownKeys = true }
     companion object {
         @Volatile
         private var instance: PetChatRepository? = null
@@ -210,7 +211,7 @@ class PetChatRepository private constructor(
     private suspend fun makeApiRequest(request: DeepseekRequest): DeepseekResponse {
         return suspendCoroutine { continuation ->
             try {
-                val requestJson = gson.toJson(request)
+                val requestJson = json.encodeToString(request)
                 val authToken = requireApiKey()
 
                 val requestBody = requestJson.toRequestBody(JSON)
@@ -252,7 +253,7 @@ class PetChatRepository private constructor(
                             }
 
                             // 解析响应
-                            val apiResponse = gson.fromJson(responseBody, DeepseekResponse::class.java)
+                            val apiResponse = json.decodeFromString<DeepseekResponse>(responseBody)
                             Log.d("API_RESPONSE", "解析后的响应: $apiResponse")
                             continuation.resume(apiResponse)
                         } catch (e: Exception) {
@@ -278,7 +279,7 @@ class PetChatRepository private constructor(
         try {
             // 确保请求启用流式传输
             val streamingRequest = request.copy(stream = true)
-            val requestJson = gson.toJson(streamingRequest)
+            val requestJson = json.encodeToString(streamingRequest)
             val authToken = requireApiKey()
 
             val requestBody = requestJson.toRequestBody(JSON)
@@ -348,7 +349,7 @@ class PetChatRepository private constructor(
                                 
                                 try {
                                     // 解析JSON数据
-                                    val chunkResponse = gson.fromJson(jsonData, DeepseekResponse::class.java)
+                                    val chunkResponse = json.decodeFromString<DeepseekResponse>(jsonData)
                                     
                                     // 提取内容并发送给监听器
                                     val content = chunkResponse.choices.firstOrNull()?.delta?.content
@@ -426,14 +427,14 @@ class PetChatRepository private constructor(
             val analysisText = response.choices.firstOrNull()?.message?.content ?: return
 
             // 解析JSON响应
-            val analysis = gson.fromJson(analysisText, ChatAnalysisResult::class.java)
+            val analysis = json.decodeFromString<ChatAnalysisResult>(analysisText)
 
             // 保存分析结果到数据库
             val analysisEntity = ChatAnalysisEntity(
                 petType = unprocessedChats.first().petType,
                 summary = analysis.summary,
-                preferences = gson.toJson(analysis.preferences),
-                patterns = gson.toJson(analysis.patterns)
+                preferences = json.encodeToString(analysis.preferences),
+                patterns = json.encodeToString(analysis.patterns)
             )
             chatDao.insertAnalysis(analysisEntity)
 
@@ -772,7 +773,7 @@ class PetChatRepository private constructor(
             val jsonStr = response.substring(systemNoteStart + 13, systemNoteEnd)
 
             try {
-                val pictureInfo = gson.fromJson(jsonStr, PictureInfo::class.java)
+                val pictureInfo = json.decodeFromString<PictureInfo>(jsonStr)
                 Pair(cleanResponse, pictureInfo)
             } catch (e: Exception) {
                 Pair(cleanResponse, PictureInfo(false, ""))
