@@ -1,4 +1,4 @@
-package com.example.chat
+package com.example.chat.ui.session
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
@@ -24,7 +24,10 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import com.example.chat.R
 import com.example.chat.model.PetTypes
+import com.example.chat.model.SessionInfo
+import com.example.chat.viewmodel.PetChatViewModel
 import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Locale
@@ -89,7 +92,7 @@ fun formatTime(timestamp: Long): String {
 }
 
 @Composable
-fun SessionItem(session: PetChatViewModel.SessionInfo, onClick: () -> Unit) {
+fun SessionItem(session: SessionInfo, onClick: () -> Unit) {
     Row(
         modifier = Modifier
             .fillMaxWidth()

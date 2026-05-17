@@ -1,4 +1,4 @@
-package com.example.chat
+package com.example.chat.ui.chat
 
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.StartOffset
@@ -47,6 +47,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import com.example.chat.R
 import com.example.chat.model.ChatMessage
 import kotlinx.coroutines.delay
 import java.text.SimpleDateFormat

@@ -1,8 +1,10 @@
 package com.example.chat.di
 
 import android.content.Context
+import androidx.room.Room
 import com.example.chat.data.ChatDao
 import com.example.chat.data.ChatDatabase
+import com.example.chat.data.repository.ChatApiService
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -17,11 +19,21 @@ object DatabaseModule {
     @Provides
     @Singleton
     fun provideDatabase(@ApplicationContext context: Context): ChatDatabase {
-        return ChatDatabase.getDatabase(context)
+        return Room.databaseBuilder(
+            context.applicationContext,
+            ChatDatabase::class.java,
+            "chat_database"
+        ).fallbackToDestructiveMigration().build()
     }
 
     @Provides
     fun provideChatDao(database: ChatDatabase): ChatDao {
         return database.chatDao()
+    }
+
+    @Provides
+    @Singleton
+    fun provideChatApiService(): ChatApiService {
+        return ChatApiService()
     }
 }

@@ -20,7 +20,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.chat.R
 import com.example.chat.model.SocialPost
 import com.example.chat.ui.social.SocialViewModel
@@ -30,7 +30,7 @@ import java.util.*
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SocialScreen(
-    viewModel: SocialViewModel = viewModel(),
+    viewModel: SocialViewModel = hiltViewModel(),
     modifier: Modifier = Modifier
 ) {
     val posts = viewModel.posts

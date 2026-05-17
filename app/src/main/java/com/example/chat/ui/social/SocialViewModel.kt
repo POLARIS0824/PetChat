@@ -4,17 +4,19 @@ import androidx.compose.runtime.mutableStateListOf
 import androidx.lifecycle.ViewModel
 import com.example.chat.R
 import com.example.chat.model.SocialPost
+import dagger.hilt.android.lifecycle.HiltViewModel
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 import java.util.UUID
+import javax.inject.Inject
 
-class SocialViewModel : ViewModel() {
+@HiltViewModel
+class SocialViewModel @Inject constructor() : ViewModel() {
     private val _posts = mutableStateListOf<SocialPost>()
     val posts: List<SocialPost> get() = _posts
 
     init {
-        // 加载模拟数据
         loadDummyPosts()
     }
 

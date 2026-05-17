@@ -1,4 +1,4 @@
-package com.example.chat
+package com.example.chat.ui.cards
 
 import android.graphics.RenderEffect
 import androidx.compose.foundation.Image
@@ -55,6 +55,7 @@ import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.min
+import com.example.chat.R
 import com.example.chat.model.Pet
 import com.example.chat.model.PetTypes
 import kotlin.math.roundToInt

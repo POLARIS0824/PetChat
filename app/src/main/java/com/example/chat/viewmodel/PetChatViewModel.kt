@@ -1,12 +1,14 @@
-package com.example.chat
+package com.example.chat.viewmodel
 
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.chat.data.repository.ChatRepository
 import com.example.chat.model.ChatMessage
 import com.example.chat.model.ChatUiState
 import com.example.chat.model.PetTypes
 import com.example.chat.model.PictureInfo
+import com.example.chat.model.SessionInfo
 import com.example.chat.model.StreamResponseListener
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.delay
@@ -19,7 +21,7 @@ import javax.inject.Inject
 
 @HiltViewModel
 class PetChatViewModel @Inject constructor(
-    private val repository: PetChatRepository
+    private val repository: ChatRepository
 ) : ViewModel() {
 
     private var currentSessionId: String = "default"
@@ -224,14 +226,6 @@ class PetChatViewModel @Inject constructor(
             emptyList()
         }
     }
-
-    data class SessionInfo(
-        val sessionId: String,
-        val petType: PetTypes,
-        val petName: String,
-        val lastMessage: String,
-        val timestamp: Long
-    )
 
     fun loadAllSessions() {
         viewModelScope.launch {

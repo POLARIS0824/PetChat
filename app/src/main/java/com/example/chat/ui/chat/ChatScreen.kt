@@ -34,12 +34,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
-import com.example.chat.ChatBubble
-import com.example.chat.ChatInput
-import com.example.chat.PetChatViewModel
 import com.example.chat.R
 import com.example.chat.model.ChatUiState
 import com.example.chat.model.PetTypes
+import com.example.chat.viewmodel.PetChatViewModel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 

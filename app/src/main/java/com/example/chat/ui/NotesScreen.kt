@@ -16,8 +16,8 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.viewmodel.compose.viewModel
-import com.example.chat.NotesViewModel
+import androidx.hilt.navigation.compose.hiltViewModel
+import com.example.chat.viewmodel.NotesViewModel
 import com.example.chat.data.NoteEntity
 import com.example.chat.model.NotesUiState
 import com.example.chat.model.PetTypes
@@ -36,7 +36,7 @@ import com.example.chat.R
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun NotesScreen(
-    viewModel: NotesViewModel = viewModel(),
+    viewModel: NotesViewModel = hiltViewModel(),
     modifier: Modifier = Modifier
 ) {
     val uiState by viewModel.uiState.collectAsState()

@@ -68,18 +68,19 @@ import androidx.compose.ui.zIndex
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowCompat
 import androidx.lifecycle.lifecycleScope
-import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.chat.model.PetTypes
-import com.example.chat.PetList
+import com.example.chat.ui.cards.PetList
 import com.example.chat.ui.chat.ChatScreen
 import com.example.chat.ui.components.PetAvatar
 import com.example.chat.ui.navigation.BottomNavItems
 import com.example.chat.ui.navigation.DrawerContent
 import com.example.chat.ui.NotesScreen
 import com.example.chat.ui.navigation.Screen
-import com.example.chat.SessionListScreen
+import com.example.chat.ui.session.SessionListScreen
 import com.example.chat.ui.social.SocialScreen
 import com.example.chat.viewmodel.CardsViewModel
+import com.example.chat.viewmodel.PetChatViewModel
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
 
@@ -110,8 +111,8 @@ class MainActivity : ComponentActivity() {
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PetChatApp(
-    viewModel: PetChatViewModel = viewModel(),
-    cardsViewModel: CardsViewModel = viewModel()
+    viewModel: PetChatViewModel = hiltViewModel(),
+    cardsViewModel: CardsViewModel = hiltViewModel()
 ) {
     var currentScreen by remember { mutableStateOf(Screen.Chat) }
     var currentPetType by remember { mutableStateOf(PetTypes.CAT) }
