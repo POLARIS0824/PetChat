@@ -268,64 +268,6 @@ class PetChatViewModel(application: Application) : AndroidViewModel(application)
     }
     
     /**
-     * 非流式方式发送消息（保留原方法作为备用）
-     */
-    fun sendMessageNonStreaming(message: String) {
-        if (message.isBlank()) return
-
-        viewModelScope.launch {
-            // 设置前台和通用加载状态为true
-            _isForegroundLoading.value = true
-            isLoading = true
-
-            try {
-                // 添加用户消息
-                val userMessage = ChatMessage(
-                    content = message,
-                    isFromUser = true,
-                    petType = currentPetType
-                )
-                chatHistory = chatHistory + userMessage
-                repository.saveChatMessage(userMessage, currentPetType)
-
-                // 获取AI响应 - 这是前台请求
-                val (response, pictureInfo) = repository.getPetResponseWithPictureInfo(currentPetType, message)
-                val petMessage = ChatMessage(
-                    content = response,
-                    isFromUser = false,
-                    petType = currentPetType
-                )
-                chatHistory = chatHistory + petMessage
-                repository.saveChatMessage(petMessage, currentPetType)
-
-                // 更新图片信息
-                lastPictureInfo = pictureInfo
-
-                // 前台请求完成，关闭前台加载状态
-                _isForegroundLoading.value = false
-
-                // 触发滚动到底部
-                _shouldScrollToBottom.value = true
-
-                // 检查是否需要进行分析 - 这是后台任务，不影响前台加载状态
-                val unprocessedCount = repository.getUnprocessedChatsCount()
-                if (unprocessedCount >= 10) {
-                    repository.analyzeChats()
-                } else {
-                    isLoading = false
-                }
-
-            } catch (e: Exception) {
-                e.printStackTrace()
-                _isForegroundLoading.value = false
-                isLoading = false
-            } finally {
-                isLoading = false
-            }
-        }
-    }
-
-    /**
      * 重置滚动状态并触发滚动到底部
      */
     fun resetScroll() {

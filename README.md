@@ -87,3 +87,15 @@
 ## 项目结构
 
 </rewritten_file> 
+## 安全配置（必做）
+
+请勿在源码中硬编码 API Key。项目已改为从 `local.properties` 或环境变量读取：
+
+```properties
+petchat.apiKey=your_api_key_here
+petchat.baseUrl=https://dashscope.aliyuncs.com/compatible-mode/v1
+petchat.model=deepseek-v3
+```
+
+- 可复制 `local.properties.example` 到本地 `local.properties` 后填写。
+- `local.properties` 与 `keystore.properties` 均不应提交到仓库。

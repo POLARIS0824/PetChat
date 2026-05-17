@@ -14,7 +14,7 @@ data class DeepseekRequest(
 )
 
 data class Message(
-    val role: String = "deepseek-r1",
+    val role: String = "user",
     val content: String,
 //    val reasoning_content : String? = null
 )

@@ -33,7 +33,7 @@ class NotesViewModel(application: Application) : AndroidViewModel(application) {
     fun loadNotes() {
         viewModelScope.launch {
             _notes.value = when (selectedPetType) {
-                null -> dao.getNotesByType(PetTypes.CAT.name) + dao.getNotesByType(PetTypes.DOG.name)
+                null -> PetTypes.entries.flatMap { dao.getNotesByType(it.name) }
                 else -> dao.getNotesByType(selectedPetType!!)
             }
         }

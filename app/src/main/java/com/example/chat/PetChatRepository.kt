@@ -11,6 +11,7 @@ import com.example.chat.model.DeepseekResponse
 import com.example.chat.model.Message
 import com.example.chat.model.PetTypes
 import com.example.chat.model.PictureInfo
+
 import com.google.gson.Gson
 import okhttp3.*
 import okhttp3.MediaType.Companion.toMediaType
@@ -47,8 +48,9 @@ class PetChatRepository private constructor(
     }
 
     private val JSON = "application/json; charset=utf-8".toMediaType()
-    private val API_KEY = "sk-cfa895f6201a4c6ab6b0036bf14ddeb4"  // API密钥
-    private val BASE_URL = "https://dashscope.aliyuncs.com/compatible-mode/v1"  // API基础URL
+    private val apiKey = BuildConfig.PETCHAT_API_KEY.trim()
+    private val baseUrl = BuildConfig.PETCHAT_BASE_URL.trim().trimEnd('/')
+    private val model = BuildConfig.PETCHAT_MODEL.trim().ifBlank { "deepseek-v3" }
 
     /**
      * 宠物角色的系统提示词配置
@@ -172,42 +174,6 @@ class PetChatRepository private constructor(
     // 新增：消息历史限制
     private val contextMessageLimit = 3  // 只保留最近3条消息作为上下文
 
-    // 新增：系统消息压缩
-    private val compressedPrompts = mapOf(
-        PetTypes.CAT to "你是猫咪。用喵结尾。简短回复。偶尔傲娇。",
-        PetTypes.DOG to "你是狗狗。用汪结尾。热情活泼。喜欢散步玩球。"
-    )
-
-    /**
-     * 获取带图片信息的宠物回复
-     * @param petType 当前选择的宠物类型
-     * @param message 用户输入的消息
-     * @return Pair<String, PictureInfo> 包含AI回复内容和图片信息
-     */
-    suspend fun getPetResponseWithPictureInfo(petType: PetTypes, message: String): Pair<String, PictureInfo> {
-        val fullResponse = getPetResponse(petType, message)
-
-        // 分离回复内容和系统指令部分
-        val systemNoteStart = fullResponse.indexOf("<system_note>")
-        val systemNoteEnd = fullResponse.indexOf("</system_note>")
-
-        return if (systemNoteStart != -1 && systemNoteEnd != -1) {
-            // 只返回系统指令之前的内容
-            val response = fullResponse.substring(0, systemNoteStart).trim()
-            val jsonStr = fullResponse.substring(systemNoteStart + 13, systemNoteEnd)
-
-            try {
-                val pictureInfo = gson.fromJson(jsonStr, PictureInfo::class.java)
-                Pair(response, pictureInfo)
-            } catch (e: Exception) {
-                Pair(response, PictureInfo(false, ""))
-            }
-        } else {
-            // 如果没有找到系统指令，返回完整响应和空图片信息
-            Pair(fullResponse, PictureInfo(false, ""))
-        }
-    }
-
     /**
      * 获取带用户偏好的系统提示
      */
@@ -231,32 +197,34 @@ class PetChatRepository private constructor(
         }
     }
 
+    private fun requireApiKey(): String {
+        if (apiKey.isBlank()) {
+            throw IOException("Missing API key. Configure petchat.apiKey in local.properties or env.")
+        }
+        return apiKey
+    }
+
     /**
      * 发送API请求并获取响应
      */
     private suspend fun makeApiRequest(request: DeepseekRequest): DeepseekResponse {
         return suspendCoroutine { continuation ->
             try {
-                // 记录请求内容
                 val requestJson = gson.toJson(request)
-                Log.d("API_REQUEST", "请求体: $request")
+                val authToken = requireApiKey()
 
                 val requestBody = requestJson.toRequestBody(JSON)
 
                 // 使用完整的API URL
-                val apiUrl = "$BASE_URL/chat/completions"
+                val apiUrl = "$baseUrl/chat/completions"
                 Log.d("API_REQUEST", "请求URL: $apiUrl")
 
                 val httpRequest = Request.Builder()
                     .url(apiUrl)
-                    .addHeader("Authorization", "Bearer $API_KEY")
+                    .addHeader("Authorization", "Bearer $authToken")
                     .addHeader("Content-Type", "application/json")
                     .post(requestBody)
                     .build()
-
-                val requestBodyLog = gson.toJson(requestBody)
-                Log.d("API_REQUEST", "请求体: $requestBodyLog")
-                Log.d("API_REQUEST", "请求头: ${httpRequest.headers}")
 
                 client.newCall(httpRequest).enqueue(object : Callback {
                     override fun onFailure(call: Call, e: IOException) {
@@ -268,7 +236,6 @@ class PetChatRepository private constructor(
                         try {
                             val responseBody = response.body?.string()
                             Log.d("API_RESPONSE", "状态码: ${response.code}")
-                            Log.d("API_RESPONSE", "响应体: $responseBody")
 
                             if (!response.isSuccessful) {
                                 Log.e("API_ERROR", "API错误: ${response.code} $responseBody")
@@ -311,20 +278,18 @@ class PetChatRepository private constructor(
         try {
             // 确保请求启用流式传输
             val streamingRequest = request.copy(stream = true)
-            
-            // 记录请求内容
             val requestJson = gson.toJson(streamingRequest)
-            Log.d("API_STREAM_REQUEST", "流式请求体: $streamingRequest")
+            val authToken = requireApiKey()
 
             val requestBody = requestJson.toRequestBody(JSON)
 
             // 使用完整的API URL
-            val apiUrl = "$BASE_URL/chat/completions"
+            val apiUrl = "$baseUrl/chat/completions"
             Log.d("API_STREAM_REQUEST", "请求URL: $apiUrl")
 
             val httpRequest = Request.Builder()
                 .url(apiUrl)
-                .addHeader("Authorization", "Bearer $API_KEY")
+                .addHeader("Authorization", "Bearer $authToken")
                 .addHeader("Content-Type", "application/json")
                 .addHeader("Accept", "text/event-stream") // 添加SSE支持
                 .post(requestBody)
@@ -448,7 +413,7 @@ class PetChatRepository private constructor(
 
         // 调用API进行分析
         val request = DeepseekRequest(
-            model = "deepseek-v3",  // 添加model参数
+            model = model,
             messages = listOf(
                 Message("assistant", "我是一个聊天分析助手，可以帮你分析聊天记录。"),
                 Message("user", analysisPrompt)
@@ -481,20 +446,6 @@ class PetChatRepository private constructor(
     }
 
     /**
-     * 获取压缩版的系统提示
-     */
-    private suspend fun getCompressedPrompt(petType: PetTypes): String {
-        val basePrompt = compressedPrompts[petType] ?: ""
-        val analysis = chatDao.getLatestAnalysis(petType.name)
-
-        return if (analysis != null) {
-            "$basePrompt 用户偏好:${analysis.summary.take(50)}"
-        } else {
-            basePrompt
-        }
-    }
-
-    /**
      * 会话摘要函数
      * 保存聊天消息并智能标记重要性
      */
@@ -512,7 +463,7 @@ class PetChatRepository private constructor(
             isImportant = isMessageImportant(message.content)
         )
 
-        val id = chatDao.insert(entity)
+        chatDao.insert(entity)
 
         // 如果消息数量超过限制，执行摘要
         val unprocessedCount = chatDao.getUnprocessedChatsCount()
@@ -674,7 +625,7 @@ class PetChatRepository private constructor(
 
             // 构建请求
             val request = DeepseekRequest(
-                model = "deepseek-v3",
+                model = model,
                 messages = messages
             )
 
@@ -745,7 +696,7 @@ class PetChatRepository private constructor(
             
             // 构建请求
             val request = DeepseekRequest(
-                model = "deepseek-v3",
+                model = model,
                 messages = messages,
                 stream = true // 确保启用流式传输
             )

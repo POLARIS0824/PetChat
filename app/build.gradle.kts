@@ -20,6 +20,34 @@ val keystoreProperties = Properties().apply {
     }
 }
 
+// 加载本地配置（local.properties 不入库）
+val localProperties = Properties().apply {
+    try {
+        val localPropertiesFile = rootProject.file("local.properties")
+        if (localPropertiesFile.exists()) {
+            load(localPropertiesFile.reader())
+        }
+    } catch (e: Exception) {
+        logger.error("Failed to load local.properties: ${e.message}")
+    }
+}
+
+fun readSecret(name: String, defaultValue: String = ""): String {
+    val valueFromLocal = localProperties.getProperty(name)?.trim().orEmpty()
+    if (valueFromLocal.isNotEmpty()) return valueFromLocal
+
+    val valueFromEnv = System.getenv(name)?.trim().orEmpty()
+    if (valueFromEnv.isNotEmpty()) return valueFromEnv
+
+    return defaultValue
+}
+
+fun escapeBuildConfig(value: String): String {
+    return value
+        .replace("\\", "\\\\")
+        .replace("\"", "\\\"")
+}
+
 android {
     namespace = "com.example.chat"
     compileSdk = 35
@@ -35,6 +63,23 @@ android {
         vectorDrawables {
             useSupportLibrary = true
         }
+
+        // API 配置通过本地配置/环境变量注入，避免硬编码密钥
+        buildConfigField(
+            "String",
+            "PETCHAT_API_KEY",
+            "\"${escapeBuildConfig(readSecret("petchat.apiKey"))}\""
+        )
+        buildConfigField(
+            "String",
+            "PETCHAT_BASE_URL",
+            "\"${escapeBuildConfig(readSecret("petchat.baseUrl", "https://dashscope.aliyuncs.com/compatible-mode/v1"))}\""
+        )
+        buildConfigField(
+            "String",
+            "PETCHAT_MODEL",
+            "\"${escapeBuildConfig(readSecret("petchat.model", "deepseek-v3"))}\""
+        )
     }
 
     signingConfigs {
@@ -65,6 +110,7 @@ android {
     }
     buildFeatures {
         compose = true
+        buildConfig = true
     }
     composeOptions {
         kotlinCompilerExtensionVersion = "1.5.8"
