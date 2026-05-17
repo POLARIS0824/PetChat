@@ -19,6 +19,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.chat.NotesViewModel
 import com.example.chat.data.NoteEntity
+import com.example.chat.model.NotesUiState
 import com.example.chat.model.PetTypes
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
@@ -38,7 +39,9 @@ fun NotesScreen(
     viewModel: NotesViewModel = viewModel(),
     modifier: Modifier = Modifier
 ) {
-    val notes by viewModel.notes.collectAsState()
+    val uiState by viewModel.uiState.collectAsState()
+    val state = (uiState as? NotesUiState.Ready) ?: NotesUiState.Ready()
+    val notes = state.notes
     var showAddDialog by remember { mutableStateOf(false) }
     var showEditDialog by remember { mutableStateOf(false) }
     var currentEditingNote by remember { mutableStateOf<NoteEntity?>(null) }
@@ -50,7 +53,7 @@ fun NotesScreen(
     ) {
         // 过滤器
         FilterChips(
-            selectedType = viewModel.selectedPetType,
+            selectedType = state.selectedPetType,
             onFilterSelected = { viewModel.setFilter(it) }
         )
 

@@ -80,8 +80,10 @@ import com.example.chat.ui.navigation.Screen
 import com.example.chat.SessionListScreen
 import com.example.chat.ui.social.SocialScreen
 import com.example.chat.viewmodel.CardsViewModel
+import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
 
+@AndroidEntryPoint
 class MainActivity : ComponentActivity() {
     private val requestPermissionLauncher: ActivityResultLauncher<String> = registerForActivityResult(
         ActivityResultContracts.RequestPermission()

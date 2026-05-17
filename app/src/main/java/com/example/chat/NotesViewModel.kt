@@ -1,77 +1,81 @@
 package com.example.chat
 
-import android.app.Application
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.setValue
-import androidx.lifecycle.AndroidViewModel
+import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.chat.data.ChatDatabase
+import com.example.chat.data.ChatDao
 import com.example.chat.data.NoteEntity
+import com.example.chat.model.NotesUiState
 import com.example.chat.model.PetTypes
+import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import javax.inject.Inject
 
-class NotesViewModel(application: Application) : AndroidViewModel(application) {
-    private val dao = ChatDatabase.getDatabase(application).chatDao()
-    
-    // 当前选中的宠物类型过滤器
-    var selectedPetType by mutableStateOf<String?>(null)
-        private set
-    
-    // 便利贴列表
-    private val _notes = MutableStateFlow<List<NoteEntity>>(emptyList())
-    val notes = _notes.asStateFlow()
+@HiltViewModel
+class NotesViewModel @Inject constructor(
+    private val chatDao: ChatDao
+) : ViewModel() {
 
-    // 初始加载所有便利贴
+    private val _uiState = MutableStateFlow<NotesUiState>(NotesUiState.Loading)
+    val uiState: StateFlow<NotesUiState> = _uiState.asStateFlow()
+
     init {
         loadNotes()
     }
 
-    // 加载便利贴
-    fun loadNotes() {
-        viewModelScope.launch {
-            _notes.value = when (selectedPetType) {
-                null -> PetTypes.entries.flatMap { dao.getNotesByType(it.name) }
-                else -> dao.getNotesByType(selectedPetType!!)
-            }
+    private fun updateReady(transform: (NotesUiState.Ready) -> NotesUiState.Ready) {
+        _uiState.update { current ->
+            if (current is NotesUiState.Ready) transform(current) else current
         }
     }
 
-    // 添加便利贴
+    fun loadNotes() {
+        viewModelScope.launch {
+            val selectedType = (uiState.value as? NotesUiState.Ready)?.selectedPetType
+            val notes = when (selectedType) {
+                null -> PetTypes.entries.flatMap { chatDao.getNotesByType(it.name) }
+                else -> chatDao.getNotesByType(selectedType)
+            }
+            _uiState.value = NotesUiState.Ready(
+                notes = notes,
+                selectedPetType = selectedType
+            )
+        }
+    }
+
     fun addNote(content: String, petType: String) {
         viewModelScope.launch {
-            // 确保创建的 NoteEntity 对象与数据库表结构匹配
             val note = NoteEntity(
                 content = content,
                 petType = petType,
-                timestamp = System.currentTimeMillis() // 添加时间戳
+                timestamp = System.currentTimeMillis()
             )
-            dao.insertNote(note)
-            loadNotes() // 重新加载便利贴列表
+            chatDao.insertNote(note)
+            loadNotes()
         }
     }
 
-    // 删除便利贴
     fun deleteNote(note: NoteEntity) {
         viewModelScope.launch {
-            dao.deleteNote(note)
+            chatDao.deleteNote(note)
             loadNotes()
         }
     }
 
-    // 更新便利贴
     fun updateNote(note: NoteEntity) {
         viewModelScope.launch {
-            dao.updateNote(note)
+            chatDao.updateNote(note)
             loadNotes()
         }
     }
 
-    // 设置过滤器
     fun setFilter(petType: String?) {
-        selectedPetType = petType
+        _uiState.update { current ->
+            if (current is NotesUiState.Ready) current.copy(selectedPetType = petType) else current
+        }
         loadNotes()
     }
-} 
+}

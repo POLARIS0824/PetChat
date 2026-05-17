@@ -23,6 +23,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -37,6 +38,7 @@ import com.example.chat.ChatBubble
 import com.example.chat.ChatInput
 import com.example.chat.PetChatViewModel
 import com.example.chat.R
+import com.example.chat.model.ChatUiState
 import com.example.chat.model.PetTypes
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -55,22 +57,21 @@ fun ChatScreen(
     val listState = rememberLazyListState()
     val coroutineScope = rememberCoroutineScope()
 
+    val uiState by viewModel.chatUiState.collectAsState()
+    val state = (uiState as? ChatUiState.Ready) ?: ChatUiState.Ready()
+
     LaunchedEffect(petType) {
-        if (viewModel.chatHistory.isNotEmpty()) {
+        if (state.chatHistory.isNotEmpty()) {
             delay(300)
-            listState.animateScrollToItem(viewModel.chatHistory.size - 1)
+            listState.animateScrollToItem(state.chatHistory.size - 1)
         }
     }
-
-    val isStreaming = viewModel.isStreaming
-    val streamingMessage = viewModel.streamingMessage
 
     val emptyStateImages = listOf(
         R.drawable.greeting,
         R.drawable.greeting2,
         R.drawable.greeting3,
     )
-
     val randomImageRes = remember { emptyStateImages.random() }
 
     Box(modifier = Modifier.fillMaxSize()) {
@@ -79,7 +80,7 @@ fun ChatScreen(
                 viewModel.selectPetType(petType)
             }
 
-            if (viewModel.chatHistory.isEmpty()) {
+            if (state.chatHistory.isEmpty()) {
                 Box(
                     modifier = Modifier
                         .weight(1f)
@@ -122,13 +123,13 @@ fun ChatScreen(
                     contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp)
                 ) {
                     items(
-                        items = viewModel.chatHistory,
+                        items = state.chatHistory,
                         key = { it.hashCode() }
                     ) { msg ->
-                        val isCurrentlyStreaming = isStreaming &&
-                                streamingMessage != null &&
+                        val isCurrentlyStreaming = state.isStreaming &&
+                                state.streamingMessage != null &&
                                 !msg.isFromUser &&
-                                msg == viewModel.chatHistory.lastOrNull { !it.isFromUser }
+                                msg == state.chatHistory.lastOrNull { !it.isFromUser }
 
                         ChatBubble(
                             message = msg,
@@ -138,11 +139,11 @@ fun ChatScreen(
                     }
                 }
 
-                LaunchedEffect(viewModel.shouldScrollToBottom, viewModel.chatHistory.size) {
-                    if ((viewModel.shouldScrollToBottom || viewModel.chatHistory.isNotEmpty()) && viewModel.chatHistory.isNotEmpty()) {
-                        listState.animateScrollToItem(viewModel.chatHistory.size - 1)
+                LaunchedEffect(state.shouldScrollToBottom, state.chatHistory.size) {
+                    if ((state.shouldScrollToBottom || state.chatHistory.isNotEmpty()) && state.chatHistory.isNotEmpty()) {
+                        listState.animateScrollToItem(state.chatHistory.size - 1)
 
-                        val lastMessage = viewModel.chatHistory.last()
+                        val lastMessage = state.chatHistory.last()
                         val extraScrollDistance = if (!lastMessage.isFromUser) {
                             val contentLength = lastMessage.content.length
                             (200f + contentLength * 0.5f).coerceAtMost(500f)
@@ -153,18 +154,18 @@ fun ChatScreen(
                         delay(150)
                         listState.scrollBy(extraScrollDistance)
 
-                        if (viewModel.isStreaming && !lastMessage.isFromUser) {
+                        if (state.isStreaming && !lastMessage.isFromUser) {
                             delay(100)
-                            listState.scrollToItem(viewModel.chatHistory.size - 1)
+                            listState.scrollToItem(state.chatHistory.size - 1)
                         }
                     }
                 }
 
-                LaunchedEffect(viewModel.streamingMessage) {
-                    viewModel.streamingMessage?.let { msg ->
+                LaunchedEffect(state.streamingMessage) {
+                    state.streamingMessage?.let { msg ->
                         if (!msg.isFromUser && msg.content.isNotEmpty()) {
                             delay(100)
-                            listState.animateScrollToItem(viewModel.chatHistory.size - 1)
+                            listState.animateScrollToItem(state.chatHistory.size - 1)
                         }
                     }
                 }
@@ -182,10 +183,10 @@ fun ChatScreen(
                         }
                     }
                 },
-                isLoading = viewModel.isForegroundLoading,
-                isStreaming = isStreaming,
+                isLoading = state.isForegroundLoading,
+                isStreaming = state.isStreaming,
                 onFocusChanged = { isFocused ->
-                    if (isFocused && viewModel.chatHistory.isNotEmpty()) {
+                    if (isFocused && state.chatHistory.isNotEmpty()) {
                         viewModel.resetScroll()
                     }
                 },
