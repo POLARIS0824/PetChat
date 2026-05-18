@@ -1,4 +1,4 @@
-package com.example.chat.ui
+package com.example.chat.ui.notes
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -17,7 +17,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
-import com.example.chat.viewmodel.NotesViewModel
 import com.example.chat.data.NoteEntity
 import com.example.chat.model.NotesUiState
 import com.example.chat.model.PetTypes

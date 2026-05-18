@@ -27,7 +27,7 @@ import androidx.compose.ui.unit.dp
 import com.example.chat.R
 import com.example.chat.model.PetTypes
 import com.example.chat.model.SessionInfo
-import com.example.chat.viewmodel.PetChatViewModel
+import com.example.chat.ui.chat.PetChatViewModel
 import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Locale

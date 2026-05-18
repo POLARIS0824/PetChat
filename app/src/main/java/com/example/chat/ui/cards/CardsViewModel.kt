@@ -1,4 +1,4 @@
-package com.example.chat.viewmodel
+package com.example.chat.ui.cards
 
 import androidx.compose.runtime.mutableStateListOf
 import androidx.lifecycle.ViewModel

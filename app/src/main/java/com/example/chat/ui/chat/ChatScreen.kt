@@ -34,7 +34,7 @@ import androidx.compose.ui.unit.dp
 import com.example.chat.R
 import com.example.chat.model.ChatUiState
 import com.example.chat.model.PetTypes
-import com.example.chat.viewmodel.PetChatViewModel
+import com.example.chat.ui.chat.PetChatViewModel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
