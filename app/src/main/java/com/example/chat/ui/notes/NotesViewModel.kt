@@ -2,10 +2,9 @@ package com.example.chat.ui.notes
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.chat.data.ChatDao
 import com.example.chat.data.NoteEntity
+import com.example.chat.data.repository.NotesRepository
 import com.example.chat.model.NotesUiState
-import com.example.chat.model.PetTypes
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -16,7 +15,7 @@ import javax.inject.Inject
 
 @HiltViewModel
 class NotesViewModel @Inject constructor(
-    private val chatDao: ChatDao
+    private val repository: NotesRepository
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow<NotesUiState>(NotesUiState.Loading)
@@ -36,8 +35,8 @@ class NotesViewModel @Inject constructor(
         viewModelScope.launch {
             val selectedType = (uiState.value as? NotesUiState.Ready)?.selectedPetType
             val notes = when (selectedType) {
-                null -> PetTypes.entries.flatMap { chatDao.getNotesByType(it.name) }
-                else -> chatDao.getNotesByType(selectedType)
+                null -> repository.getAllNotes()
+                else -> repository.getNotesByType(selectedType)
             }
             _uiState.value = NotesUiState.Ready(
                 notes = notes,
@@ -53,21 +52,21 @@ class NotesViewModel @Inject constructor(
                 petType = petType,
                 timestamp = System.currentTimeMillis()
             )
-            chatDao.insertNote(note)
+            repository.insertNote(note)
             loadNotes()
         }
     }
 
     fun deleteNote(note: NoteEntity) {
         viewModelScope.launch {
-            chatDao.deleteNote(note)
+            repository.deleteNote(note)
             loadNotes()
         }
     }
 
     fun updateNote(note: NoteEntity) {
         viewModelScope.launch {
-            chatDao.updateNote(note)
+            repository.updateNote(note)
             loadNotes()
         }
     }

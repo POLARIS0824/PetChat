@@ -6,7 +6,7 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowCompat
-import com.example.chat.ui.app.PetChatApp
+import com.example.chat.ui.PetChatApp
 import dagger.hilt.android.AndroidEntryPoint
 
 @AndroidEntryPoint

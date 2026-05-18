@@ -14,7 +14,6 @@ import com.example.chat.model.SessionInfo
 import com.example.chat.model.StreamResponseListener
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
-import java.util.UUID
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -22,11 +21,11 @@ import javax.inject.Singleton
 class ChatRepository @Inject constructor(
     private val chatDao: ChatDao,
     private val apiService: ChatApiService,
+    private val sessionManager: SessionManager,
 ) {
     private val json = Json { ignoreUnknownKeys = true }
     private val model = com.example.chat.BuildConfig.PETCHAT_MODEL.trim().ifBlank { "deepseek-v3" }
 
-    @Volatile private var currentSessionId: String = UUID.randomUUID().toString()
     private val contextMessageLimit = 3
     private val pictureInfoLock = Any()
 
@@ -58,7 +57,7 @@ class ChatRepository @Inject constructor(
     private suspend fun buildMessages(petType: PetTypes, userMessage: String): List<Message> {
         val enhancedPrompt = getEnhancedPrompt(petType)
         val recentMessages = chatDao.getRecentSessionMessages(
-            currentSessionId, petType.name, contextMessageLimit
+            sessionManager.currentSessionId, petType.name, contextMessageLimit
         )
 
         val messages = mutableListOf<Message>()
@@ -201,7 +200,7 @@ class ChatRepository @Inject constructor(
             content = message.content,
             isFromUser = message.isFromUser,
             petType = petType.name,
-            sessionId = currentSessionId,
+            sessionId = sessionManager.currentSessionId,
             role = if (message.isFromUser) "user" else "assistant",
             isImportant = isMessageImportant(message.content)
         )
@@ -289,19 +288,14 @@ class ChatRepository @Inject constructor(
 
     // endregion
 
-    // region Session Management
+    // region Session Delegation
 
-    fun createNewSession(): String {
-        currentSessionId = UUID.randomUUID().toString()
-        return currentSessionId
-    }
+    fun createNewSession(): String = sessionManager.createNewSession()
 
-    fun setCurrentSessionId(sessionId: String) {
-        currentSessionId = sessionId
-    }
+    fun setCurrentSessionId(sessionId: String) = sessionManager.setCurrentSessionId(sessionId)
 
     suspend fun getSessionMessages(petType: PetTypes, sessionId: String? = null): List<ChatEntity> {
-        val targetSessionId = sessionId ?: currentSessionId
+        val targetSessionId = sessionId ?: sessionManager.currentSessionId
         return try {
             chatDao.getSessionMessages(targetSessionId, petType.name)
         } catch (e: Exception) {
@@ -309,20 +303,7 @@ class ChatRepository @Inject constructor(
         }
     }
 
-    suspend fun getAllSessions(): List<SessionInfo> {
-        return chatDao.getAllSessions().map { entity ->
-            val petType = PetTypes.entries.firstOrNull { it.name == entity.petType } ?: PetTypes.CAT
-            SessionInfo(
-                sessionId = entity.sessionId,
-                petType = petType,
-                petName = getPetName(petType),
-                lastMessage = entity.lastMessage,
-                timestamp = entity.timestamp
-            )
-        }
-    }
-
-    private fun getPetName(petType: PetTypes): String = petType.displayName
+    suspend fun getAllSessions(): List<SessionInfo> = sessionManager.getAllSessions()
 
     // endregion
 }
