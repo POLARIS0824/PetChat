@@ -1,7 +1,5 @@
-package com.example.chat.ui
+package com.example.chat.ui.app
 
-import androidx.compose.animation.AnimatedContent
-import androidx.compose.animation.AnimatedContentTransitionScope
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.animateFloatAsState
@@ -11,6 +9,7 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.shrinkVertically
 import androidx.compose.animation.togetherWith
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -54,11 +53,12 @@ import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.zIndex
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.navigation3.runtime.entryProvider
+import androidx.navigation3.ui.NavDisplay
 import com.example.chat.R
 import com.example.chat.model.PetTypes
 import com.example.chat.ui.cards.CardsViewModel
@@ -66,9 +66,14 @@ import com.example.chat.ui.cards.PetList
 import com.example.chat.ui.chat.ChatScreen
 import com.example.chat.ui.chat.PetChatViewModel
 import com.example.chat.ui.components.PetAvatar
-import com.example.chat.ui.navigation.BottomNavItems
+import com.example.chat.ui.navigation.CardsRoute
+import com.example.chat.ui.navigation.ChatRoute
 import com.example.chat.ui.navigation.DrawerContent
-import com.example.chat.ui.navigation.Screen
+import com.example.chat.ui.navigation.NotesRoute
+import com.example.chat.ui.navigation.SessionListRoute
+import com.example.chat.ui.navigation.SocialRoute
+import com.example.chat.ui.navigation.TOP_LEVEL_ROUTES
+import com.example.chat.ui.navigation.TopLevelBackStack
 import com.example.chat.ui.notes.NotesScreen
 import com.example.chat.ui.session.SessionListScreen
 import com.example.chat.ui.social.SocialScreen
@@ -80,7 +85,8 @@ fun PetChatApp(
     viewModel: PetChatViewModel = hiltViewModel(),
     cardsViewModel: CardsViewModel = hiltViewModel()
 ) {
-    var currentScreen by remember { mutableStateOf(Screen.Chat) }
+    val topLevelBackStack = remember { TopLevelBackStack<Any>(ChatRoute) }
+
     var currentPetType by remember { mutableStateOf(PetTypes.CAT) }
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
     val scope = rememberCoroutineScope()
@@ -97,7 +103,7 @@ fun PetChatApp(
                 ModalDrawerSheet {
                     DrawerContent(
                         onNavigateToSessionList = {
-                            currentScreen = Screen.SessionList
+                            topLevelBackStack.add(SessionListRoute)
                             scope.launch { drawerState.close() }
                         }
                     )
@@ -110,17 +116,19 @@ fun PetChatApp(
             Scaffold(
                 topBar = {
                     PetChatTopBar(
-                        currentScreen = currentScreen,
+                        topLevelKey = topLevelBackStack.topLevelKey,
                         showPetSelector = showPetSelector,
                         onTogglePetSelector = { showPetSelector = !showPetSelector },
                         onOpenDrawer = { scope.launch { drawerState.open() } }
                     )
                 },
                 bottomBar = {
-                    if (currentScreen != Screen.SessionList) {
+                    if (topLevelBackStack.topLevelKey != SessionListRoute) {
                         PetChatBottomBar(
-                            currentScreen = currentScreen,
-                            onScreenSelected = { currentScreen = it }
+                            topLevelKey = topLevelBackStack.topLevelKey,
+                            onRouteSelected = { route ->
+                                topLevelBackStack.addTopLevel(route)
+                            }
                         )
                     }
                 },
@@ -128,7 +136,7 @@ fun PetChatApp(
             ) { innerPadding ->
                 Box(modifier = Modifier.fillMaxSize()) {
                     PetSelectorOverlay(
-                        visible = showPetSelector && currentScreen == Screen.Chat,
+                        visible = showPetSelector && topLevelBackStack.topLevelKey == ChatRoute,
                         currentPetType = currentPetType,
                         onSelect = { petType ->
                             currentPetType = petType
@@ -147,49 +155,47 @@ fun PetChatApp(
                                 interactionSource = remember { MutableInteractionSource() }
                             )
                     ) {
-                        AnimatedContent(
-                            targetState = currentScreen,
-                            transitionSpec = {
-                                val direction = if (targetState.ordinal > initialState.ordinal)
-                                    AnimatedContentTransitionScope.SlideDirection.Left
-                                else
-                                    AnimatedContentTransitionScope.SlideDirection.Right
-
-                                val animationSpec = tween<IntOffset>(
-                                    durationMillis = 300,
-                                    easing = FastOutSlowInEasing
-                                )
-                                slideIntoContainer(towards = direction, animationSpec = animationSpec) togetherWith
-                                        slideOutOfContainer(towards = direction, animationSpec = animationSpec)
-                            },
-                            label = "ScreenTransition"
-                        ) { screen ->
-                            when (screen) {
-                                Screen.Chat -> ChatScreen(
-                                    viewModel = viewModel,
-                                    petType = currentPetType,
-                                    contentPadding = innerPadding,
-                                    showPetSelector = showPetSelector,
-                                    onHidePetSelector = { showPetSelector = false }
-                                )
-                                Screen.Cards -> PetList(
-                                    pets = cardsViewModel.pets,
-                                    onNavigateToChat = { petType ->
-                                        currentPetType = petType
-                                        currentScreen = Screen.Chat
-                                    }
-                                )
-                                Screen.Notes -> NotesScreen()
-                                Screen.Social -> SocialScreen()
-                                Screen.SessionList -> SessionListScreen(
-                                    viewModel = viewModel,
-                                    onSessionSelected = { sessionId ->
-                                        viewModel.switchToSession(sessionId)
-                                        currentScreen = Screen.Chat
-                                    }
-                                )
+                        NavDisplay(
+                            backStack = topLevelBackStack.backStack,
+                            onBack = { topLevelBackStack.removeLast() },
+                            transitionSpec = { fadeIn() togetherWith fadeOut() },
+                            popTransitionSpec = { fadeIn() togetherWith fadeOut() },
+                            predictivePopTransitionSpec = { fadeIn() togetherWith fadeOut() },
+                            entryProvider = entryProvider {
+                                entry<ChatRoute> {
+                                    ChatScreen(
+                                        viewModel = viewModel,
+                                        petType = currentPetType,
+                                        showPetSelector = showPetSelector,
+                                        onHidePetSelector = { showPetSelector = false }
+                                    )
+                                }
+                                entry<CardsRoute> {
+                                    PetList(
+                                        pets = cardsViewModel.pets,
+                                        onNavigateToChat = { petType ->
+                                            currentPetType = petType
+                                            topLevelBackStack.addTopLevel(ChatRoute)
+                                        }
+                                    )
+                                }
+                                entry<NotesRoute> {
+                                    NotesScreen()
+                                }
+                                entry<SocialRoute> {
+                                    SocialScreen()
+                                }
+                                entry<SessionListRoute> {
+                                    SessionListScreen(
+                                        viewModel = viewModel,
+                                        onSessionSelected = { sessionId ->
+                                            viewModel.switchToSession(sessionId)
+                                            topLevelBackStack.addTopLevel(ChatRoute)
+                                        }
+                                    )
+                                }
                             }
-                        }
+                        )
                     }
                 }
             }
@@ -200,12 +206,12 @@ fun PetChatApp(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun PetChatTopBar(
-    currentScreen: Screen,
+    topLevelKey: Any,
     showPetSelector: Boolean,
     onTogglePetSelector: () -> Unit,
     onOpenDrawer: () -> Unit
 ) {
-    val isPetSelectorActive = showPetSelector && currentScreen == Screen.Chat
+    val isPetSelectorActive = showPetSelector && topLevelKey == ChatRoute
 
     TopAppBar(
         title = {
@@ -216,18 +222,18 @@ private fun PetChatTopBar(
                     fontWeight = FontWeight.Bold,
                     fontSize = 18.sp
                 )
-                currentScreen == Screen.Chat -> Text("")
-                currentScreen == Screen.Cards -> {
+                topLevelKey == ChatRoute -> Text("")
+                topLevelKey == CardsRoute -> {
                     Row(Modifier.fillMaxWidth().padding(end = 8.dp), horizontalArrangement = Arrangement.End) {
                         Text("名片夹", modifier = Modifier.padding(end = 8.dp), fontWeight = FontWeight.Bold, fontSize = 18.sp, color = Color(255, 143, 45))
                     }
                 }
-                currentScreen == Screen.Notes -> {
+                topLevelKey == NotesRoute -> {
                     Row(Modifier.fillMaxWidth().padding(end = 8.dp), horizontalArrangement = Arrangement.End) {
                         Text("便利贴", modifier = Modifier.padding(end = 8.dp), fontWeight = FontWeight.Bold, fontSize = 18.sp, color = Color(255, 143, 45))
                     }
                 }
-                currentScreen == Screen.Social -> {
+                topLevelKey == SocialRoute -> {
                     Row(Modifier.fillMaxWidth().padding(end = 8.dp), horizontalArrangement = Arrangement.End) {
                         Text("萌友圈", modifier = Modifier.padding(end = 8.dp), fontWeight = FontWeight.Bold, fontSize = 18.sp, color = Color(255, 143, 45))
                     }
@@ -245,7 +251,7 @@ private fun PetChatTopBar(
             }
         },
         actions = {
-            if (currentScreen == Screen.Chat) {
+            if (topLevelKey == ChatRoute) {
                 val rotation by animateFloatAsState(
                     targetValue = if (showPetSelector) 180f else 0f,
                     animationSpec = tween(durationMillis = 300)
@@ -271,21 +277,21 @@ private fun PetChatTopBar(
 
 @Composable
 private fun PetChatBottomBar(
-    currentScreen: Screen,
-    onScreenSelected: (Screen) -> Unit
+    topLevelKey: Any,
+    onRouteSelected: (Any) -> Unit
 ) {
     NavigationBar(
         containerColor = Color(255, 253, 246),
         contentColor = Color(250, 142, 57),
         modifier = Modifier.heightIn(min = 72.dp, max = 96.dp)
     ) {
-        BottomNavItems.forEach { item ->
+        TOP_LEVEL_ROUTES.forEach { item ->
             NavigationBarItem(
                 icon = {
                     Icon(
-                        painter = painterResource(id = if (currentScreen == item.screen) item.selectedIcon else item.unselectedIcon),
+                        painter = painterResource(id = if (topLevelKey == item.route) item.selectedIcon else item.unselectedIcon),
                         contentDescription = item.title,
-                        tint = if (currentScreen == item.screen) Color(255, 143, 45) else Color.Gray,
+                        tint = if (topLevelKey == item.route) Color(255, 143, 45) else Color.Gray,
                         modifier = Modifier.size(26.dp)
                     )
                 },
@@ -293,11 +299,11 @@ private fun PetChatBottomBar(
                     Text(
                         item.title,
                         fontSize = 12.sp,
-                        fontWeight = if (currentScreen == item.screen) FontWeight.Bold else FontWeight.Normal
+                        fontWeight = if (topLevelKey == item.route) FontWeight.Bold else FontWeight.Normal
                     )
                 },
-                selected = currentScreen == item.screen,
-                onClick = { onScreenSelected(item.screen) },
+                selected = topLevelKey == item.route,
+                onClick = { onRouteSelected(item.route) },
                 colors = NavigationBarItemDefaults.colors(
                     selectedIconColor = Color(255, 143, 45),
                     unselectedIconColor = Color.Gray,
