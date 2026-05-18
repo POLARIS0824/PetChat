@@ -1,6 +1,5 @@
 package com.example.chat.viewmodel
 
-import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.chat.data.repository.ChatRepository
@@ -23,8 +22,6 @@ import javax.inject.Inject
 class PetChatViewModel @Inject constructor(
     private val repository: ChatRepository
 ) : ViewModel() {
-
-    private var currentSessionId: String = "default"
 
     private val _chatUiState = MutableStateFlow<ChatUiState>(ChatUiState.Loading)
     val chatUiState: StateFlow<ChatUiState> = _chatUiState.asStateFlow()
@@ -79,12 +76,9 @@ class PetChatViewModel @Inject constructor(
     }
 
     fun createNewSession() {
-        viewModelScope.launch {
-            val newSessionId = repository.createNewSession()
-            currentSessionId = newSessionId
-            updateReady { it.copy(chatHistory = emptyList()) }
-            loadAllSessions()
-        }
+        repository.createNewSession()
+        updateReady { it.copy(chatHistory = emptyList()) }
+        loadAllSessions()
     }
 
     fun sendMessage(message: String) {
@@ -235,8 +229,9 @@ class PetChatViewModel @Inject constructor(
 
     fun switchToSession(sessionId: String) {
         viewModelScope.launch {
-            val session = _allSessions.value.find { it.sessionId == sessionId }
-            if (session != null) selectPetType(session.petType)
+            val session = _allSessions.value.find { it.sessionId == sessionId } ?: return@launch
+            repository.setCurrentSessionId(sessionId)
+            selectPetType(session.petType)
         }
     }
 }

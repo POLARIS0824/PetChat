@@ -62,7 +62,7 @@ class ChatRepository @Inject constructor(
         )
 
         val messages = mutableListOf<Message>()
-        messages.add(Message("user", enhancedPrompt))
+        messages.add(Message("system", enhancedPrompt))
 
         val processedMessages = recentMessages
             .distinctBy { "${it.role}:${it.content}" }
@@ -201,7 +201,7 @@ class ChatRepository @Inject constructor(
             content = message.content,
             isFromUser = message.isFromUser,
             petType = petType.name,
-            sessionId = "default_${petType.name}",
+            sessionId = currentSessionId,
             role = if (message.isFromUser) "user" else "assistant",
             isImportant = isMessageImportant(message.content)
         )
@@ -235,7 +235,7 @@ class ChatRepository @Inject constructor(
                 content = "【对话摘要】$summary",
                 isFromUser = false,
                 petType = messages.first().petType,
-                sessionId = currentSessionId,
+                sessionId = messages.first().sessionId,
                 role = "system",
                 isImportant = true,
                 isProcessed = true,
@@ -310,16 +310,14 @@ class ChatRepository @Inject constructor(
     }
 
     suspend fun getAllSessions(): List<SessionInfo> {
-        return PetTypes.entries.map { petType ->
-            val latestMessages = chatDao.getRecentSessionMessages(
-                "default_${petType.name}", petType.name, 1
-            )
+        return chatDao.getAllSessions().map { entity ->
+            val petType = PetTypes.entries.firstOrNull { it.name == entity.petType } ?: PetTypes.CAT
             SessionInfo(
-                sessionId = "default_${petType.name}",
+                sessionId = entity.sessionId,
                 petType = petType,
                 petName = getPetName(petType),
-                lastMessage = latestMessages.firstOrNull()?.content ?: "",
-                timestamp = latestMessages.firstOrNull()?.timestamp ?: System.currentTimeMillis()
+                lastMessage = entity.lastMessage,
+                timestamp = entity.timestamp
             )
         }
     }

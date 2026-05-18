@@ -40,6 +40,4 @@ data class ChatEntity(
 
     // 新增：是否为摘要消息（用于区分普通消息和摘要消息）
     val isSummary: Boolean = false,
-
-    val isSummarized: Boolean = false, // 是否已被摘要处理
 ) 

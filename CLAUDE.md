@@ -29,6 +29,9 @@ PetChat is an Android application built with Kotlin and Jetpack Compose that pro
 
 # Clean build
 ./gradlew clean
+
+# Run Android lint checks
+./gradlew lintDebug
 ```
 
 ## Android CLI
@@ -65,19 +68,28 @@ For full CLI documentation, run `android help` or `android help <command>`.
 ```
 UI Layer (Compose)
     ↓
-ViewModel Layer (PetChatViewModel, SocialViewModel)
+ViewModel Layer (PetChatViewModel, CardsViewModel, NotesViewModel, SocialViewModel)
     ↓
-Repository Layer (PetChatRepository - Singleton)
+Repository Layer (ChatRepository - @Singleton via Hilt)
     ↓
-Data Layer (Room Database) & Network Layer (OkHttp)
+Data Layer (Room Database via ChatDao) & Network Layer (ChatApiService via OkHttp)
 ```
 
 ### Key Components
 
-- **PetChatViewModel**: Manages UI state, handles user interactions, coordinates chat history and sessions. Uses `viewModelScope` for coroutines.
-- **SocialViewModel**: Manages state for the social feed screen independently.
-- **PetChatRepository**: Singleton instance managing all data operations, API calls, and local database persistence. Contains pet personality prompts and streaming API logic.
-- **ChatDatabase**: Room database with single-instance pattern using `fallbackToDestructiveMigration()`.
+- **PetChatViewModel** (`viewmodel/PetChatViewModel.kt`): Manages UI state (`ChatUiState` sealed interface: Loading/Ready), handles streaming responses via `StreamResponseListener` callbacks, coordinates chat history and sessions. Uses `viewModelScope` for coroutines.
+- **CardsViewModel** (`viewmodel/CardsViewModel.kt`): Manages pet card collection.
+- **NotesViewModel** (`viewmodel/NotesViewModel.kt`): CRUD operations for sticky notes, filtered by pet type.
+- **SocialViewModel** (`ui/social/SocialViewModel.kt`): Manages state for the social feed screen independently.
+- **ChatRepository** (`data/repository/ChatRepository.kt`): `@Singleton` injected via Hilt. Manages all data operations, API calls, prompt enhancement with user profiling, and local database persistence. Contains pet personality prompts and streaming API logic.
+- **ChatDatabase** (`data/ChatDatabase.kt`): Room database with `fallbackToDestructiveMigration()`.
+
+### Dependency Injection (Hilt)
+
+- `PetChatApplication` is `@HiltAndroidApp`; `MainActivity` is `@AndroidEntryPoint`
+- `DatabaseModule` (`di/DatabaseModule.kt`) provides `ChatDatabase`, `ChatDao`, and `ChatApiService` as singletons
+- `ChatRepository` uses `@Inject constructor` with `@Singleton` scope
+- `PetGreetingWorker` is `@HiltWorker`, injected via `HiltWorkerFactory`
 
 ### Data Flow
 
@@ -88,13 +100,13 @@ Data Layer (Room Database) & Network Layer (OkHttp)
 ### Streaming API
 
 The app uses Server-Sent Events (SSE) for streaming AI responses:
-- `PetChatRepository.makeStreamingApiRequest()` handles SSE parsing
+- `ChatRepository` calls `ChatApiService` which handles SSE parsing
 - `StreamResponseListener` callbacks: `onContent()`, `onComplete()`, `onError()`
-- Response parsing uses OkHttp `BufferedSource`
+- Response parsing uses OkHttp `BufferedSource` line reading for streaming, `suspendCancellableCoroutine` for non-streaming
 
 ### Pet Types & Personalities
 
-Four pet types with distinct system prompts in `PetChatRepository`:
+Four pet types with distinct system prompts in `PromptConfig` (`data/repository/PromptConfig.kt`):
 - **CAT** (布丁): Gold Shaded Persian - tsundere personality
 - **DOG** (大白): Samoyed - energetic and cheerful
 - **HAMSTER** (团绒): Silver Shaded Persian - cute and clingy
@@ -113,8 +125,8 @@ Chat history is organized by `petType`, not by sessions. Each pet type maintains
 
 The app uses a single-activity architecture with bottom navigation and a modal drawer:
 
-**Screens** (defined by `Screen` enum in `MainActivity.kt`):
-- **Chat** (`MainActivity.kt`): Main chat interface with pet selector dropdown
+**Screens** (defined by `Screen` enum in `ui/navigation/Navigation.kt`):
+- **Chat** (`ui/chat/ChatScreen.kt` + `ChatComponents.kt`): Main chat interface with pet selector dropdown
 - **Cards** (`ui/cards/PetCards.kt`): Pet card collection with draggable interactions
 - **Notes** (`ui/NotesScreen.kt`): Sticky notes screen
 - **Social** (`ui/social/SocialScreen.kt`): Social feed with `SocialViewModel`
@@ -142,7 +154,8 @@ The app uses a single-activity architecture with bottom navigation and a modal d
 
 ## Important Notes
 
-- Repository is a singleton - use `PetChatRepository.getInstance(chatDao)`
+- Uses `kotlinx.serialization` (not Gson) for JSON — see `proguard-rules.pro` for keep rules
+- Repository is a Hilt `@Singleton` — inject via constructor, do not instantiate manually
 - Database uses `fallbackToDestructiveMigration()` - version changes wipe data
 - Streaming responses update UI in real-time via `StreamResponseListener`
 - Message history limited to last 3 messages for context (`contextMessageLimit = 3`)
