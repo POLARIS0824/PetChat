@@ -36,6 +36,18 @@ class PetGreetingWorker @AssistedInject constructor(
             }
         }
 
+        fun savePetType(context: Context, petType: PetType) {
+            context.getSharedPreferences("pet_greeting", Context.MODE_PRIVATE).edit {
+                putString("pet_type", petType.name)
+            }
+        }
+
+        private fun getSavedPetType(context: Context): PetType {
+            val name = context.getSharedPreferences("pet_greeting", Context.MODE_PRIVATE)
+                .getString("pet_type", null)
+            return PetType.entries.firstOrNull { it.name == name } ?: PetType.CAT
+        }
+
         fun schedule(context: Context, hourOfDay: Int, minute: Int) {
             saveGreetingTime(context, hourOfDay, minute)
 
@@ -73,9 +85,10 @@ class PetGreetingWorker @AssistedInject constructor(
 
     override suspend fun doWork(): Result {
         return try {
+            val petType = getSavedPetType(context)
             val greeting = try {
                 repository.getPetResponse(
-                    PetType.CAT,
+                    petType,
                     "生成一句简短的问候语，表达对主人的思念或关心"
                 )
             } catch (e: Exception) {

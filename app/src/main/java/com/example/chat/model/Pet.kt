@@ -11,6 +11,7 @@ data class Pet(
     val breed: String,
     val age: String,
     val gender: String,
+    val weight: String,
     val character: String,
     val hobby: String,
     val petType: PetType

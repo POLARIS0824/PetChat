@@ -22,6 +22,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.example.chat.R
@@ -42,12 +43,12 @@ fun SessionListScreen(viewModel: PetChatViewModel, onSessionSelected: (String) -
 
     Column(modifier = Modifier.fillMaxSize()) {
         TopAppBar(
-            title = { Text("我的宠物聊天") },
+            title = { Text(stringResource(R.string.session_title)) },
             colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.surface)
         )
 
         Text(
-            text = "选择一个宠物开始聊天",
+            text = stringResource(R.string.session_hint),
             style = MaterialTheme.typography.bodyLarge,
             modifier = Modifier.padding(16.dp)
         )
@@ -98,7 +99,7 @@ fun SessionItem(session: SessionInfo, onClick: () -> Unit) {
     ) {
         Image(
             painter = painterResource(id = getPetAvatar(session.petType)),
-            contentDescription = "宠物头像",
+            contentDescription = stringResource(R.string.session_pet_avatar),
             modifier = Modifier
                 .size(50.dp)
                 .clip(CircleShape)

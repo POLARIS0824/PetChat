@@ -4,7 +4,7 @@ import android.util.Log
 import com.example.chat.BuildConfig
 import com.example.chat.model.DeepseekRequest
 import com.example.chat.model.DeepseekResponse
-import com.example.chat.model.StreamResponseListener
+
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
@@ -159,14 +159,4 @@ class ChatApiService(
         awaitClose { call.cancel() }
     }
 
-    suspend fun makeStreamingApiRequestLegacy(request: DeepseekRequest, listener: StreamResponseListener) {
-        try {
-            makeStreamingApiRequest(request).collect { content ->
-                listener.onContent(content)
-            }
-            listener.onComplete()
-        } catch (e: Exception) {
-            listener.onError(e)
-        }
-    }
 }

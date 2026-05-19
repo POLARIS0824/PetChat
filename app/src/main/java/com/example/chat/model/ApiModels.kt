@@ -6,7 +6,7 @@ import kotlinx.serialization.json.JsonElement
 
 @Serializable
 data class DeepseekRequest(
-    val model: String = "deepseek-r1",
+    val model: String = "deepseek-v3",
     val messages: List<Message>,
     val stream: Boolean = false,
 )

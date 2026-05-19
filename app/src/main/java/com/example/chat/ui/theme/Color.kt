@@ -11,3 +11,7 @@ val PurpleGrey40 = Color(0xFF625b71)
 val Pink40 = Color(0xFF7D5260)
 
 val AccentOrange = Color(0xFFFF8F2D)
+val PetSelectorBackground = Color(0xFFFFB26E)
+val ScaffoldBackground = Color(0xFFF6F6F6)
+val BottomBarBackground = Color(0xFFFFFDF6)
+val BottomBarContent = Color(0xFFFA8E39)

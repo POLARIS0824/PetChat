@@ -10,14 +10,8 @@ import javax.inject.Singleton
 class NotesRepository @Inject constructor(
     private val notesDao: NotesDao
 ) {
-    suspend fun getNotesByType(petType: String): List<NoteEntity> =
-        notesDao.getByType(petType)
-
     fun getNotesByTypeFlow(petType: String): Flow<List<NoteEntity>> =
         notesDao.getByTypeFlow(petType)
-
-    suspend fun getAllNotes(): List<NoteEntity> =
-        notesDao.getAll()
 
     fun getAllNotesFlow(): Flow<List<NoteEntity>> =
         notesDao.getAllFlow()

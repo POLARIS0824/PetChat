@@ -17,11 +17,10 @@ enum class PetType(val displayName: String) {
  * 聊天消息数据类
  */
 data class ChatMessage(
-    val content: String,    // 消息内容
-    val isFromUser: Boolean, // 是否为用户消息
-    val petType: PetType,  // 宠物类型
-    val timestamp: Long = System.currentTimeMillis(), // 消息时间戳
-    val role: String = if (isFromUser) "user" else "assistant", // 消息角色
+    val content: String,
+    val role: String = "user",
+    val petType: PetType,
+    val timestamp: Long = System.currentTimeMillis(),
 )
 
 /**

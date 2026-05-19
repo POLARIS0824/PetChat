@@ -49,6 +49,7 @@ import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.IntOffset
@@ -136,7 +137,7 @@ fun PetCard(
 
             Image(
                 painter = painterResource(id = pet.initialRes),
-                contentDescription = "Pet Image",
+                contentDescription = stringResource(R.string.cards_pet_image),
                 modifier = Modifier
                     .fillMaxSize()
                     .graphicsLayer {
@@ -192,13 +193,13 @@ fun PetCard(
                         horizontalArrangement = Arrangement.Center
                     ) {
                         InfoTag(
-                            text = "${pet.breed}·雄性",
+                            text = "${pet.breed}·${pet.gender}",
                             backgroundColor = Color(0xFFD8F0D7),
                             modifier = Modifier.padding(end = 24.dp)
                         )
 
                         InfoTag(
-                            text = "28kg",
+                            text = pet.weight,
                             backgroundColor = Color(0xFFF0C0BD),
                             modifier = Modifier.padding(end = 24.dp)
                         )
@@ -224,7 +225,7 @@ fun PetCard(
                                 .weight(1f)
                                 .width(160.dp)
                         ) {
-                            Text("删除", color = Color.Black)
+                            Text(stringResource(R.string.cards_delete), color = Color.Black)
                         }
 
                         Button(
@@ -235,7 +236,7 @@ fun PetCard(
                                 .width(160.dp)
                                 .weight(1f)
                         ) {
-                            Text("去对话", color = Color.White)
+                            Text(stringResource(R.string.cards_chat), color = Color.White)
                         }
                     }
                 }
@@ -255,7 +256,7 @@ fun PetCard(
 
                         Icon(
                             painter = painterResource(id = R.drawable.card_icon),
-                            contentDescription = "表情",
+                            contentDescription = stringResource(R.string.cards_emoji),
                             tint = Color.Black,
                             modifier = Modifier.size(42.dp)
                         )

@@ -17,6 +17,7 @@ import androidx.compose.ui.graphics.Color
 import com.example.chat.ui.theme.AccentOrange
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -69,7 +70,7 @@ fun SocialScreen(
             containerColor = AccentOrange,
             contentColor = Color.White
         ) {
-            Icon(Icons.Default.Add, contentDescription = "发布动态")
+            Icon(Icons.Default.Add, contentDescription = stringResource(R.string.social_add_post))
         }
     }
 
@@ -156,7 +157,7 @@ fun SocialPostItem(
                         painter = painterResource(
                             id = if (post.isLiked) R.drawable.ic_heart_filled else R.drawable.ic_heart
                         ),
-                        contentDescription = "点赞",
+                        contentDescription = stringResource(R.string.social_like),
                         tint = if (post.isLiked) Color(0xFFFF4D4D) else Color.Gray,
                         modifier = Modifier.size(24.dp)
                     )
@@ -173,7 +174,7 @@ fun SocialPostItem(
                 IconButton(onClick = { /* 打开评论 */ }) {
                     Icon(
                         painter = painterResource(id = R.drawable.ic_comment),
-                        contentDescription = "评论",
+                        contentDescription = stringResource(R.string.social_comment),
                         tint = Color.Gray,
                         modifier = Modifier.size(16.dp)
                     )
@@ -191,7 +192,7 @@ fun SocialPostItem(
                     painter = painterResource(
                         id = R.drawable.ic_bookmark
                     ),
-                    contentDescription = "收藏",
+                    contentDescription = stringResource(R.string.social_save),
                     tint = if (post.isSaved) AccentOrange else Color.Gray,
                     modifier = Modifier.size(24.dp)
                 )
@@ -209,12 +210,12 @@ fun AddPostDialog(
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("发布新动态") },
+        title = { Text(stringResource(R.string.social_new_post_title)) },
         text = {
             OutlinedTextField(
                 value = content,
                 onValueChange = { content = it },
-                label = { Text("分享你的宠物趣事...") },
+                label = { Text(stringResource(R.string.social_new_post_hint)) },
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(200.dp),
@@ -229,13 +230,13 @@ fun AddPostDialog(
                     containerColor = AccentOrange
                 )
             ) {
-                Text("发布")
+                Text(stringResource(R.string.social_publish))
             }
         },
         dismissButton = {
             TextButton(onClick = onDismiss) {
                 Text(
-                    "取消",
+                    stringResource(R.string.social_cancel),
                     color = AccentOrange
                 )
             }

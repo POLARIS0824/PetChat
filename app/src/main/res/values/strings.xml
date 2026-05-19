@@ -30,6 +30,32 @@
     <string name="social_add_post">发布动态</string>
     <string name="social_post_hint">分享你和宠物的故事...</string>
     <string name="social_publish">发布</string>
+    <string name="social_cancel">取消</string>
+    <string name="social_new_post_title">发布新动态</string>
+    <string name="social_new_post_hint">分享你的宠物趣事…</string>
+    <string name="social_like">点赞</string>
+    <string name="social_comment">评论</string>
+    <string name="social_save">收藏</string>
+
+    <!-- Pet Cards -->
+    <string name="cards_pet_image">宠物图片</string>
+    <string name="cards_delete">删除</string>
+    <string name="cards_chat">去对话</string>
+    <string name="cards_emoji">表情</string>
+
+    <!-- Top Bar / Navigation -->
+    <string name="topbar_pet_selector_title">专属萌宠，随时陪伴！</string>
+    <string name="topbar_cards">名片夹</string>
+    <string name="topbar_notes">便利贴</string>
+    <string name="topbar_social">萌友圈</string>
+    <string name="topbar_open_drawer">打开抽屉菜单</string>
+    <string name="topbar_close_pet_selector">关闭宠物选择器</string>
+    <string name="topbar_toggle_pet">切换宠物</string>
+
+    <!-- Session List -->
+    <string name="session_title">我的宠物聊天</string>
+    <string name="session_hint">选择一个宠物开始聊天</string>
+    <string name="session_pet_avatar">宠物头像</string>
 
     <!-- Notification -->
     <string name="notification_channel_name">宠物问候</string>

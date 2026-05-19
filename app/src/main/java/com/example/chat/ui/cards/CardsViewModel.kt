@@ -31,6 +31,7 @@ class CardsViewModel @Inject constructor() : ViewModel() {
                 breed = "英短",
                 age = "2岁",
                 gender = "母",
+                weight = "4kg",
                 character = "慵懒，爱睡觉，吃货",
                 hobby = "日光浴，吃鱼",
                 petType = PetType.CAT
@@ -44,6 +45,7 @@ class CardsViewModel @Inject constructor() : ViewModel() {
                 breed = "萨摩耶",
                 age = "1岁",
                 gender = "公",
+                weight = "28kg",
                 character = "活泼，粘人，爱笑",
                 hobby = "追球，吃骨头",
                 petType = PetType.DOG

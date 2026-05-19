@@ -117,7 +117,7 @@ class ChatRepository @Inject constructor(
             content = message.content,
             petType = petType.name,
             sessionId = sessionManager.currentSessionId,
-            role = if (message.isFromUser) "user" else "assistant",
+            role = message.role,
             isImportant = isMessageImportant(message.content)
         )
         chatDao.insert(entity)

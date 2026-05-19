@@ -60,7 +60,7 @@ class PetChatViewModel @Inject constructor(
             val chatMessages = messages.map { entity ->
                 ChatMessage(
                     content = entity.content,
-                    isFromUser = entity.role == "user",
+                    role = entity.role,
                     petType = PetType.entries.firstOrNull { it.name == entity.petType } ?: PetType.CAT
                 )
             }
@@ -109,7 +109,7 @@ class PetChatViewModel @Inject constructor(
             try {
                 val userMessage = ChatMessage(
                     content = message,
-                    isFromUser = true,
+                    role = "user",
                     petType = petType
                 )
                 updateReady { it.copy(chatHistory = it.chatHistory + userMessage) }
@@ -117,7 +117,7 @@ class PetChatViewModel @Inject constructor(
 
                 val petMessage = ChatMessage(
                     content = "",
-                    isFromUser = false,
+                    role = "assistant",
                     petType = petType
                 )
                 updateReady {

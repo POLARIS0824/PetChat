@@ -48,12 +48,18 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Color
 import com.example.chat.ui.theme.AccentOrange
+import com.example.chat.ui.theme.BottomBarBackground
+import com.example.chat.ui.theme.BottomBarContent
+import com.example.chat.ui.theme.PetSelectorBackground
+import com.example.chat.ui.theme.ScaffoldBackground
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.zIndex
@@ -62,6 +68,7 @@ import androidx.navigation3.runtime.entryProvider
 import androidx.navigation3.ui.NavDisplay
 import com.example.chat.R
 import com.example.chat.model.PetType
+import com.example.chat.service.PetGreetingWorker
 import com.example.chat.ui.cards.CardsViewModel
 import com.example.chat.ui.cards.PetList
 import com.example.chat.ui.chat.ChatScreen
@@ -92,10 +99,15 @@ fun PetChatApp(
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
     val scope = rememberCoroutineScope()
     var showPetSelector by remember { mutableStateOf(false) }
+    val context = LocalContext.current
 
     LaunchedEffect(Unit) {
         viewModel.loadAllSessions()
         viewModel.resetScroll()
+    }
+
+    LaunchedEffect(currentPetType) {
+        PetGreetingWorker.savePetType(context, currentPetType)
     }
 
     MaterialTheme {
@@ -133,7 +145,7 @@ fun PetChatApp(
                         )
                     }
                 },
-                containerColor = Color(246, 246, 246)
+                containerColor = ScaffoldBackground
             ) { innerPadding ->
                 Box(modifier = Modifier.fillMaxSize()) {
                     PetSelectorOverlay(
@@ -219,7 +231,7 @@ private fun PetChatTopBar(
         title = {
             when {
                 isPetSelectorActive -> Text(
-                    "专属萌宠，随时陪伴！",
+                    stringResource(R.string.topbar_pet_selector_title),
                     color = Color.White,
                     fontWeight = FontWeight.Bold,
                     fontSize = 18.sp
@@ -227,17 +239,17 @@ private fun PetChatTopBar(
                 topLevelKey == ChatRoute -> Text("")
                 topLevelKey == CardsRoute -> {
                     Row(Modifier.fillMaxWidth().padding(end = 8.dp), horizontalArrangement = Arrangement.End) {
-                        Text("名片夹", modifier = Modifier.padding(end = 8.dp), fontWeight = FontWeight.Bold, fontSize = 18.sp, color = AccentOrange)
+                        Text(stringResource(R.string.topbar_cards), modifier = Modifier.padding(end = 8.dp), fontWeight = FontWeight.Bold, fontSize = 18.sp, color = AccentOrange)
                     }
                 }
                 topLevelKey == NotesRoute -> {
                     Row(Modifier.fillMaxWidth().padding(end = 8.dp), horizontalArrangement = Arrangement.End) {
-                        Text("便利贴", modifier = Modifier.padding(end = 8.dp), fontWeight = FontWeight.Bold, fontSize = 18.sp, color = AccentOrange)
+                        Text(stringResource(R.string.topbar_notes), modifier = Modifier.padding(end = 8.dp), fontWeight = FontWeight.Bold, fontSize = 18.sp, color = AccentOrange)
                     }
                 }
                 topLevelKey == SocialRoute -> {
                     Row(Modifier.fillMaxWidth().padding(end = 8.dp), horizontalArrangement = Arrangement.End) {
-                        Text("萌友圈", modifier = Modifier.padding(end = 8.dp), fontWeight = FontWeight.Bold, fontSize = 18.sp, color = AccentOrange)
+                        Text(stringResource(R.string.topbar_social), modifier = Modifier.padding(end = 8.dp), fontWeight = FontWeight.Bold, fontSize = 18.sp, color = AccentOrange)
                     }
                 }
             }
@@ -246,7 +258,7 @@ private fun PetChatTopBar(
             IconButton(onClick = onOpenDrawer, modifier = Modifier.padding(start = 8.dp)) {
                 Icon(
                     painter = painterResource(id = R.drawable.sidebar),
-                    contentDescription = "打开抽屉菜单",
+                    contentDescription = stringResource(R.string.topbar_open_drawer),
                     modifier = Modifier.size(24.dp),
                     tint = if (isPetSelectorActive) Color.White else Color.Unspecified
                 )
@@ -261,7 +273,7 @@ private fun PetChatTopBar(
                 IconButton(onClick = onTogglePetSelector, modifier = Modifier.padding(end = 8.dp)) {
                     Icon(
                         painter = painterResource(id = R.drawable.arrow),
-                        contentDescription = if (showPetSelector) "关闭宠物选择器" else "切换宠物",
+                        contentDescription = if (showPetSelector) stringResource(R.string.topbar_close_pet_selector) else stringResource(R.string.topbar_toggle_pet),
                         modifier = Modifier.size(24.dp).rotate(rotation),
                         tint = if (showPetSelector) Color.White else Color.Unspecified
                     )
@@ -269,7 +281,7 @@ private fun PetChatTopBar(
             }
         },
         colors = TopAppBarDefaults.topAppBarColors(
-            containerColor = if (isPetSelectorActive) Color(255, 178, 110) else Color.White,
+            containerColor = if (isPetSelectorActive) PetSelectorBackground else Color.White,
             titleContentColor = if (isPetSelectorActive) Color.White else MaterialTheme.colorScheme.onPrimaryContainer,
             navigationIconContentColor = if (isPetSelectorActive) Color.White else Color.Unspecified,
             actionIconContentColor = if (isPetSelectorActive) Color.White else MaterialTheme.colorScheme.onPrimaryContainer
@@ -283,8 +295,8 @@ private fun PetChatBottomBar(
     onRouteSelected: (Any) -> Unit
 ) {
     NavigationBar(
-        containerColor = Color(255, 253, 246),
-        contentColor = Color(250, 142, 57),
+        containerColor = BottomBarBackground,
+        contentColor = BottomBarContent,
         modifier = Modifier.heightIn(min = 72.dp, max = 96.dp)
     ) {
         TOP_LEVEL_ROUTES.forEach { item ->
@@ -331,7 +343,7 @@ private fun PetSelectorOverlay(
         modifier = Modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(bottomStart = 20.dp, bottomEnd = 20.dp))
-            .background(Color(255, 178, 110))
+            .background(PetSelectorBackground)
             .zIndex(2f)
             .offset(y = 0.dp)
     ) {

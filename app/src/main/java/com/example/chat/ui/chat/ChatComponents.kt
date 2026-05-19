@@ -100,7 +100,7 @@ fun ChatBubble(
     modifier: Modifier = Modifier,
     isStreaming: Boolean = false
 ) {
-    val isFromUser = message.isFromUser
+    val isFromUser = message.role == "user"
     val backgroundColor = if (isFromUser) AccentOrange else Color.White
     val textColor = if (isFromUser) Color.White else Color.Black
     val arrangement = if (isFromUser) Arrangement.End else Arrangement.Start
