@@ -1,25 +1,31 @@
 package com.example.chat.ui.social
 
-import androidx.compose.runtime.mutableStateListOf
 import androidx.lifecycle.ViewModel
 import com.example.chat.R
 import com.example.chat.model.SocialPost
+import dagger.hilt.android.lifecycle.HiltViewModel
 import java.text.SimpleDateFormat
-import java.util.Date
 import java.util.Locale
 import java.util.UUID
+import javax.inject.Inject
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.update
 
-class SocialViewModel : ViewModel() {
-    private val _posts = mutableStateListOf<SocialPost>()
-    val posts: List<SocialPost> get() = _posts
+@HiltViewModel
+class SocialViewModel @Inject constructor() : ViewModel() {
+    private val _posts = MutableStateFlow<List<SocialPost>>(emptyList())
+    val posts: StateFlow<List<SocialPost>> = _posts.asStateFlow()
 
     init {
-        // 加载模拟数据
         loadDummyPosts()
     }
 
     private fun loadDummyPosts() {
         val dateFormat = SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault())
+        val dummyTimestamp = dateFormat.parse("2021-06-20 11:18:00")?.time
+            ?: System.currentTimeMillis()
 
         val dummyPosts = listOf(
             SocialPost(
@@ -28,7 +34,7 @@ class SocialViewModel : ViewModel() {
                 authorAvatar = R.drawable.pet_shiba,
                 authorUsername = "@spicyyuanroll",
                 content = "凌晨三点的人类卧室探险成功！花瓶碎片×1，尖叫分贝+10086，本喵荣获本月拆家MVP",
-                timestamp = dateFormat.parse("2021-06-20 11:18:00") ?: Date(),
+                timestamp = dummyTimestamp,
                 likeCount = 45,
                 commentCount = 0,
                 isLiked = true
@@ -39,7 +45,7 @@ class SocialViewModel : ViewModel() {
                 authorAvatar = R.drawable.avatar1,
                 authorUsername = "@spicyyuanroll",
                 content = "汪！新玩具上线啦，咬起来特别有嚼劲，实名推荐！",
-                timestamp = dateFormat.parse("2021-06-20 11:18:00") ?: Date(),
+                timestamp = dummyTimestamp,
                 likeCount = 5,
                 commentCount = 0,
                 isLiked = true
@@ -50,7 +56,7 @@ class SocialViewModel : ViewModel() {
                 authorAvatar = R.drawable.avatar2,
                 authorUsername = "@skybudgie",
                 content = "飞了一圈，回来还是觉得笼子里更有安全感",
-                timestamp = dateFormat.parse("2021-06-20 11:18:00") ?: Date(),
+                timestamp = dummyTimestamp,
                 likeCount = 6,
                 commentCount = 0
             ),
@@ -60,7 +66,7 @@ class SocialViewModel : ViewModel() {
                 authorAvatar = R.drawable.avatar3,
                 authorUsername = "@theahighfives",
                 content = "发现主人偷偷吃零食没分我，生气！以后别想有好脸色。",
-                timestamp = dateFormat.parse("2021-06-20 11:18:00") ?: Date(),
+                timestamp = dummyTimestamp,
                 likeCount = 3,
                 commentCount = 0
             ),
@@ -70,31 +76,34 @@ class SocialViewModel : ViewModel() {
                 authorAvatar = R.drawable.avatar4,
                 authorUsername = "@gibraltar",
                 content = "虽然铲屎的很笨，但他做的饭香味不错，今天就原谅他了。",
-                timestamp = dateFormat.parse("2021-06-20 11:18:00") ?: Date(),
+                timestamp = dummyTimestamp,
                 likeCount = 9,
                 commentCount = 0
             )
         )
 
-        _posts.addAll(dummyPosts)
+        _posts.value = dummyPosts
     }
 
     fun likePost(postId: String) {
-        val index = _posts.indexOfFirst { it.id == postId }
-        if (index != -1) {
-            val post = _posts[index]
-            _posts[index] = post.copy(
-                isLiked = !post.isLiked,
-                likeCount = if (post.isLiked) post.likeCount - 1 else post.likeCount + 1
-            )
+        _posts.update { posts ->
+            posts.map { post ->
+                if (post.id == postId) {
+                    post.copy(
+                        isLiked = !post.isLiked,
+                        likeCount = if (post.isLiked) (post.likeCount - 1).coerceAtLeast(0) else post.likeCount + 1
+                    )
+                } else post
+            }
         }
     }
 
     fun savePost(postId: String) {
-        val index = _posts.indexOfFirst { it.id == postId }
-        if (index != -1) {
-            val post = _posts[index]
-            _posts[index] = post.copy(isSaved = !post.isSaved)
+        _posts.update { posts ->
+            posts.map { post ->
+                if (post.id == postId) post.copy(isSaved = !post.isSaved)
+                else post
+            }
         }
     }
 
@@ -105,10 +114,10 @@ class SocialViewModel : ViewModel() {
             authorAvatar = R.drawable.ic_cat_avatar,
             authorUsername = "@mypet",
             content = content,
-            timestamp = Date(),
+            timestamp = System.currentTimeMillis(),
             likeCount = 0,
             commentCount = 0
         )
-        _posts.add(0, newPost)
+        _posts.update { listOf(newPost) + it }
     }
 }

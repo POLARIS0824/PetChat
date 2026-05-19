@@ -1,3 +1,78 @@
 <resources>
     <string name="app_name">PetChat</string>
+
+    <!-- Chat Screen -->
+    <string name="chat_empty_hint">开始和宠物聊天吧！</string>
+    <string name="chat_no_messages">没有消息</string>
+    <string name="chat_message_placeholder">Message…</string>
+    <string name="chat_error_fallback">抱歉，我现在有点累了，待会再聊吧。</string>
+
+    <!-- Drawer -->
+    <string name="drawer_session_list">会话列表</string>
+    <string name="drawer_account">账号信息</string>
+    <string name="drawer_password">密码设置</string>
+    <string name="drawer_preferences">偏好设置</string>
+    <string name="drawer_settings">系统设置</string>
+    <string name="drawer_logout">退出登录</string>
+
+    <!-- Notes Screen -->
+    <string name="notes_add">添加便利贴</string>
+    <string name="notes_edit">编辑便利贴</string>
+    <string name="notes_content_label">内容</string>
+    <string name="notes_select_pet_type">选择宠物类型:</string>
+    <string name="notes_filter_all">全部</string>
+    <string name="notes_delete">删除</string>
+    <string name="notes_save">保存</string>
+    <string name="notes_cancel">取消</string>
+    <string name="notes_confirm">添加</string>
+
+    <!-- Social Screen -->
+    <string name="social_add_post">发布动态</string>
+    <string name="social_post_hint">分享你和宠物的故事...</string>
+    <string name="social_publish">发布</string>
+    <string name="social_cancel">取消</string>
+    <string name="social_new_post_title">发布新动态</string>
+    <string name="social_new_post_hint">分享你的宠物趣事…</string>
+    <string name="social_like">点赞</string>
+    <string name="social_comment">评论</string>
+    <string name="social_save">收藏</string>
+
+    <!-- Pet Cards -->
+    <string name="cards_pet_image">宠物图片</string>
+    <string name="cards_delete">删除</string>
+    <string name="cards_chat">去对话</string>
+    <string name="cards_emoji">表情</string>
+
+    <!-- Top Bar / Navigation -->
+    <string name="topbar_pet_selector_title">专属萌宠，随时陪伴！</string>
+    <string name="topbar_cards">名片夹</string>
+    <string name="topbar_notes">便利贴</string>
+    <string name="topbar_social">萌友圈</string>
+    <string name="topbar_open_drawer">打开抽屉菜单</string>
+    <string name="topbar_close_pet_selector">关闭宠物选择器</string>
+    <string name="topbar_toggle_pet">切换宠物</string>
+
+    <!-- Session List -->
+    <string name="session_title">我的宠物聊天</string>
+    <string name="session_hint">选择一个宠物开始聊天</string>
+    <string name="session_pet_avatar">宠物头像</string>
+
+    <!-- Settings -->
+    <string name="settings_title">API 设置</string>
+    <string name="settings_back">返回</string>
+    <string name="settings_api_section">接口配置</string>
+    <string name="settings_base_url">Base URL</string>
+    <string name="settings_api_key">API Key</string>
+    <string name="settings_model">模型名称</string>
+    <string name="settings_save">保存配置</string>
+    <string name="settings_saved">已保存</string>
+    <string name="settings_show">显示</string>
+    <string name="settings_hide">隐藏</string>
+    <string name="settings_save_hint">配置已保存，新的对话将使用更新后的设置。</string>
+
+    <!-- Notification -->
+    <string name="notification_channel_name">宠物问候</string>
+    <string name="notification_channel_desc">来自宠物的每日问候</string>
+    <string name="notification_title">来自宠物的问候</string>
+    <string name="notification_fallback">喵~ 想你了，主人！</string>
 </resources>

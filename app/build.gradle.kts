@@ -3,7 +3,10 @@ import java.util.Properties
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
-    id("com.google.devtools.ksp") version "1.9.22-1.0.17"
+    alias(libs.plugins.kotlin.serialization)
+    alias(libs.plugins.compose.compiler)
+    id("com.google.devtools.ksp")
+    id("com.google.dagger.hilt.android")
 }
 
 // 加载 keystore 配置
@@ -20,14 +23,42 @@ val keystoreProperties = Properties().apply {
     }
 }
 
+// 加载本地配置（local.properties 不入库）
+val localProperties = Properties().apply {
+    try {
+        val localPropertiesFile = rootProject.file("local.properties")
+        if (localPropertiesFile.exists()) {
+            load(localPropertiesFile.reader())
+        }
+    } catch (e: Exception) {
+        logger.error("Failed to load local.properties: ${e.message}")
+    }
+}
+
+fun readSecret(name: String, defaultValue: String = ""): String {
+    val valueFromLocal = localProperties.getProperty(name)?.trim().orEmpty()
+    if (valueFromLocal.isNotEmpty()) return valueFromLocal
+
+    val valueFromEnv = System.getenv(name)?.trim().orEmpty()
+    if (valueFromEnv.isNotEmpty()) return valueFromEnv
+
+    return defaultValue
+}
+
+fun escapeBuildConfig(value: String): String {
+    return value
+        .replace("\\", "\\\\")
+        .replace("\"", "\\\"")
+}
+
 android {
     namespace = "com.example.chat"
-    compileSdk = 35
+    compileSdk = 36
 
     defaultConfig {
         applicationId = "com.example.chat"
         minSdk = 31
-        targetSdk = 35
+        targetSdk = 36
         versionCode = 1
         versionName = "1.0"
 
@@ -35,6 +66,23 @@ android {
         vectorDrawables {
             useSupportLibrary = true
         }
+
+        // API 配置通过本地配置/环境变量注入，避免硬编码密钥
+        buildConfigField(
+            "String",
+            "PETCHAT_API_KEY",
+            "\"${escapeBuildConfig(readSecret("petchat.apiKey"))}\""
+        )
+        buildConfigField(
+            "String",
+            "PETCHAT_BASE_URL",
+            "\"${escapeBuildConfig(readSecret("petchat.baseUrl", "https://dashscope.aliyuncs.com/compatible-mode/v1"))}\""
+        )
+        buildConfigField(
+            "String",
+            "PETCHAT_MODEL",
+            "\"${escapeBuildConfig(readSecret("petchat.model", "deepseek-v3"))}\""
+        )
     }
 
     signingConfigs {
@@ -65,9 +113,7 @@ android {
     }
     buildFeatures {
         compose = true
-    }
-    composeOptions {
-        kotlinCompilerExtensionVersion = "1.5.8"
+        buildConfig = true
     }
     packaging {
         resources {
@@ -88,7 +134,7 @@ dependencies {
     implementation("androidx.compose.ui:ui-tooling-preview:1.7.6")
     implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.8.7")
     implementation("com.squareup.okhttp3:okhttp:4.9.3")
-    implementation("com.google.code.gson:gson:2.8.8")
+    implementation(libs.kotlinx.serialization.json)
     implementation("androidx.compose.ui:ui-graphics:1.7.6")
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
@@ -109,4 +155,16 @@ dependencies {
     implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.8.7")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.3")
     implementation("com.google.accompanist:accompanist-systemuicontroller:0.32.0")
+
+    // Hilt
+    implementation("com.google.dagger:hilt-android:2.53.1")
+    ksp("com.google.dagger:hilt-android-compiler:2.53.1")
+    implementation("androidx.hilt:hilt-navigation-compose:1.2.0")
+    implementation("androidx.hilt:hilt-work:1.2.0")
+    ksp("androidx.hilt:hilt-compiler:1.2.0")
+
+    // Navigation 3
+    implementation(libs.androidx.navigation3.runtime)
+    implementation(libs.androidx.navigation3.ui)
+    implementation(libs.androidx.lifecycle.viewmodel.navigation3)
 }

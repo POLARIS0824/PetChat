@@ -1,0 +1,6 @@
+# Copy values into local.properties (this file is safe to commit)
+# sdk.dir is machine specific and should remain only in local.properties
+
+petchat.apiKey=your_api_key_here
+petchat.baseUrl=https://dashscope.aliyuncs.com/compatible-mode/v1
+petchat.model=deepseek-v3

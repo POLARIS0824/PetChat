@@ -1,15 +1,18 @@
 package com.example.chat.model
 
+import androidx.annotation.DrawableRes
+
 data class Pet(
     val name: String,
     val status: String,
-    val imageRes: Int,
-    val initalRes: Int,
-    val finalRes: Int,
-    val breed: String,     // 品种
-    val age: String,       // 年龄
-    val gender: String,     // 性别
+    @DrawableRes val imageRes: Int,
+    @DrawableRes val initialRes: Int,
+    @DrawableRes val finalRes: Int,
+    val breed: String,
+    val age: String,
+    val gender: String,
+    val weight: String,
     val character: String,
     val hobby: String,
-    val petType: PetTypes
+    val petType: PetType
 )
