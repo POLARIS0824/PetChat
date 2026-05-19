@@ -12,4 +12,7 @@ interface AnalysisDao {
 
     @Insert
     suspend fun insert(analysis: ChatAnalysisEntity)
+
+    @Insert
+    fun insertBlocking(analysis: ChatAnalysisEntity)
 }

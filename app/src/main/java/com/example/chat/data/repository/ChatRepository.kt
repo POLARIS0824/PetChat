@@ -34,19 +34,10 @@ class ChatRepository @Inject constructor(
         val messages = mutableListOf<Message>()
         messages.add(Message("system", enhancedPrompt))
 
-        val processedMessages = recentMessages
+        recentMessages
             .distinctBy { "${it.role}:${it.content}" }
             .sortedBy { it.timestamp }
-            .groupBy { it.isFromUser }
-
-        val userMessages = processedMessages[true] ?: listOf()
-        val assistantMessages = processedMessages[false] ?: listOf()
-
-        val maxIndex = maxOf(userMessages.size, assistantMessages.size)
-        for (i in 0 until maxIndex) {
-            if (i < assistantMessages.size) messages.add(Message("assistant", assistantMessages[i].content))
-            if (i < userMessages.size) messages.add(Message("user", userMessages[i].content))
-        }
+            .forEach { messages.add(Message(it.role, it.content)) }
 
         messages.add(Message("user", userMessage))
         return messages
@@ -77,7 +68,10 @@ class ChatRepository @Inject constructor(
         try {
             val messages = buildMessages(petType, userMessage)
             val request = DeepseekRequest(model = model, messages = messages, stream = true)
-            apiService.makeStreamingApiRequest(request, listener)
+            apiService.makeStreamingApiRequest(request).collect { content ->
+                listener.onContent(content)
+            }
+            listener.onComplete()
         } catch (e: Exception) {
             listener.onError(e)
         }
@@ -116,7 +110,6 @@ class ChatRepository @Inject constructor(
     suspend fun saveChatMessage(message: ChatMessage, petType: PetTypes) {
         val entity = ChatEntity(
             content = message.content,
-            isFromUser = message.isFromUser,
             petType = petType.name,
             sessionId = sessionManager.currentSessionId,
             role = if (message.isFromUser) "user" else "assistant",

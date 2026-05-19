@@ -44,12 +44,18 @@ interface ChatDao {
     @Insert
     suspend fun insert(chat: ChatEntity)
 
+    @Insert
+    fun insertBlocking(chat: ChatEntity)
+
     /**
      * 批量更新聊天记录
      * 主要用于将消息标记为已处理
      */
     @Update
     suspend fun update(chats: List<ChatEntity>)
+
+    @Update
+    fun updateBlocking(chats: List<ChatEntity>)
 
     /**
      * 删除指定时间戳之前的已处理聊天记录

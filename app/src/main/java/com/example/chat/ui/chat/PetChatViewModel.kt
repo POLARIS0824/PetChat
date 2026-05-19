@@ -57,7 +57,7 @@ class PetChatViewModel @Inject constructor(
             val chatMessages = messages.map { entity ->
                 ChatMessage(
                     content = entity.content,
-                    isFromUser = entity.isFromUser,
+                    isFromUser = entity.role == "user",
                     petType = PetTypes.entries.firstOrNull { it.name == entity.petType } ?: PetTypes.CAT
                 )
             }

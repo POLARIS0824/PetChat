@@ -1,6 +1,7 @@
 package com.example.chat.data.repository
 
 import android.util.Log
+import com.example.chat.data.ChatDatabase
 import com.example.chat.data.dao.AnalysisDao
 import com.example.chat.data.entity.ChatAnalysisEntity
 import com.example.chat.data.dao.ChatDao
@@ -20,6 +21,7 @@ class ChatAnalysisUseCase @Inject constructor(
     private val analysisDao: AnalysisDao,
     private val apiService: ChatApiService,
     private val promptBuilder: PromptBuilder,
+    private val database: ChatDatabase,
 ) {
     private val json = Json { ignoreUnknownKeys = true }
     private val model = com.example.chat.BuildConfig.PETCHAT_MODEL.trim().ifBlank { "deepseek-v3" }
@@ -41,7 +43,7 @@ class ChatAnalysisUseCase @Inject constructor(
 
                 聊天记录：
                 ${chats.joinToString("\n") {
-                    if (it.isFromUser) "用户: ${it.content}" else "宠物: ${it.content}"
+                    if (it.role == "user") "用户: ${it.content}" else "宠物: ${it.content}"
                 }}
 
                 请用JSON格式返回，格式如下：
@@ -71,8 +73,10 @@ class ChatAnalysisUseCase @Inject constructor(
                     preferences = json.encodeToString(analysis.preferences),
                     patterns = json.encodeToString(analysis.patterns)
                 )
-                analysisDao.insert(analysisEntity)
-                chatDao.update(chats.map { it.copy(isProcessed = true) })
+                database.runInTransaction {
+                    analysisDao.insertBlocking(analysisEntity)
+                    chatDao.updateBlocking(chats.map { it.copy(isProcessed = true) })
+                }
             } catch (e: Exception) {
                 Log.e("ANALYSIS", "分析聊天记录出错 (petType=$petTypeString)", e)
             }
@@ -86,7 +90,7 @@ class ChatAnalysisUseCase @Inject constructor(
         val summaryPrompt = """
             请对以下对话进行摘要，提取关键信息，不超过100字：
             ${messages.joinToString("\n") {
-                (if (it.isFromUser) "用户: " else "宠物: ") + it.content
+                (if (it.role == "user") "用户: " else "宠物: ") + it.content
             }}
         """.trimIndent()
 
@@ -95,7 +99,6 @@ class ChatAnalysisUseCase @Inject constructor(
             val summary = getPetResponse(petType, summaryPrompt)
             val summaryEntity = ChatEntity(
                 content = "【对话摘要】$summary",
-                isFromUser = false,
                 petType = messages.first().petType,
                 sessionId = messages.first().sessionId,
                 role = "system",
@@ -103,8 +106,10 @@ class ChatAnalysisUseCase @Inject constructor(
                 isProcessed = true,
                 isSummary = true
             )
-            chatDao.insert(summaryEntity)
-            chatDao.update(messages.map { it.copy(isProcessed = true) })
+            database.runInTransaction {
+                chatDao.insertBlocking(summaryEntity)
+                chatDao.updateBlocking(messages.map { it.copy(isProcessed = true) })
+            }
         } catch (e: Exception) {
             Log.e("SUMMARY", "对话摘要出错", e)
         }

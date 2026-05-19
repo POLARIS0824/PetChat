@@ -119,8 +119,8 @@ fun ChatScreen(
                     ) { msg ->
                         val isCurrentlyStreaming = state.isStreaming &&
                                 state.streamingMessage != null &&
-                                !msg.isFromUser &&
-                                msg == state.chatHistory.lastOrNull { !it.isFromUser }
+                                msg.role != "user" &&
+                                msg == state.chatHistory.lastOrNull { it.role != "user" }
 
                         ChatBubble(
                             message = msg,
@@ -135,7 +135,7 @@ fun ChatScreen(
                         listState.animateScrollToItem(state.chatHistory.size - 1)
 
                         val lastMessage = state.chatHistory.last()
-                        val extraScrollDistance = if (!lastMessage.isFromUser) {
+                        val extraScrollDistance = if (lastMessage.role != "user") {
                             val contentLength = lastMessage.content.length
                             (200f + contentLength * 0.5f).coerceAtMost(500f)
                         } else {
@@ -145,7 +145,7 @@ fun ChatScreen(
                         delay(150)
                         listState.scrollBy(extraScrollDistance)
 
-                        if (state.isStreaming && !lastMessage.isFromUser) {
+                        if (state.isStreaming && lastMessage.role != "user") {
                             delay(100)
                             listState.scrollToItem(state.chatHistory.size - 1)
                         }
@@ -154,7 +154,7 @@ fun ChatScreen(
 
                 LaunchedEffect(state.streamingMessage) {
                     state.streamingMessage?.let { msg ->
-                        if (!msg.isFromUser && msg.content.isNotEmpty()) {
+                        if (msg.role != "user" && msg.content.isNotEmpty()) {
                             delay(100)
                             listState.animateScrollToItem(state.chatHistory.size - 1)
                         }

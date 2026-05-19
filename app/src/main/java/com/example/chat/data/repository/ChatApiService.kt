@@ -5,6 +5,10 @@ import com.example.chat.BuildConfig
 import com.example.chat.model.DeepseekRequest
 import com.example.chat.model.DeepseekResponse
 import com.example.chat.model.StreamResponseListener
+import kotlinx.coroutines.channels.awaitClose
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.callbackFlow
+import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import okhttp3.Call
@@ -16,7 +20,6 @@ import okhttp3.RequestBody.Companion.toRequestBody
 import okhttp3.Response
 import java.io.IOException
 import java.util.concurrent.TimeUnit
-import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
 
@@ -89,68 +92,79 @@ class ChatApiService(
         }
     }
 
-    fun makeStreamingApiRequest(request: DeepseekRequest, listener: StreamResponseListener) {
-        try {
-            val streamingRequest = request.copy(stream = true)
-            val requestJson = json.encodeToString(streamingRequest)
-            val requestBody = requestJson.toRequestBody(jsonMediaType)
-            val apiUrl = "$baseUrl/chat/completions"
+    fun makeStreamingApiRequest(request: DeepseekRequest): Flow<String> = callbackFlow {
+        val streamingRequest = request.copy(stream = true)
+        val requestJson = json.encodeToString(streamingRequest)
+        val requestBody = requestJson.toRequestBody(jsonMediaType)
+        val apiUrl = "$baseUrl/chat/completions"
 
-            val httpRequest = Request.Builder()
-                .url(apiUrl)
-                .addHeader("Authorization", "Bearer ${requireApiKey()}")
-                .addHeader("Content-Type", "application/json")
-                .addHeader("Accept", "text/event-stream")
-                .post(requestBody)
-                .build()
+        val httpRequest = Request.Builder()
+            .url(apiUrl)
+            .addHeader("Authorization", "Bearer ${requireApiKey()}")
+            .addHeader("Content-Type", "application/json")
+            .addHeader("Accept", "text/event-stream")
+            .post(requestBody)
+            .build()
 
-            client.newCall(httpRequest).enqueue(object : Callback {
-                override fun onFailure(call: Call, e: IOException) {
-                    listener.onError(e)
+        val call = client.newCall(httpRequest)
+
+        call.enqueue(object : Callback {
+            override fun onFailure(call: Call, e: IOException) {
+                close(e)
+            }
+
+            override fun onResponse(call: Call, response: Response) {
+                if (!response.isSuccessful) {
+                    close(IOException("API流式请求失败: ${response.code}"))
+                    response.close()
+                    return
                 }
-
-                override fun onResponse(call: Call, response: Response) {
-                    if (!response.isSuccessful) {
-                        listener.onError(IOException("API流式请求失败: ${response.code}"))
-                        response.close()
-                        return
-                    }
-                    val responseBody = response.body
-                    if (responseBody == null) {
-                        listener.onError(IOException("响应体为空"))
-                        response.close()
-                        return
-                    }
-                    try {
-                        val source = responseBody.source()
-                        var completed = false
-                        while (!source.exhausted()) {
-                            val line = source.readUtf8Line() ?: break
-                            if (line.isEmpty()) continue
-                            if (line.startsWith("data: ")) {
-                                val jsonData = line.substring(6)
-                                if (jsonData == "[DONE]") {
-                                    completed = true
-                                    listener.onComplete()
-                                    break
+                val responseBody = response.body
+                if (responseBody == null) {
+                    close(IOException("响应体为空"))
+                    response.close()
+                    return
+                }
+                try {
+                    val source = responseBody.source()
+                    while (!source.exhausted()) {
+                        val line = source.readUtf8Line() ?: break
+                        if (line.isEmpty()) continue
+                        if (line.startsWith("data: ")) {
+                            val jsonData = line.substring(6)
+                            if (jsonData == "[DONE]") {
+                                close()
+                                return
+                            }
+                            try {
+                                val chunkResponse = json.decodeFromString<DeepseekResponse>(jsonData)
+                                val content = chunkResponse.choices.firstOrNull()?.delta?.content
+                                if (content != null) {
+                                    trySend(content)
                                 }
-                                try {
-                                    val chunkResponse = json.decodeFromString<DeepseekResponse>(jsonData)
-                                    val content = chunkResponse.choices.firstOrNull()?.delta?.content
-                                    if (content != null) listener.onContent(content)
-                                } catch (e: Exception) {
-                                    Log.e("API_STREAM_ERROR", "解析流式数据出错: ${e.message}", e)
-                                }
+                            } catch (e: Exception) {
+                                Log.e("API_STREAM_ERROR", "解析流式数据出错: ${e.message}", e)
                             }
                         }
-                        if (!completed) listener.onComplete()
-                    } catch (e: Exception) {
-                        listener.onError(e)
-                    } finally {
-                        response.close()
                     }
+                    close()
+                } catch (e: Exception) {
+                    close(e)
+                } finally {
+                    response.close()
                 }
-            })
+            }
+        })
+
+        awaitClose { call.cancel() }
+    }
+
+    suspend fun makeStreamingApiRequestLegacy(request: DeepseekRequest, listener: StreamResponseListener) {
+        try {
+            makeStreamingApiRequest(request).collect { content ->
+                listener.onContent(content)
+            }
+            listener.onComplete()
         } catch (e: Exception) {
             listener.onError(e)
         }
