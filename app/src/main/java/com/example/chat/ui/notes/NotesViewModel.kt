@@ -2,7 +2,7 @@ package com.example.chat.ui.notes
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.chat.data.NoteEntity
+import com.example.chat.data.entity.NoteEntity
 import com.example.chat.data.repository.NotesRepository
 import com.example.chat.model.NotesUiState
 import dagger.hilt.android.lifecycle.HiltViewModel

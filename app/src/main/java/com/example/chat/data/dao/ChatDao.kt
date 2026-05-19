@@ -1,6 +1,10 @@
-package com.example.chat.data
+package com.example.chat.data.dao
 
-import androidx.room.*
+import androidx.room.Dao
+import androidx.room.Insert
+import androidx.room.Query
+import androidx.room.Update
+import com.example.chat.data.entity.ChatEntity
 
 /**
  * 聊天记录数据访问对象（DAO）
@@ -20,7 +24,7 @@ interface ChatDao {
      */
     @Query("SELECT * FROM chat_history WHERE sessionId = :sessionId AND petType = :petType ORDER BY timestamp ASC")
     suspend fun getSessionMessages(sessionId: String, petType: String): List<ChatEntity>
-    
+
     /**
      * 获取指定宠物类型的所有消息，不考虑会话ID
      */
@@ -54,37 +58,19 @@ interface ChatDao {
     @Query("DELETE FROM chat_history WHERE isProcessed = 1 AND timestamp < :timestamp")
     suspend fun deleteOldProcessedChats(timestamp: Long)
 
-    @Query("SELECT * FROM chat_analysis WHERE petType = :petType ORDER BY timestamp DESC LIMIT 1")
-    suspend fun getLatestAnalysis(petType: String): ChatAnalysisEntity?
-
-    @Insert
-    suspend fun insertAnalysis(analysis: ChatAnalysisEntity)
-
-    @Query("SELECT * FROM notes WHERE petType = :petType ORDER BY timestamp DESC")
-    suspend fun getNotesByType(petType: String): List<NoteEntity>
-
-    // 新增：获取指定会话的最近消息
+    // 获取指定会话的最近消息
     @Query("SELECT * FROM chat_history WHERE sessionId = :sessionId AND petType = :petType ORDER BY timestamp DESC LIMIT :limit")
     suspend fun getRecentSessionMessages(sessionId: String, petType: String, limit: Int): List<ChatEntity>
-    
+
     // 新增：获取指定会话的重要消息
     @Query("SELECT * FROM chat_history WHERE sessionId = :sessionId AND isImportant = 1 ORDER BY timestamp ASC")
     suspend fun getImportantMessages(sessionId: String): List<ChatEntity>
-    
+
     // 新增：标记消息为重要
     @Query("UPDATE chat_history SET isImportant = :isImportant WHERE id = :messageId")
     suspend fun markMessageImportant(messageId: Long, isImportant: Boolean)
 
-    @Insert
-    suspend fun insertNote(note: NoteEntity)
-
-    @Delete
-    suspend fun deleteNote(note: NoteEntity)
-
-    @Update
-    suspend fun updateNote(note: NoteEntity)
-
-    // 在 ChatDao.kt 中添加
+    // 获取所有会话
     @Query("""
     SELECT ch.sessionId, ch.petType, ch.content as lastMessage, ch.timestamp
     FROM chat_history ch
@@ -105,4 +91,3 @@ interface ChatDao {
         val timestamp: Long
     )
 }
-

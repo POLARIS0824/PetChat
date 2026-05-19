@@ -1,27 +1,26 @@
 package com.example.chat.data.repository
 
-import com.example.chat.data.ChatDao
-import com.example.chat.data.NoteEntity
-import com.example.chat.model.PetTypes
+import com.example.chat.data.entity.NoteEntity
+import com.example.chat.data.dao.NotesDao
 import javax.inject.Inject
 import javax.inject.Singleton
 
 @Singleton
 class NotesRepository @Inject constructor(
-    private val chatDao: ChatDao
+    private val notesDao: NotesDao
 ) {
     suspend fun getNotesByType(petType: String): List<NoteEntity> =
-        chatDao.getNotesByType(petType)
+        notesDao.getByType(petType)
 
     suspend fun getAllNotes(): List<NoteEntity> =
-        PetTypes.entries.flatMap { chatDao.getNotesByType(it.name) }
+        notesDao.getAll()
 
     suspend fun insertNote(note: NoteEntity) =
-        chatDao.insertNote(note)
+        notesDao.insert(note)
 
     suspend fun deleteNote(note: NoteEntity) =
-        chatDao.deleteNote(note)
+        notesDao.delete(note)
 
     suspend fun updateNote(note: NoteEntity) =
-        chatDao.updateNote(note)
+        notesDao.update(note)
 }

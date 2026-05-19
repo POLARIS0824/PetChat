@@ -1,6 +1,6 @@
 package com.example.chat.model
 
-import com.example.chat.data.NoteEntity
+import com.example.chat.data.entity.NoteEntity
 
 sealed interface NotesUiState {
     data object Loading : NotesUiState

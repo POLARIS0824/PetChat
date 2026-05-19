@@ -2,8 +2,10 @@ package com.example.chat.di
 
 import android.content.Context
 import androidx.room.Room
-import com.example.chat.data.ChatDao
+import com.example.chat.data.dao.AnalysisDao
+import com.example.chat.data.dao.ChatDao
 import com.example.chat.data.ChatDatabase
+import com.example.chat.data.dao.NotesDao
 import com.example.chat.data.repository.ChatApiService
 import dagger.Module
 import dagger.Provides
@@ -29,6 +31,16 @@ object DatabaseModule {
     @Provides
     fun provideChatDao(database: ChatDatabase): ChatDao {
         return database.chatDao()
+    }
+
+    @Provides
+    fun provideAnalysisDao(database: ChatDatabase): AnalysisDao {
+        return database.analysisDao()
+    }
+
+    @Provides
+    fun provideNotesDao(database: ChatDatabase): NotesDao {
+        return database.notesDao()
     }
 
     @Provides

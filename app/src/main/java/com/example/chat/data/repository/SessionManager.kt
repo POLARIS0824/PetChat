@@ -1,6 +1,7 @@
 package com.example.chat.data.repository
 
-import com.example.chat.data.ChatDao
+import com.example.chat.data.dao.ChatDao
+import com.example.chat.data.entity.ChatEntity
 import com.example.chat.model.PetTypes
 import com.example.chat.model.SessionInfo
 import java.util.UUID
@@ -24,7 +25,7 @@ class SessionManager @Inject constructor(
         currentSessionId = sessionId
     }
 
-    suspend fun getSessionMessages(sessionId: String, petType: PetTypes): List<com.example.chat.data.ChatEntity> =
+    suspend fun getSessionMessages(sessionId: String, petType: PetTypes): List<ChatEntity> =
         chatDao.getSessionMessages(sessionId, petType.name)
 
     suspend fun getAllSessions(): List<SessionInfo> {
