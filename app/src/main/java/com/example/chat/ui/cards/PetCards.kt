@@ -128,15 +128,19 @@ fun PetCard(
                     )
                 }
         ) {
+            val cachedRenderEffect = remember(blurRadius) {
+                RenderEffect
+                    .createBlurEffect(blurRadius, blurRadius, android.graphics.Shader.TileMode.DECAL)
+                    .asComposeRenderEffect()
+            }
+
             Image(
                 painter = painterResource(id = pet.initialRes),
                 contentDescription = "Pet Image",
                 modifier = Modifier
                     .fillMaxSize()
                     .graphicsLayer {
-                        renderEffect = RenderEffect
-                            .createBlurEffect(blurRadius, blurRadius, android.graphics.Shader.TileMode.DECAL)
-                            .asComposeRenderEffect()
+                        renderEffect = cachedRenderEffect
                     },
                 contentScale = ContentScale.Crop
             )

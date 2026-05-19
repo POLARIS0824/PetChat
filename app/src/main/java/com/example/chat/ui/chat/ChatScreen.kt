@@ -7,7 +7,6 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.gestures.scrollBy
 import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.imePadding
@@ -35,7 +34,6 @@ import com.example.chat.model.ChatUiState
 import com.example.chat.model.PetTypes
 import com.example.chat.ui.chat.PetChatViewModel
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
 
 @Composable
 fun ChatScreen(
@@ -50,13 +48,6 @@ fun ChatScreen(
 
     val uiState by viewModel.chatUiState.collectAsState()
     val state = (uiState as? ChatUiState.Ready) ?: ChatUiState.Ready()
-
-    LaunchedEffect(petType) {
-        if (state.chatHistory.isNotEmpty()) {
-            delay(300)
-            listState.animateScrollToItem(state.chatHistory.size - 1)
-        }
-    }
 
     val emptyStateImages = listOf(
         R.drawable.greeting,
@@ -115,7 +106,7 @@ fun ChatScreen(
                 ) {
                     items(
                         items = state.chatHistory,
-                        key = { it.hashCode() }
+                        key = { "${it.timestamp}_${it.role}" }
                     ) { msg ->
                         val isCurrentlyStreaming = state.isStreaming &&
                                 state.streamingMessage != null &&
@@ -130,34 +121,16 @@ fun ChatScreen(
                     }
                 }
 
-                LaunchedEffect(state.shouldScrollToBottom, state.chatHistory.size) {
-                    if ((state.shouldScrollToBottom || state.chatHistory.isNotEmpty()) && state.chatHistory.isNotEmpty()) {
+                LaunchedEffect(petType, state.chatHistory.size, state.shouldScrollToBottom, state.streamingMessage) {
+                    if (state.chatHistory.isEmpty()) return@LaunchedEffect
+
+                    if (state.shouldScrollToBottom) {
                         listState.animateScrollToItem(state.chatHistory.size - 1)
-
-                        val lastMessage = state.chatHistory.last()
-                        val extraScrollDistance = if (lastMessage.role != "user") {
-                            val contentLength = lastMessage.content.length
-                            (200f + contentLength * 0.5f).coerceAtMost(500f)
-                        } else {
-                            100f
-                        }
-
-                        delay(150)
-                        listState.scrollBy(extraScrollDistance)
-
-                        if (state.isStreaming && lastMessage.role != "user") {
-                            delay(100)
-                            listState.scrollToItem(state.chatHistory.size - 1)
-                        }
                     }
-                }
 
-                LaunchedEffect(state.streamingMessage) {
-                    state.streamingMessage?.let { msg ->
-                        if (msg.role != "user" && msg.content.isNotEmpty()) {
-                            delay(100)
-                            listState.animateScrollToItem(state.chatHistory.size - 1)
-                        }
+                    if (state.isStreaming) {
+                        delay(50)
+                        listState.scrollToItem(state.chatHistory.size - 1)
                     }
                 }
             }

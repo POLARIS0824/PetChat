@@ -189,22 +189,6 @@ private fun EditNoteDialog(
                         color = Color.White
                     )
                 }
-//                // 删除按钮
-//                Button(
-//                    onClick = onDelete,
-//                    colors = ButtonDefaults.buttonColors(
-//                        containerColor = Color.Red.copy(alpha = 0.8f)
-//                    )
-//                ) {
-//                    Icon(
-//                        imageVector = Icons.Default.Delete,
-//                        contentDescription = "删除",
-//                        tint = Color.White
-//                    )
-//                    Spacer(modifier = Modifier.width(4.dp))
-//                    Text("删除")
-//                }
-
                 // 保存按钮
                 Button(
                     onClick = {

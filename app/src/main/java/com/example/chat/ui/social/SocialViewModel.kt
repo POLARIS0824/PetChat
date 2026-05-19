@@ -87,7 +87,7 @@ class SocialViewModel @Inject constructor() : ViewModel() {
             val post = _posts[index]
             _posts[index] = post.copy(
                 isLiked = !post.isLiked,
-                likeCount = if (post.isLiked) post.likeCount - 1 else post.likeCount + 1
+                likeCount = if (post.isLiked) (post.likeCount - 1).coerceAtLeast(0) else post.likeCount + 1
             )
         }
     }
