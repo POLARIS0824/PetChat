@@ -1,6 +1,5 @@
 package com.example.chat.ui.social
 
-import androidx.compose.runtime.mutableStateListOf
 import androidx.lifecycle.ViewModel
 import com.example.chat.R
 import com.example.chat.model.SocialPost
@@ -10,11 +9,15 @@ import java.util.Date
 import java.util.Locale
 import java.util.UUID
 import javax.inject.Inject
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.update
 
 @HiltViewModel
 class SocialViewModel @Inject constructor() : ViewModel() {
-    private val _posts = mutableStateListOf<SocialPost>()
-    val posts: List<SocialPost> get() = _posts
+    private val _posts = MutableStateFlow<List<SocialPost>>(emptyList())
+    val posts: StateFlow<List<SocialPost>> = _posts.asStateFlow()
 
     init {
         loadDummyPosts()
@@ -78,25 +81,28 @@ class SocialViewModel @Inject constructor() : ViewModel() {
             )
         )
 
-        _posts.addAll(dummyPosts)
+        _posts.value = dummyPosts
     }
 
     fun likePost(postId: String) {
-        val index = _posts.indexOfFirst { it.id == postId }
-        if (index != -1) {
-            val post = _posts[index]
-            _posts[index] = post.copy(
-                isLiked = !post.isLiked,
-                likeCount = if (post.isLiked) (post.likeCount - 1).coerceAtLeast(0) else post.likeCount + 1
-            )
+        _posts.update { posts ->
+            posts.map { post ->
+                if (post.id == postId) {
+                    post.copy(
+                        isLiked = !post.isLiked,
+                        likeCount = if (post.isLiked) (post.likeCount - 1).coerceAtLeast(0) else post.likeCount + 1
+                    )
+                } else post
+            }
         }
     }
 
     fun savePost(postId: String) {
-        val index = _posts.indexOfFirst { it.id == postId }
-        if (index != -1) {
-            val post = _posts[index]
-            _posts[index] = post.copy(isSaved = !post.isSaved)
+        _posts.update { posts ->
+            posts.map { post ->
+                if (post.id == postId) post.copy(isSaved = !post.isSaved)
+                else post
+            }
         }
     }
 
@@ -111,6 +117,6 @@ class SocialViewModel @Inject constructor() : ViewModel() {
             likeCount = 0,
             commentCount = 0
         )
-        _posts.add(0, newPost)
+        _posts.update { listOf(newPost) + it }
     }
 }

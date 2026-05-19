@@ -33,7 +33,7 @@ fun SocialScreen(
     viewModel: SocialViewModel = hiltViewModel(),
     modifier: Modifier = Modifier
 ) {
-    val posts = viewModel.posts
+    val posts by viewModel.posts.collectAsState()
     var showAddPostDialog by remember { mutableStateOf(false) }
 
     Box(

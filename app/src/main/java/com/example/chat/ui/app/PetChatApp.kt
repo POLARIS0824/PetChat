@@ -23,6 +23,8 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.DrawerValue
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -169,8 +171,9 @@ fun PetChatApp(
                                     )
                                 }
                                 entry<CardsRoute> {
+                                    val pets by cardsViewModel.pets.collectAsState()
                                     PetList(
-                                        pets = cardsViewModel.pets,
+                                        pets = pets,
                                         onNavigateToChat = { petType ->
                                             currentPetType = petType
                                             topLevelBackStack.addTopLevel(ChatRoute)
