@@ -22,9 +22,9 @@ class ChatAnalysisUseCase @Inject constructor(
     private val apiService: ChatApiService,
     private val promptBuilder: PromptBuilder,
     private val database: ChatDatabase,
+    private val settingsManager: SettingsManager,
 ) {
     private val json = Json { ignoreUnknownKeys = true }
-    private val model = com.example.chat.BuildConfig.PETCHAT_MODEL.trim().ifBlank { "deepseek-v3" }
 
     companion object {
         private const val ANALYSIS_THRESHOLD = 10
@@ -59,7 +59,7 @@ class ChatAnalysisUseCase @Inject constructor(
             """.trimIndent()
 
             val request = DeepseekRequest(
-                model = model,
+                model = settingsManager.getConfig().model,
                 messages = listOf(
                     Message("system", "我是一个聊天分析助手，可以帮你分析聊天记录。"),
                     Message("user", analysisPrompt)
@@ -122,7 +122,7 @@ class ChatAnalysisUseCase @Inject constructor(
     private suspend fun getPetResponse(petType: PetType, userMessage: String): String {
         return try {
             val messages = buildMessages(petType, userMessage)
-            val request = DeepseekRequest(model = model, messages = messages)
+            val request = DeepseekRequest(model = settingsManager.getConfig().model, messages = messages)
             val response = apiService.makeApiRequest(request)
             response.choices.firstOrNull()?.message?.content
                 ?: throw IllegalStateException("AI响应为空")

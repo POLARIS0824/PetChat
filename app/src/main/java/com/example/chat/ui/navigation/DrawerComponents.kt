@@ -24,7 +24,8 @@ import com.example.chat.R
 
 @Composable
 fun DrawerContent(
-    onNavigateToSessionList: () -> Unit = {}
+    onNavigateToSessionList: () -> Unit = {},
+    onNavigateToSettings: () -> Unit = {},
 ) {
     Column(
         modifier = Modifier
@@ -69,7 +70,7 @@ fun DrawerContent(
             DrawerMenuItem(icon = R.drawable.ic_account, text = stringResource(R.string.drawer_account))
             DrawerMenuItem(icon = R.drawable.ic_password, text = stringResource(R.string.drawer_password))
             DrawerMenuItem(icon = R.drawable.ic_favorite, text = stringResource(R.string.drawer_preferences))
-            DrawerMenuItem(icon = R.drawable.ic_settings, text = stringResource(R.string.drawer_settings))
+            DrawerMenuItem(icon = R.drawable.ic_settings, text = stringResource(R.string.drawer_settings), onClick = onNavigateToSettings)
         }
 
         Spacer(modifier = Modifier.weight(1f))

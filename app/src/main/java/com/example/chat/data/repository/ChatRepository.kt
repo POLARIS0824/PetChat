@@ -19,8 +19,8 @@ class ChatRepository @Inject constructor(
     private val promptBuilder: PromptBuilder,
     private val pictureInfoParser: PictureInfoParser,
     private val analysisUseCase: ChatAnalysisUseCase,
+    private val settingsManager: SettingsManager,
 ) {
-    private val model = com.example.chat.BuildConfig.PETCHAT_MODEL.trim().ifBlank { "deepseek-v3" }
 
     companion object {
         private const val CONTEXT_MESSAGE_LIMIT = 3
@@ -55,7 +55,7 @@ class ChatRepository @Inject constructor(
     suspend fun getPetResponse(petType: PetType, userMessage: String): String {
         return try {
             val messages = buildMessages(petType, userMessage)
-            val request = DeepseekRequest(model = model, messages = messages)
+            val request = DeepseekRequest(model = settingsManager.getConfig().model, messages = messages)
             val response = apiService.makeApiRequest(request)
             response.choices.firstOrNull()?.message?.content
                 ?: throw IllegalStateException("AI响应为空")
@@ -72,7 +72,7 @@ class ChatRepository @Inject constructor(
     ) {
         try {
             val messages = buildMessages(petType, userMessage)
-            val request = DeepseekRequest(model = model, messages = messages, stream = true)
+            val request = DeepseekRequest(model = settingsManager.getConfig().model, messages = messages, stream = true)
             apiService.makeStreamingApiRequest(request).collect { content ->
                 listener.onContent(content)
             }

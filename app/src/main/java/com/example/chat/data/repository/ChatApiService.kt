@@ -1,7 +1,6 @@
 package com.example.chat.data.repository
 
 import android.util.Log
-import com.example.chat.BuildConfig
 import com.example.chat.model.DeepseekRequest
 import com.example.chat.model.DeepseekResponse
 
@@ -20,38 +19,37 @@ import okhttp3.RequestBody.Companion.toRequestBody
 import okhttp3.Response
 import java.io.IOException
 import java.util.concurrent.TimeUnit
+import javax.inject.Inject
+import javax.inject.Singleton
 import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
 
-class ChatApiService(
-    private val client: OkHttpClient = OkHttpClient.Builder()
+@Singleton
+class ChatApiService @Inject constructor(
+    private val settingsManager: SettingsManager,
+) {
+    private val client = OkHttpClient.Builder()
         .connectTimeout(60, TimeUnit.SECONDS)
         .readTimeout(60, TimeUnit.SECONDS)
         .writeTimeout(30, TimeUnit.SECONDS)
-        .build(),
-) {
+        .build()
+
     private val json = Json { ignoreUnknownKeys = true }
     private val jsonMediaType = "application/json; charset=utf-8".toMediaType()
-    private val apiKey = BuildConfig.PETCHAT_API_KEY.trim()
-    private val baseUrl = BuildConfig.PETCHAT_BASE_URL.trim().trimEnd('/')
 
-    private fun requireApiKey(): String {
-        if (apiKey.isBlank()) {
-            throw IOException("Missing API key. Configure petchat.apiKey in local.properties or env.")
-        }
-        return apiKey
-    }
+    private fun getConfig(): ApiConfig = settingsManager.getConfig()
 
     suspend fun makeApiRequest(request: DeepseekRequest): DeepseekResponse {
         return suspendCancellableCoroutine { continuation ->
             try {
+                val config = getConfig()
                 val requestJson = json.encodeToString(request)
                 val requestBody = requestJson.toRequestBody(jsonMediaType)
-                val apiUrl = "$baseUrl/chat/completions"
+                val apiUrl = "${config.baseUrl}/chat/completions"
 
                 val httpRequest = Request.Builder()
                     .url(apiUrl)
-                    .addHeader("Authorization", "Bearer ${requireApiKey()}")
+                    .addHeader("Authorization", "Bearer ${config.apiKey}")
                     .addHeader("Content-Type", "application/json")
                     .post(requestBody)
                     .build()
@@ -93,14 +91,15 @@ class ChatApiService(
     }
 
     fun makeStreamingApiRequest(request: DeepseekRequest): Flow<String> = callbackFlow {
+        val config = getConfig()
         val streamingRequest = request.copy(stream = true)
         val requestJson = json.encodeToString(streamingRequest)
         val requestBody = requestJson.toRequestBody(jsonMediaType)
-        val apiUrl = "$baseUrl/chat/completions"
+        val apiUrl = "${config.baseUrl}/chat/completions"
 
         val httpRequest = Request.Builder()
             .url(apiUrl)
-            .addHeader("Authorization", "Bearer ${requireApiKey()}")
+            .addHeader("Authorization", "Bearer ${config.apiKey}")
             .addHeader("Content-Type", "application/json")
             .addHeader("Accept", "text/event-stream")
             .post(requestBody)
@@ -158,5 +157,4 @@ class ChatApiService(
 
         awaitClose { call.cancel() }
     }
-
 }

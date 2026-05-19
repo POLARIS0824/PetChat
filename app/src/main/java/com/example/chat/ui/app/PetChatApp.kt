@@ -68,6 +68,7 @@ import androidx.navigation3.runtime.entryProvider
 import androidx.navigation3.ui.NavDisplay
 import com.example.chat.R
 import com.example.chat.model.PetType
+import com.example.chat.data.repository.SettingsManager
 import com.example.chat.service.PetGreetingWorker
 import com.example.chat.ui.cards.CardsViewModel
 import com.example.chat.ui.cards.PetList
@@ -79,11 +80,13 @@ import com.example.chat.ui.navigation.ChatRoute
 import com.example.chat.ui.navigation.DrawerContent
 import com.example.chat.ui.navigation.NotesRoute
 import com.example.chat.ui.navigation.SessionListRoute
+import com.example.chat.ui.navigation.SettingsRoute
 import com.example.chat.ui.navigation.SocialRoute
 import com.example.chat.ui.navigation.TOP_LEVEL_ROUTES
 import com.example.chat.ui.navigation.TopLevelBackStack
 import com.example.chat.ui.notes.NotesScreen
 import com.example.chat.ui.session.SessionListScreen
+import com.example.chat.ui.settings.SettingsScreen
 import com.example.chat.ui.social.SocialScreen
 import kotlinx.coroutines.launch
 
@@ -91,15 +94,16 @@ import kotlinx.coroutines.launch
 @Composable
 fun PetChatApp(
     viewModel: PetChatViewModel = hiltViewModel(),
-    cardsViewModel: CardsViewModel = hiltViewModel()
+    cardsViewModel: CardsViewModel = hiltViewModel(),
 ) {
+    val context = LocalContext.current
+    val settingsManager = remember { SettingsManager(context) }
     val topLevelBackStack = remember { TopLevelBackStack<Any>(ChatRoute) }
 
     var currentPetType by remember { mutableStateOf(PetType.CAT) }
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
     val scope = rememberCoroutineScope()
     var showPetSelector by remember { mutableStateOf(false) }
-    val context = LocalContext.current
 
     LaunchedEffect(Unit) {
         viewModel.loadAllSessions()
@@ -117,6 +121,10 @@ fun PetChatApp(
                     DrawerContent(
                         onNavigateToSessionList = {
                             topLevelBackStack.add(SessionListRoute)
+                            scope.launch { drawerState.close() }
+                        },
+                        onNavigateToSettings = {
+                            topLevelBackStack.add(SettingsRoute)
                             scope.launch { drawerState.close() }
                         }
                     )
@@ -136,7 +144,7 @@ fun PetChatApp(
                     )
                 },
                 bottomBar = {
-                    if (topLevelBackStack.topLevelKey != SessionListRoute) {
+                    if (topLevelBackStack.topLevelKey != SessionListRoute && topLevelBackStack.topLevelKey != SettingsRoute) {
                         PetChatBottomBar(
                             topLevelKey = topLevelBackStack.topLevelKey,
                             onRouteSelected = { route ->
@@ -206,6 +214,12 @@ fun PetChatApp(
                                             viewModel.switchToSession(sessionId)
                                             topLevelBackStack.addTopLevel(ChatRoute)
                                         }
+                                    )
+                                }
+                                entry<SettingsRoute> {
+                                    SettingsScreen(
+                                        settingsManager = settingsManager,
+                                        onBack = { topLevelBackStack.removeLast() }
                                     )
                                 }
                             }

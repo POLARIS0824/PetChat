@@ -57,6 +57,19 @@
     <string name="session_hint">选择一个宠物开始聊天</string>
     <string name="session_pet_avatar">宠物头像</string>
 
+    <!-- Settings -->
+    <string name="settings_title">API 设置</string>
+    <string name="settings_back">返回</string>
+    <string name="settings_api_section">接口配置</string>
+    <string name="settings_base_url">Base URL</string>
+    <string name="settings_api_key">API Key</string>
+    <string name="settings_model">模型名称</string>
+    <string name="settings_save">保存配置</string>
+    <string name="settings_saved">已保存</string>
+    <string name="settings_show">显示</string>
+    <string name="settings_hide">隐藏</string>
+    <string name="settings_save_hint">配置已保存，新的对话将使用更新后的设置。</string>
+
     <!-- Notification -->
     <string name="notification_channel_name">宠物问候</string>
     <string name="notification_channel_desc">来自宠物的每日问候</string>

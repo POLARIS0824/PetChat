@@ -25,6 +25,9 @@ data object SocialRoute : NavKey
 @Serializable
 data object SessionListRoute : NavKey
 
+@Serializable
+data object SettingsRoute : NavKey
+
 val TOP_LEVEL_ROUTES: List<TopLevelRouteItem> = listOf(
     TopLevelRouteItem(ChatRoute, "聊天", R.drawable.chat_outline, R.drawable.chat_fill),
     TopLevelRouteItem(CardsRoute, "名片夹", R.drawable.par_outline, R.drawable.par_fill),

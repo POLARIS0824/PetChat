@@ -6,7 +6,6 @@ import com.example.chat.data.dao.AnalysisDao
 import com.example.chat.data.dao.ChatDao
 import com.example.chat.data.ChatDatabase
 import com.example.chat.data.dao.NotesDao
-import com.example.chat.data.repository.ChatApiService
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -45,9 +44,4 @@ object DatabaseModule {
         return database.notesDao()
     }
 
-    @Provides
-    @Singleton
-    fun provideChatApiService(): ChatApiService {
-        return ChatApiService()
-    }
 }
