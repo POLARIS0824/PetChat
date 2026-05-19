@@ -86,10 +86,14 @@ interface ChatDao {
 
     // 在 ChatDao.kt 中添加
     @Query("""
-    SELECT ch.sessionId, ch.petType, ch.content as lastMessage, MAX(ch.timestamp) as timestamp
+    SELECT ch.sessionId, ch.petType, ch.content as lastMessage, ch.timestamp
     FROM chat_history ch
-    GROUP BY ch.sessionId
-    ORDER BY timestamp DESC
+    INNER JOIN (
+        SELECT sessionId, MAX(timestamp) as maxTimestamp
+        FROM chat_history
+        GROUP BY sessionId
+    ) latest ON ch.sessionId = latest.sessionId AND ch.timestamp = latest.maxTimestamp
+    ORDER BY ch.timestamp DESC
     """)
     suspend fun getAllSessions(): List<SessionEntity>
 

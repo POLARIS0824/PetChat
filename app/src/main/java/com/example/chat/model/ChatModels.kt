@@ -9,7 +9,7 @@ import kotlinx.serialization.Serializable
 enum class PetTypes(val displayName: String) {
     CAT("布丁"),
     DOG("大白"),
-    HAMSTER("团绒"),
+    CAT2("团绒"),
     DOG2("豆豆"),
 }
 

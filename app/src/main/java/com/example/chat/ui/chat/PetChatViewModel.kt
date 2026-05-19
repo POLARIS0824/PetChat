@@ -10,6 +10,7 @@ import com.example.chat.model.PictureInfo
 import com.example.chat.model.SessionInfo
 import com.example.chat.model.StreamResponseListener
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -27,6 +28,7 @@ class PetChatViewModel @Inject constructor(
     val chatUiState: StateFlow<ChatUiState> = _chatUiState.asStateFlow()
 
     private var lastPictureInfo: PictureInfo? = null
+    private var scrollJob: Job? = null
 
     private val _allSessions = MutableStateFlow<List<SessionInfo>>(emptyList())
     val allSessions: StateFlow<List<SessionInfo>> = _allSessions.asStateFlow()
@@ -136,7 +138,8 @@ class PetChatViewModel @Inject constructor(
                                 shouldScrollToBottom = false
                             )
                         }
-                        viewModelScope.launch {
+                        scrollJob?.cancel()
+                        scrollJob = viewModelScope.launch {
                             delay(50)
                             updateReady { it.copy(shouldScrollToBottom = true) }
                         }
@@ -216,7 +219,6 @@ class PetChatViewModel @Inject constructor(
         return if (state.currentPetType == petType) {
             state.chatHistory
         } else {
-            selectPetType(petType)
             emptyList()
         }
     }

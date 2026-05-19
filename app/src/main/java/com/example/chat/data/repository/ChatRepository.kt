@@ -146,48 +146,54 @@ class ChatRepository @Inject constructor(
         val unprocessedChats = chatDao.getUnprocessedChats()
         if (unprocessedChats.size < 10) return
 
-        val analysisPrompt = """
-            请分析以下聊天记录，并提供:
-            1. 对话总结
-            2. 用户偏好和兴趣
-            3. 主要互动模式
+        val chatsByPetType = unprocessedChats.groupBy { it.petType }
 
-            聊天记录：
-            ${unprocessedChats.joinToString("\n") {
-                if (it.isFromUser) "用户: ${it.content}" else "宠物: ${it.content}"
-            }}
+        for ((petTypeString, chats) in chatsByPetType) {
+            if (chats.size < 10) continue
 
-            请用JSON格式返回，格式如下：
-            {
-                "summary": "对话总结",
-                "preferences": ["偏好1", "偏好2"],
-                "patterns": ["互动模式1", "互动模式2"]
+            val analysisPrompt = """
+                请分析以下聊天记录，并提供:
+                1. 对话总结
+                2. 用户偏好和兴趣
+                3. 主要互动模式
+
+                聊天记录：
+                ${chats.joinToString("\n") {
+                    if (it.isFromUser) "用户: ${it.content}" else "宠物: ${it.content}"
+                }}
+
+                请用JSON格式返回，格式如下：
+                {
+                    "summary": "对话总结",
+                    "preferences": ["偏好1", "偏好2"],
+                    "patterns": ["互动模式1", "互动模式2"]
+                }
+            """.trimIndent()
+
+            val request = DeepseekRequest(
+                model = model,
+                messages = listOf(
+                    Message("system", "我是一个聊天分析助手，可以帮你分析聊天记录。"),
+                    Message("user", analysisPrompt)
+                )
+            )
+
+            try {
+                val response = apiService.makeApiRequest(request)
+                val analysisText = response.choices.firstOrNull()?.message?.content ?: continue
+                val analysis = json.decodeFromString<ChatAnalysisResult>(analysisText)
+
+                val analysisEntity = ChatAnalysisEntity(
+                    petType = petTypeString,
+                    summary = analysis.summary,
+                    preferences = json.encodeToString(analysis.preferences),
+                    patterns = json.encodeToString(analysis.patterns)
+                )
+                chatDao.insertAnalysis(analysisEntity)
+                chatDao.update(chats.map { it.copy(isProcessed = true) })
+            } catch (e: Exception) {
+                Log.e("ANALYSIS", "分析聊天记录出错 (petType=$petTypeString)", e)
             }
-        """.trimIndent()
-
-        val request = DeepseekRequest(
-            model = model,
-            messages = listOf(
-                Message("system", "我是一个聊天分析助手，可以帮你分析聊天记录。"),
-                Message("user", analysisPrompt)
-            )
-        )
-
-        try {
-            val response = apiService.makeApiRequest(request)
-            val analysisText = response.choices.firstOrNull()?.message?.content ?: return
-            val analysis = json.decodeFromString<ChatAnalysisResult>(analysisText)
-
-            val analysisEntity = ChatAnalysisEntity(
-                petType = unprocessedChats.first().petType,
-                summary = analysis.summary,
-                preferences = json.encodeToString(analysis.preferences),
-                patterns = json.encodeToString(analysis.patterns)
-            )
-            chatDao.insertAnalysis(analysisEntity)
-            chatDao.update(unprocessedChats.map { it.copy(isProcessed = true) })
-        } catch (e: Exception) {
-            Log.e("ANALYSIS", "分析聊天记录出错", e)
         }
     }
 

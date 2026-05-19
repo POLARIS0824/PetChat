@@ -67,7 +67,7 @@ fun getPetAvatar(petType: PetTypes): Int {
     return when (petType) {
         PetTypes.CAT -> R.drawable.pet_cat
         PetTypes.DOG -> R.drawable.pet_samoyed
-        PetTypes.HAMSTER -> R.drawable.pet_hamster
+        PetTypes.CAT2 -> R.drawable.pet_hamster
         PetTypes.DOG2 -> R.drawable.pet_shiba
     }
 }

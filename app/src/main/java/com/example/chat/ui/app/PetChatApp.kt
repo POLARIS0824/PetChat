@@ -1,7 +1,6 @@
 package com.example.chat.ui.app
 
 import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.expandVertically
@@ -9,7 +8,6 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.shrinkVertically
 import androidx.compose.animation.togetherWith
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -345,7 +343,7 @@ private fun PetSelectorOverlay(
                 PetAvatar(name = "布丁", imageRes = R.drawable.pet_cat, isSelected = currentPetType == PetTypes.CAT, onClick = { onSelect(PetTypes.CAT) })
                 PetAvatar(name = "大白", imageRes = R.drawable.pet_samoyed, isSelected = currentPetType == PetTypes.DOG, onClick = { onSelect(PetTypes.DOG) })
                 PetAvatar(name = "豆豆", imageRes = R.drawable.pet_shiba, isSelected = currentPetType == PetTypes.DOG2, onClick = { onSelect(PetTypes.DOG2) })
-                PetAvatar(name = "团绒", imageRes = R.drawable.pet_hamster, isSelected = currentPetType == PetTypes.HAMSTER, onClick = { onSelect(PetTypes.HAMSTER) })
+                PetAvatar(name = "团绒", imageRes = R.drawable.pet_hamster, isSelected = currentPetType == PetTypes.CAT2, onClick = { onSelect(PetTypes.CAT2) })
             }
         }
     }

@@ -127,13 +127,13 @@ class ChatApiService(
                         while (!source.exhausted()) {
                             val line = source.readUtf8Line() ?: break
                             if (line.isEmpty()) continue
-                            if (line == "[DONE]") {
-                                completed = true
-                                listener.onComplete()
-                                break
-                            }
                             if (line.startsWith("data: ")) {
                                 val jsonData = line.substring(6)
+                                if (jsonData == "[DONE]") {
+                                    completed = true
+                                    listener.onComplete()
+                                    break
+                                }
                                 try {
                                     val chunkResponse = json.decodeFromString<DeepseekResponse>(jsonData)
                                     val content = chunkResponse.choices.firstOrNull()?.delta?.content
