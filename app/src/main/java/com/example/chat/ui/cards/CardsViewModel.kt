@@ -3,7 +3,7 @@ package com.example.chat.ui.cards
 import androidx.lifecycle.ViewModel
 import com.example.chat.R
 import com.example.chat.model.Pet
-import com.example.chat.model.PetTypes
+import com.example.chat.model.PetType
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -33,7 +33,7 @@ class CardsViewModel @Inject constructor() : ViewModel() {
                 gender = "母",
                 character = "慵懒，爱睡觉，吃货",
                 hobby = "日光浴，吃鱼",
-                petType = PetTypes.CAT
+                petType = PetType.CAT
             ),
             Pet(
                 name = "大白",
@@ -46,7 +46,7 @@ class CardsViewModel @Inject constructor() : ViewModel() {
                 gender = "公",
                 character = "活泼，粘人，爱笑",
                 hobby = "追球，吃骨头",
-                petType = PetTypes.DOG
+                petType = PetType.DOG
             )
         )
     }

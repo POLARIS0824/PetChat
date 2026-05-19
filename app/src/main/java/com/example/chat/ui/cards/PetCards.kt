@@ -57,14 +57,14 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.min
 import com.example.chat.R
 import com.example.chat.model.Pet
-import com.example.chat.model.PetTypes
+import com.example.chat.model.PetType
 import kotlin.math.roundToInt
 
 @Composable
 fun PetList(
     pets: List<Pet>,
     modifier: Modifier = Modifier,
-    onNavigateToChat: (PetTypes) -> Unit = {}
+    onNavigateToChat: (PetType) -> Unit = {}
 ) {
     LazyColumn(
         modifier = modifier
@@ -85,7 +85,7 @@ fun PetList(
 @Composable
 fun PetCard(
     pet: Pet,
-    onChatClick: (PetTypes) -> Unit = {}
+    onChatClick: (PetType) -> Unit = {}
 ) {
     val maxDragDistance = 200.dp
     val density = LocalDensity.current

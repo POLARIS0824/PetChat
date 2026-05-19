@@ -1,13 +1,13 @@
 package com.example.chat.data
 
 import androidx.room.TypeConverter
-import com.example.chat.model.PetTypes
+import com.example.chat.model.PetType
 
 class Converters {
     @TypeConverter
-    fun fromPetTypes(value: PetTypes): String = value.name
+    fun fromPetType(value: PetType): String = value.name
 
     @TypeConverter
-    fun toPetTypes(value: String): PetTypes =
-        PetTypes.entries.firstOrNull { it.name == value } ?: PetTypes.CAT
+    fun toPetType(value: String): PetType =
+        PetType.entries.firstOrNull { it.name == value } ?: PetType.CAT
 }

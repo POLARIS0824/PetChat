@@ -3,7 +3,7 @@ package com.example.chat.data.repository
 import android.content.Context
 import android.content.SharedPreferences
 import com.example.chat.data.dao.ChatDao
-import com.example.chat.model.PetTypes
+import com.example.chat.model.PetType
 import com.example.chat.model.SessionInfo
 import dagger.hilt.android.qualifiers.ApplicationContext
 import java.util.UUID
@@ -38,12 +38,12 @@ class SessionManager @Inject constructor(
         prefs.edit().putString(KEY_SESSION_ID, sessionId).apply()
     }
 
-    suspend fun getSessionMessages(sessionId: String, petType: PetTypes): List<com.example.chat.data.entity.ChatEntity> =
+    suspend fun getSessionMessages(sessionId: String, petType: PetType): List<com.example.chat.data.entity.ChatEntity> =
         chatDao.getSessionMessages(sessionId, petType.name)
 
     suspend fun getAllSessions(): List<SessionInfo> {
         return chatDao.getAllSessions().map { entity ->
-            val petType = PetTypes.entries.firstOrNull { it.name == entity.petType } ?: PetTypes.CAT
+            val petType = PetType.entries.firstOrNull { it.name == entity.petType } ?: PetType.CAT
             SessionInfo(
                 sessionId = entity.sessionId,
                 petType = petType,

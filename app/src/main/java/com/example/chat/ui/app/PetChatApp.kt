@@ -51,6 +51,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Color
+import com.example.chat.ui.theme.AccentOrange
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -60,7 +61,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation3.runtime.entryProvider
 import androidx.navigation3.ui.NavDisplay
 import com.example.chat.R
-import com.example.chat.model.PetTypes
+import com.example.chat.model.PetType
 import com.example.chat.ui.cards.CardsViewModel
 import com.example.chat.ui.cards.PetList
 import com.example.chat.ui.chat.ChatScreen
@@ -87,7 +88,7 @@ fun PetChatApp(
 ) {
     val topLevelBackStack = remember { TopLevelBackStack<Any>(ChatRoute) }
 
-    var currentPetType by remember { mutableStateOf(PetTypes.CAT) }
+    var currentPetType by remember { mutableStateOf(PetType.CAT) }
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
     val scope = rememberCoroutineScope()
     var showPetSelector by remember { mutableStateOf(false) }
@@ -226,17 +227,17 @@ private fun PetChatTopBar(
                 topLevelKey == ChatRoute -> Text("")
                 topLevelKey == CardsRoute -> {
                     Row(Modifier.fillMaxWidth().padding(end = 8.dp), horizontalArrangement = Arrangement.End) {
-                        Text("名片夹", modifier = Modifier.padding(end = 8.dp), fontWeight = FontWeight.Bold, fontSize = 18.sp, color = Color(255, 143, 45))
+                        Text("名片夹", modifier = Modifier.padding(end = 8.dp), fontWeight = FontWeight.Bold, fontSize = 18.sp, color = AccentOrange)
                     }
                 }
                 topLevelKey == NotesRoute -> {
                     Row(Modifier.fillMaxWidth().padding(end = 8.dp), horizontalArrangement = Arrangement.End) {
-                        Text("便利贴", modifier = Modifier.padding(end = 8.dp), fontWeight = FontWeight.Bold, fontSize = 18.sp, color = Color(255, 143, 45))
+                        Text("便利贴", modifier = Modifier.padding(end = 8.dp), fontWeight = FontWeight.Bold, fontSize = 18.sp, color = AccentOrange)
                     }
                 }
                 topLevelKey == SocialRoute -> {
                     Row(Modifier.fillMaxWidth().padding(end = 8.dp), horizontalArrangement = Arrangement.End) {
-                        Text("萌友圈", modifier = Modifier.padding(end = 8.dp), fontWeight = FontWeight.Bold, fontSize = 18.sp, color = Color(255, 143, 45))
+                        Text("萌友圈", modifier = Modifier.padding(end = 8.dp), fontWeight = FontWeight.Bold, fontSize = 18.sp, color = AccentOrange)
                     }
                 }
             }
@@ -292,7 +293,7 @@ private fun PetChatBottomBar(
                     Icon(
                         painter = painterResource(id = if (topLevelKey == item.route) item.selectedIcon else item.unselectedIcon),
                         contentDescription = item.title,
-                        tint = if (topLevelKey == item.route) Color(255, 143, 45) else Color.Gray,
+                        tint = if (topLevelKey == item.route) AccentOrange else Color.Gray,
                         modifier = Modifier.size(26.dp)
                     )
                 },
@@ -306,9 +307,9 @@ private fun PetChatBottomBar(
                 selected = topLevelKey == item.route,
                 onClick = { onRouteSelected(item.route) },
                 colors = NavigationBarItemDefaults.colors(
-                    selectedIconColor = Color(255, 143, 45),
+                    selectedIconColor = AccentOrange,
                     unselectedIconColor = Color.Gray,
-                    selectedTextColor = Color(255, 143, 45),
+                    selectedTextColor = AccentOrange,
                     unselectedTextColor = Color.Gray,
                     indicatorColor = Color.Transparent
                 )
@@ -320,8 +321,8 @@ private fun PetChatBottomBar(
 @Composable
 private fun PetSelectorOverlay(
     visible: Boolean,
-    currentPetType: PetTypes,
-    onSelect: (PetTypes) -> Unit
+    currentPetType: PetType,
+    onSelect: (PetType) -> Unit
 ) {
     AnimatedVisibility(
         visible = visible,
@@ -343,10 +344,10 @@ private fun PetSelectorOverlay(
                 modifier = Modifier.fillMaxWidth().padding(vertical = 16.dp),
                 horizontalArrangement = Arrangement.SpaceEvenly
             ) {
-                PetAvatar(name = "布丁", imageRes = R.drawable.pet_cat, isSelected = currentPetType == PetTypes.CAT, onClick = { onSelect(PetTypes.CAT) })
-                PetAvatar(name = "大白", imageRes = R.drawable.pet_samoyed, isSelected = currentPetType == PetTypes.DOG, onClick = { onSelect(PetTypes.DOG) })
-                PetAvatar(name = "豆豆", imageRes = R.drawable.pet_shiba, isSelected = currentPetType == PetTypes.DOG2, onClick = { onSelect(PetTypes.DOG2) })
-                PetAvatar(name = "团绒", imageRes = R.drawable.pet_hamster, isSelected = currentPetType == PetTypes.CAT2, onClick = { onSelect(PetTypes.CAT2) })
+                PetAvatar(name = "布丁", imageRes = R.drawable.pet_cat, isSelected = currentPetType == PetType.CAT, onClick = { onSelect(PetType.CAT) })
+                PetAvatar(name = "大白", imageRes = R.drawable.pet_samoyed, isSelected = currentPetType == PetType.DOG, onClick = { onSelect(PetType.DOG) })
+                PetAvatar(name = "豆豆", imageRes = R.drawable.pet_shiba, isSelected = currentPetType == PetType.SHIBA, onClick = { onSelect(PetType.SHIBA) })
+                PetAvatar(name = "团绒", imageRes = R.drawable.pet_hamster, isSelected = currentPetType == PetType.HAMSTER, onClick = { onSelect(PetType.HAMSTER) })
             }
         }
     }

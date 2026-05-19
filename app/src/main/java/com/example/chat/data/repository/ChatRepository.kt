@@ -6,7 +6,7 @@ import com.example.chat.data.entity.ChatEntity
 import com.example.chat.model.ChatMessage
 import com.example.chat.model.DeepseekRequest
 import com.example.chat.model.Message
-import com.example.chat.model.PetTypes
+import com.example.chat.model.PetType
 import com.example.chat.model.StreamResponseListener
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -21,14 +21,19 @@ class ChatRepository @Inject constructor(
     private val analysisUseCase: ChatAnalysisUseCase,
 ) {
     private val model = com.example.chat.BuildConfig.PETCHAT_MODEL.trim().ifBlank { "deepseek-v3" }
-    private val contextMessageLimit = 3
+
+    companion object {
+        private const val CONTEXT_MESSAGE_LIMIT = 3
+        private const val SUMMARY_THRESHOLD = 20
+        private const val IMPORTANT_MESSAGE_LENGTH = 50
+    }
 
     // region Message Building
 
-    private suspend fun buildMessages(petType: PetTypes, userMessage: String): List<Message> {
+    private suspend fun buildMessages(petType: PetType, userMessage: String): List<Message> {
         val enhancedPrompt = promptBuilder.build(petType)
         val recentMessages = chatDao.getRecentSessionMessages(
-            sessionManager.currentSessionId, petType.name, contextMessageLimit
+            sessionManager.currentSessionId, petType.name, CONTEXT_MESSAGE_LIMIT
         )
 
         val messages = mutableListOf<Message>()
@@ -47,7 +52,7 @@ class ChatRepository @Inject constructor(
 
     // region API Calls
 
-    suspend fun getPetResponse(petType: PetTypes, userMessage: String): String {
+    suspend fun getPetResponse(petType: PetType, userMessage: String): String {
         return try {
             val messages = buildMessages(petType, userMessage)
             val request = DeepseekRequest(model = model, messages = messages)
@@ -61,7 +66,7 @@ class ChatRepository @Inject constructor(
     }
 
     suspend fun getPetResponseStreaming(
-        petType: PetTypes,
+        petType: PetType,
         userMessage: String,
         listener: StreamResponseListener
     ) {
@@ -78,7 +83,7 @@ class ChatRepository @Inject constructor(
     }
 
     suspend fun getPetResponseWithPictureInfoStreaming(
-        petType: PetTypes,
+        petType: PetType,
         message: String,
         listener: StreamResponseListener
     ) {
@@ -107,7 +112,7 @@ class ChatRepository @Inject constructor(
 
     // region Chat Persistence
 
-    suspend fun saveChatMessage(message: ChatMessage, petType: PetTypes) {
+    suspend fun saveChatMessage(message: ChatMessage, petType: PetType) {
         val entity = ChatEntity(
             content = message.content,
             petType = petType.name,
@@ -118,16 +123,16 @@ class ChatRepository @Inject constructor(
         chatDao.insert(entity)
 
         val unprocessedCount = chatDao.getUnprocessedChatsCount()
-        if (unprocessedCount > 20) analysisUseCase.summarizeConversation()
+        if (unprocessedCount > SUMMARY_THRESHOLD) analysisUseCase.summarizeConversation()
     }
 
     private fun isMessageImportant(content: String): Boolean {
         return content.contains("?") || content.contains("!") ||
-                content.length > 50 || content.contains("喜欢") ||
+                content.length > IMPORTANT_MESSAGE_LENGTH || content.contains("喜欢") ||
                 content.contains("不喜欢") || content.contains("想要")
     }
 
-    suspend fun getMessagesByPetType(petType: PetTypes): List<ChatEntity> {
+    suspend fun getMessagesByPetType(petType: PetType): List<ChatEntity> {
         return try {
             chatDao.getMessagesByPetType(petType.name)
         } catch (e: Exception) {

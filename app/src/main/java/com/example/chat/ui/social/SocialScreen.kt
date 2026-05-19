@@ -14,6 +14,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import com.example.chat.ui.theme.AccentOrange
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
@@ -65,7 +66,7 @@ fun SocialScreen(
             modifier = Modifier
                 .align(Alignment.BottomEnd)
                 .padding(16.dp),
-            containerColor = Color(255, 143, 45),
+            containerColor = AccentOrange,
             contentColor = Color.White
         ) {
             Icon(Icons.Default.Add, contentDescription = "发布动态")
@@ -191,7 +192,7 @@ fun SocialPostItem(
                         id = R.drawable.ic_bookmark
                     ),
                     contentDescription = "收藏",
-                    tint = if (post.isSaved) Color(255, 143, 45) else Color.Gray,
+                    tint = if (post.isSaved) AccentOrange else Color.Gray,
                     modifier = Modifier.size(24.dp)
                 )
             }
@@ -225,7 +226,7 @@ fun AddPostDialog(
                 onClick = { onPost(content) },
                 enabled = content.isNotEmpty(),
                 colors = ButtonDefaults.buttonColors(
-                    containerColor = Color(255, 143, 45)
+                    containerColor = AccentOrange
                 )
             ) {
                 Text("发布")
@@ -235,27 +236,25 @@ fun AddPostDialog(
             TextButton(onClick = onDismiss) {
                 Text(
                     "取消",
-                    color = Color(255, 143, 45)
+                    color = AccentOrange
                 )
             }
         }
     )
 }
 
-private fun formatDate(date: Date): String {
+private val socialDateYear = SimpleDateFormat("yyyy年MM月dd日 HH:mm", Locale.getDefault())
+private val socialDateMonth = SimpleDateFormat("MM月dd日 HH:mm", Locale.getDefault())
+private val socialDateTime = SimpleDateFormat("HH:mm", Locale.getDefault())
+
+private fun formatDate(timestamp: Long): String {
     val now = Calendar.getInstance()
-    val postTime = Calendar.getInstance().apply { time = date }
+    val postTime = Calendar.getInstance().apply { timeInMillis = timestamp }
 
     return when {
-        now.get(Calendar.YEAR) != postTime.get(Calendar.YEAR) -> {
-            SimpleDateFormat("yyyy年MM月dd日 HH:mm", Locale.getDefault()).format(date)
-        }
-        now.get(Calendar.DAY_OF_YEAR) != postTime.get(Calendar.DAY_OF_YEAR) -> {
-            SimpleDateFormat("MM月dd日 HH:mm", Locale.getDefault()).format(date)
-        }
-        else -> {
-            SimpleDateFormat("HH:mm", Locale.getDefault()).format(date)
-        }
+        now.get(Calendar.YEAR) != postTime.get(Calendar.YEAR) -> socialDateYear.format(timestamp)
+        now.get(Calendar.DAY_OF_YEAR) != postTime.get(Calendar.DAY_OF_YEAR) -> socialDateMonth.format(timestamp)
+        else -> socialDateTime.format(timestamp)
     }
 }
 

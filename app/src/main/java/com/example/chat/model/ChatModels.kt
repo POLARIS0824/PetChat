@@ -6,11 +6,11 @@ import kotlinx.serialization.Serializable
  * 宠物类型枚举
  * 定义支持的宠物类型及其显示名称
  */
-enum class PetTypes(val displayName: String) {
+enum class PetType(val displayName: String) {
     CAT("布丁"),
     DOG("大白"),
-    CAT2("团绒"),
-    DOG2("豆豆"),
+    HAMSTER("团绒"),
+    SHIBA("豆豆"),
 }
 
 /**
@@ -19,7 +19,7 @@ enum class PetTypes(val displayName: String) {
 data class ChatMessage(
     val content: String,    // 消息内容
     val isFromUser: Boolean, // 是否为用户消息
-    val petType: PetTypes,  // 宠物类型
+    val petType: PetType,  // 宠物类型
     val timestamp: Long = System.currentTimeMillis(), // 消息时间戳
     val role: String = if (isFromUser) "user" else "assistant", // 消息角色
 )

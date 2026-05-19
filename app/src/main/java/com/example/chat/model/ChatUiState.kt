@@ -8,6 +8,7 @@ sealed interface ChatUiState {
         val streamingMessage: ChatMessage? = null,
         val isForegroundLoading: Boolean = false,
         val shouldScrollToBottom: Boolean = false,
-        val currentPetType: PetTypes = PetTypes.CAT
+        val currentPetType: PetType = PetType.CAT
     ) : ChatUiState
+    data class Error(val message: String) : ChatUiState
 }

@@ -17,6 +17,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import com.example.chat.ui.theme.AccentOrange
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
@@ -49,7 +50,7 @@ fun PetAvatar(
                         .size(20.dp)
                         .align(Alignment.BottomEnd)
                         .offset(x = (-1).dp, y = (-1).dp)
-                        .background(Color(255, 143, 45), CircleShape)
+                        .background(AccentOrange, CircleShape)
                         .border(1.dp, Color.White, CircleShape)
                 )
             }

@@ -4,16 +4,18 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.chat.data.entity.NoteEntity
 import com.example.chat.data.repository.NotesRepository
+import com.example.chat.model.NoteUiModel
 import com.example.chat.model.NotesUiState
+import com.example.chat.model.PetType
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.combine
-import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -28,7 +30,7 @@ class NotesViewModel @Inject constructor(
     private val notesFlow = _selectedPetType.flatMapLatest { petType ->
         if (petType == null) repository.getAllNotesFlow()
         else repository.getNotesByTypeFlow(petType)
-    }
+    }.map { notes -> notes.map { it.toUiModel() } }
 
     val uiState: StateFlow<NotesUiState> = combine(
         _selectedPetType,
@@ -55,19 +57,33 @@ class NotesViewModel @Inject constructor(
         }
     }
 
-    fun deleteNote(note: NoteEntity) {
+    fun deleteNote(note: NoteUiModel) {
         viewModelScope.launch {
-            repository.deleteNote(note)
+            repository.deleteNote(note.toEntity())
         }
     }
 
-    fun updateNote(note: NoteEntity) {
+    fun updateNote(note: NoteUiModel) {
         viewModelScope.launch {
-            repository.updateNote(note)
+            repository.updateNote(note.toEntity())
         }
     }
 
     fun setFilter(petType: String?) {
         _selectedPetType.value = petType
     }
+
+    private fun NoteEntity.toUiModel() = NoteUiModel(
+        id = id,
+        content = content,
+        petType = PetType.entries.firstOrNull { it.name == petType } ?: PetType.CAT,
+        timestamp = timestamp
+    )
+
+    private fun NoteUiModel.toEntity() = NoteEntity(
+        id = id,
+        content = content,
+        petType = petType.name,
+        timestamp = timestamp
+    )
 }

@@ -11,7 +11,8 @@ import androidx.hilt.work.HiltWorker
 import androidx.work.*
 import com.example.chat.MainActivity
 import com.example.chat.data.repository.ChatRepository
-import com.example.chat.model.PetTypes
+import com.example.chat.model.PetType
+import com.example.chat.R
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedInject
 import java.util.concurrent.TimeUnit
@@ -74,11 +75,11 @@ class PetGreetingWorker @AssistedInject constructor(
         return try {
             val greeting = try {
                 repository.getPetResponse(
-                    PetTypes.CAT,
+                    PetType.CAT,
                     "生成一句简短的问候语，表达对主人的思念或关心"
                 )
             } catch (e: Exception) {
-                "喵~ 想你了，主人！"
+                context.getString(R.string.notification_fallback)
             }
 
             createNotificationChannel()
@@ -94,7 +95,7 @@ class PetGreetingWorker @AssistedInject constructor(
             val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
             val notification = NotificationCompat.Builder(context, CHANNEL_ID)
                 .setSmallIcon(android.R.drawable.ic_dialog_info)
-                .setContentTitle("来自宠物的问候")
+                .setContentTitle(context.getString(R.string.notification_title))
                 .setContentText(greeting)
                 .setPriority(NotificationCompat.PRIORITY_DEFAULT)
                 .setAutoCancel(true)
@@ -110,8 +111,8 @@ class PetGreetingWorker @AssistedInject constructor(
     }
 
     private fun createNotificationChannel() {
-        val name = "宠物问候"
-        val descriptionText = "来自宠物的每日问候"
+        val name = context.getString(R.string.notification_channel_name)
+        val descriptionText = context.getString(R.string.notification_channel_desc)
         val importance = NotificationManager.IMPORTANCE_DEFAULT
         val channel = NotificationChannel(CHANNEL_ID, name, importance).apply {
             description = descriptionText

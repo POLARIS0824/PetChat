@@ -25,7 +25,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.example.chat.R
-import com.example.chat.model.PetTypes
+import com.example.chat.model.PetType
 import com.example.chat.model.SessionInfo
 import com.example.chat.ui.chat.PetChatViewModel
 import java.text.SimpleDateFormat
@@ -63,31 +63,27 @@ fun SessionListScreen(viewModel: PetChatViewModel, onSessionSelected: (String) -
     }
 }
 
-fun getPetAvatar(petType: PetTypes): Int {
+fun getPetAvatar(petType: PetType): Int {
     return when (petType) {
-        PetTypes.CAT -> R.drawable.pet_cat
-        PetTypes.DOG -> R.drawable.pet_samoyed
-        PetTypes.CAT2 -> R.drawable.pet_hamster
-        PetTypes.DOG2 -> R.drawable.pet_shiba
+        PetType.CAT -> R.drawable.pet_cat
+        PetType.DOG -> R.drawable.pet_samoyed
+        PetType.HAMSTER -> R.drawable.pet_hamster
+        PetType.SHIBA -> R.drawable.pet_shiba
     }
 }
+
+private val dateFormatYear = SimpleDateFormat("yyyy年MM月dd日", Locale.getDefault())
+private val dateFormatMonth = SimpleDateFormat("MM月dd日", Locale.getDefault())
+private val dateFormatTime = SimpleDateFormat("HH:mm", Locale.getDefault())
 
 fun formatTime(timestamp: Long): String {
     val now = Calendar.getInstance()
     val messageTime = Calendar.getInstance().apply { timeInMillis = timestamp }
 
     return when {
-        now.get(Calendar.YEAR) != messageTime.get(Calendar.YEAR) -> {
-            SimpleDateFormat("yyyy年MM月dd日", Locale.getDefault()).format(timestamp)
-        }
-
-        now.get(Calendar.DAY_OF_YEAR) != messageTime.get(Calendar.DAY_OF_YEAR) -> {
-            SimpleDateFormat("MM月dd日", Locale.getDefault()).format(timestamp)
-        }
-
-        else -> {
-            SimpleDateFormat("HH:mm", Locale.getDefault()).format(timestamp)
-        }
+        now.get(Calendar.YEAR) != messageTime.get(Calendar.YEAR) -> dateFormatYear.format(timestamp)
+        now.get(Calendar.DAY_OF_YEAR) != messageTime.get(Calendar.DAY_OF_YEAR) -> dateFormatMonth.format(timestamp)
+        else -> dateFormatTime.format(timestamp)
     }
 }
 

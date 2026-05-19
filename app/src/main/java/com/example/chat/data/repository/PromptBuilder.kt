@@ -1,7 +1,7 @@
 package com.example.chat.data.repository
 
 import com.example.chat.data.dao.AnalysisDao
-import com.example.chat.model.PetTypes
+import com.example.chat.model.PetType
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -9,7 +9,7 @@ import javax.inject.Singleton
 class PromptBuilder @Inject constructor(
     private val analysisDao: AnalysisDao,
 ) {
-    suspend fun build(petType: PetTypes): String {
+    suspend fun build(petType: PetType): String {
         val basePrompt = PromptConfig.prompts[petType] ?: ""
         val analysis = analysisDao.getLatestAnalysis(petType.name)
         return if (analysis != null) {

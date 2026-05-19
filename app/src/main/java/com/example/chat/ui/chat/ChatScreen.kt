@@ -28,17 +28,18 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.example.chat.R
 import com.example.chat.model.ChatUiState
-import com.example.chat.model.PetTypes
+import com.example.chat.model.PetType
 import com.example.chat.ui.chat.PetChatViewModel
 import kotlinx.coroutines.delay
 
 @Composable
 fun ChatScreen(
     viewModel: PetChatViewModel,
-    petType: PetTypes,
+    petType: PetType,
     contentPadding: PaddingValues = PaddingValues(0.dp),
     showPetSelector: Boolean = false,
     onHidePetSelector: () -> Unit = {}
@@ -78,13 +79,13 @@ fun ChatScreen(
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
                         Image(
                             painter = painterResource(id = randomImageRes),
-                            contentDescription = "没有消息",
+                            contentDescription = stringResource(R.string.chat_no_messages),
                             modifier = Modifier
                                 .size(200.dp)
                                 .padding(bottom = 16.dp)
                         )
                         Text(
-                            text = "开始和宠物聊天吧！",
+                            text = stringResource(R.string.chat_empty_hint),
                             style = MaterialTheme.typography.bodyLarge,
                             color = Color.Gray
                         )

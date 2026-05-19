@@ -6,10 +6,12 @@ import com.example.chat.data.repository.ChatRepository
 import com.example.chat.data.repository.SessionManager
 import com.example.chat.model.ChatMessage
 import com.example.chat.model.ChatUiState
-import com.example.chat.model.PetTypes
+import com.example.chat.model.PetType
 import com.example.chat.model.PictureInfo
 import com.example.chat.model.SessionInfo
 import com.example.chat.model.StreamResponseListener
+import android.app.Application
+import com.example.chat.R
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
@@ -24,6 +26,7 @@ import javax.inject.Inject
 class PetChatViewModel @Inject constructor(
     private val repository: ChatRepository,
     private val sessionManager: SessionManager,
+    private val application: Application,
 ) : ViewModel() {
 
     private val _chatUiState = MutableStateFlow<ChatUiState>(ChatUiState.Loading)
@@ -58,7 +61,7 @@ class PetChatViewModel @Inject constructor(
                 ChatMessage(
                     content = entity.content,
                     isFromUser = entity.role == "user",
-                    petType = PetTypes.entries.firstOrNull { it.name == entity.petType } ?: PetTypes.CAT
+                    petType = PetType.entries.firstOrNull { it.name == entity.petType } ?: PetType.CAT
                 )
             }
             _chatUiState.value = ChatUiState.Ready(
@@ -74,7 +77,7 @@ class PetChatViewModel @Inject constructor(
         }
     }
 
-    fun selectPetType(petType: PetTypes) {
+    fun selectPetType(petType: PetType) {
         updateReady { it.copy(currentPetType = petType) }
         loadChatHistory()
     }
@@ -176,7 +179,9 @@ class PetChatViewModel @Inject constructor(
 
                     override fun onError(e: Exception) {
                         e.printStackTrace()
-                        val errorMessage = petMessage.copy(content = "抱歉，我现在有点累了，待会再聊吧。")
+                        val errorMessage = petMessage.copy(
+                            content = application.getString(R.string.chat_error_fallback)
+                        )
                         updateReady {
                             it.copy(
                                 isStreaming = false,
@@ -216,7 +221,7 @@ class PetChatViewModel @Inject constructor(
         return info
     }
 
-    fun getChatHistory(petType: PetTypes): List<ChatMessage> {
+    fun getChatHistory(petType: PetType): List<ChatMessage> {
         val state = readyState()
         return if (state.currentPetType == petType) {
             state.chatHistory

@@ -17,17 +17,18 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
-import com.example.chat.data.entity.NoteEntity
+import com.example.chat.model.NoteUiModel
 import com.example.chat.model.NotesUiState
-import com.example.chat.model.PetTypes
+import com.example.chat.model.PetType
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
-
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import com.example.chat.R
+import com.example.chat.ui.theme.AccentOrange
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -40,23 +41,21 @@ fun NotesScreen(
     val notes = state.notes
     var showAddDialog by remember { mutableStateOf(false) }
     var showEditDialog by remember { mutableStateOf(false) }
-    var currentEditingNote by remember { mutableStateOf<NoteEntity?>(null) }
+    var currentEditingNote by remember { mutableStateOf<NoteUiModel?>(null) }
 
     Column(
         modifier = modifier
             .fillMaxSize()
             .background(Color(255, 255, 255))
     ) {
-        // 过滤器
         FilterChips(
             selectedType = state.selectedPetType,
             onFilterSelected = { viewModel.setFilter(it) }
         )
 
-        // 便利贴网格
         LazyVerticalGrid(
             columns = GridCells.Fixed(2),
-            contentPadding = PaddingValues(horizontal = 24.dp, vertical = 16.dp), // 增加水平内边距
+            contentPadding = PaddingValues(horizontal = 24.dp, vertical = 16.dp),
             horizontalArrangement = Arrangement.spacedBy(24.dp),
             verticalArrangement = Arrangement.spacedBy(24.dp),
             modifier = Modifier.weight(1f),
@@ -73,21 +72,19 @@ fun NotesScreen(
             }
         }
 
-        // 添加按钮
         FloatingActionButton(
             onClick = { showAddDialog = true },
             modifier = Modifier
                 .padding(16.dp)
                 .align(Alignment.End),
-            containerColor = Color(255,143, 45),
+            containerColor = AccentOrange,
             contentColor = Color.White
         ) {
             Icon(Icons.Default.Add,
-                contentDescription = "添加便利贴")
+                contentDescription = stringResource(R.string.notes_add))
         }
     }
 
-    // 添加便利贴对话框
     if (showAddDialog) {
         AddNoteDialog(
             onDismiss = { showAddDialog = false },
@@ -98,7 +95,6 @@ fun NotesScreen(
         )
     }
 
-    // 编辑便利贴对话框
     val editingNote = currentEditingNote
     if (showEditDialog && editingNote != null) {
         EditNoteDialog(
@@ -123,17 +119,17 @@ fun NotesScreen(
 
 @Composable
 private fun EditNoteDialog(
-    note: NoteEntity,
+    note: NoteUiModel,
     onDismiss: () -> Unit,
-    onUpdate: (NoteEntity) -> Unit,
+    onUpdate: (NoteUiModel) -> Unit,
     onDelete: () -> Unit
 ) {
     var content by remember { mutableStateOf(note.content) }
-    var selectedType by remember { mutableStateOf(PetTypes.entries.firstOrNull { it.name == note.petType } ?: PetTypes.CAT) }
+    var selectedType by remember { mutableStateOf(note.petType) }
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("编辑便利贴") },
+        title = { Text(stringResource(R.string.notes_edit)) },
         text = {
             Column(
                 modifier = Modifier.fillMaxWidth(),
@@ -142,7 +138,7 @@ private fun EditNoteDialog(
                 OutlinedTextField(
                     value = content,
                     onValueChange = { content = it },
-                    label = { Text("内容") },
+                    label = { Text(stringResource(R.string.notes_content_label)) },
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(180.dp),
@@ -150,21 +146,20 @@ private fun EditNoteDialog(
                     maxLines = 10
                 )
 
-                Text("选择宠物类型:", style = MaterialTheme.typography.labelLarge)
-                // 使用LazyRow和FilterChip替换原来的选择器
+                Text(stringResource(R.string.notes_select_pet_type), style = MaterialTheme.typography.labelLarge)
                 LazyRow(
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(vertical = 8.dp),
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    items(PetTypes.entries) { type ->
+                    items(PetType.entries) { type ->
                         FilterChip(
                             selected = selectedType == type,
                             onClick = { selectedType = type },
                             label = { Text(type.displayName) },
                             colors = FilterChipDefaults.filterChipColors(
-                                selectedContainerColor = Color(255, 143, 45),
+                                selectedContainerColor = AccentOrange,
                                 selectedLabelColor = Color.White,
                                 containerColor = Color.Transparent,
                             ),
@@ -185,33 +180,31 @@ private fun EditNoteDialog(
                     )
                 ) {
                     Text(
-                        "删除",
+                        stringResource(R.string.notes_delete),
                         color = Color.White
                     )
                 }
-                // 保存按钮
                 Button(
                     onClick = {
-                        // 创建更新后的便利贴对象，保留原ID和时间戳
                         val updatedNote = note.copy(
                             content = content,
-                            petType = selectedType.name
+                            petType = selectedType
                         )
                         onUpdate(updatedNote)
                     },
                     colors = ButtonDefaults.buttonColors(
-                        containerColor = Color(255, 143, 45)
+                        containerColor = AccentOrange
                     )
                 ) {
-                    Text("保存")
+                    Text(stringResource(R.string.notes_save))
                 }
             }
         },
         dismissButton = {
             TextButton(onClick = onDismiss) {
                 Text(
-                    "取消",
-                    color = Color(255, 143, 45)
+                    stringResource(R.string.notes_cancel),
+                    color = AccentOrange
                 )
             }
         }
@@ -233,25 +226,25 @@ private fun FilterChips(
             FilterChip(
                 selected = selectedType == null,
                 onClick = { onFilterSelected(null) },
-                label = { Text("全部") },
+                label = { Text(stringResource(R.string.notes_filter_all)) },
                 colors = FilterChipDefaults.filterChipColors(
-                    selectedContainerColor = Color(255, 143, 45),
+                    selectedContainerColor = AccentOrange,
                     selectedLabelColor = Color.White
                 ),
                 shape = RoundedCornerShape(16.dp)
             )
         }
 
-        items(PetTypes.entries) { type ->
+        items(PetType.entries) { type ->
             FilterChip(
                 selected = selectedType == type.name,
                 onClick = { onFilterSelected(type.name) },
                 label = { Text("#${type.displayName}") },
                 colors = FilterChipDefaults.filterChipColors(
-                    selectedContainerColor = Color(255, 143, 45),
+                    selectedContainerColor = AccentOrange,
                     selectedLabelColor = Color.White,
                     containerColor = Color.Transparent,
-                    labelColor = Color(255, 143, 45),
+                    labelColor = AccentOrange,
                 ),
                 shape = RoundedCornerShape(16.dp)
             )
@@ -261,7 +254,7 @@ private fun FilterChips(
 
 @Composable
 private fun NoteCard(
-    note: NoteEntity,
+    note: NoteUiModel,
     onClick: () -> Unit
 ) {
     val background = R.drawable.notebackground
@@ -269,10 +262,9 @@ private fun NoteCard(
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .aspectRatio(0.9f) // 设置固定宽高比，确保便签有足够空间显示背景
+            .aspectRatio(0.9f)
             .clickable(onClick = onClick),
         elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
-//        shape = RoundedCornerShape(8.dp) // 添加圆角
     ) {
         Box(
             modifier = Modifier.fillMaxSize(),
@@ -281,7 +273,7 @@ private fun NoteCard(
             Image(
                 painter = painterResource(id = background),
                 contentDescription = null,
-                contentScale = ContentScale.FillBounds, // 修改为FillBounds确保背景填充整个区域
+                contentScale = ContentScale.FillBounds,
                 modifier = Modifier.fillMaxSize()
             )
 
@@ -293,7 +285,6 @@ private fun NoteCard(
             ) {
                 Column(modifier = Modifier.padding(16.dp),
                     horizontalAlignment = Alignment.CenterHorizontally) {
-                    // 便利贴内容
                     Text(
                         text = note.content,
                         style = MaterialTheme.typography.bodyLarge,
@@ -302,9 +293,8 @@ private fun NoteCard(
 
                     Spacer(modifier = Modifier.height(8.dp))
 
-                    // 添加宠物类型标签
                     Text(
-                        text = "#${PetTypes.entries.firstOrNull { it.name == note.petType }?.displayName ?: note.petType}",
+                        text = "#${note.petType.displayName}",
                         style = MaterialTheme.typography.bodySmall,
                         color = Color.Black,
                         fontWeight = FontWeight.Bold,
@@ -317,18 +307,17 @@ private fun NoteCard(
     }
 }
 
-// 修改添加便利贴对话框，使用LazyRow和FilterChip
 @Composable
 private fun AddNoteDialog(
     onDismiss: () -> Unit,
     onAdd: (String, String) -> Unit
 ) {
     var content by remember { mutableStateOf("") }
-    var selectedType by remember { mutableStateOf(PetTypes.CAT) }
+    var selectedType by remember { mutableStateOf(PetType.CAT) }
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("添加便利贴") },
+        title = { Text(stringResource(R.string.notes_add)) },
         text = {
             Column(
                 modifier = Modifier
@@ -339,7 +328,7 @@ private fun AddNoteDialog(
                 OutlinedTextField(
                     value = content,
                     onValueChange = { content = it },
-                    label = { Text("内容") },
+                    label = { Text(stringResource(R.string.notes_content_label)) },
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(180.dp),
@@ -347,22 +336,21 @@ private fun AddNoteDialog(
                     maxLines = 10
                 )
 
-                Text("选择宠物类型:", style = MaterialTheme.typography.labelLarge)
+                Text(stringResource(R.string.notes_select_pet_type), style = MaterialTheme.typography.labelLarge)
 
-                // 使用LazyRow和FilterChip替换原来的选择器
                 LazyRow(
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(vertical = 8.dp),
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    items(PetTypes.entries) { type ->
+                    items(PetType.entries) { type ->
                         FilterChip(
                             selected = selectedType == type,
                             onClick = { selectedType = type },
                             label = { Text(type.displayName) },
                             colors = FilterChipDefaults.filterChipColors(
-                                selectedContainerColor = Color(255, 143, 45),
+                                selectedContainerColor = AccentOrange,
                                 selectedLabelColor = Color.White,
                                 containerColor = Color.Transparent,
                             ),
@@ -381,17 +369,17 @@ private fun AddNoteDialog(
                 },
                 enabled = content.isNotEmpty(),
                 colors = ButtonDefaults.buttonColors(
-                    containerColor = Color(255, 143, 45)
+                    containerColor = AccentOrange
                 )
             ) {
-                Text("添加")
+                Text(stringResource(R.string.notes_confirm))
             }
         },
         dismissButton = {
             TextButton(onClick = onDismiss) {
                 Text(
-                    "取消",
-                    color = Color(255, 143, 45)
+                    stringResource(R.string.notes_cancel),
+                    color = AccentOrange
                 )
             }
         }

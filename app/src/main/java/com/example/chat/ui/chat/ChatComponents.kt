@@ -42,8 +42,10 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
+import com.example.chat.ui.theme.AccentOrange
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -99,7 +101,7 @@ fun ChatBubble(
     isStreaming: Boolean = false
 ) {
     val isFromUser = message.isFromUser
-    val backgroundColor = if (isFromUser) Color(255, 143, 45) else Color.White
+    val backgroundColor = if (isFromUser) AccentOrange else Color.White
     val textColor = if (isFromUser) Color.White else Color.Black
     val arrangement = if (isFromUser) Arrangement.End else Arrangement.Start
     val bubbleShape = if (isFromUser) {
@@ -108,8 +110,8 @@ fun ChatBubble(
         androidx.compose.foundation.shape.RoundedCornerShape(4.dp, 16.dp, 16.dp, 16.dp)
     }
 
-    val timeString = SimpleDateFormat("HH:mm", Locale.getDefault())
-        .format(message.timestamp)
+    val timeFormat = remember { SimpleDateFormat("HH:mm", Locale.getDefault()) }
+    val timeString = timeFormat.format(message.timestamp)
 
     Row(
         modifier = modifier
@@ -186,7 +188,7 @@ fun TypingIndicator(modifier: Modifier = Modifier) {
 fun LoadingAnimation(
     modifier: Modifier = Modifier,
     dotSize: Float = 36f,
-    dotColor: Color = Color(255, 143, 45),
+    dotColor: Color = AccentOrange,
     animationDuration: Int = 1000,
     delayBetweenDots: Int = 200
 ) {
@@ -304,7 +306,7 @@ fun ChatInput(
                 ),
                 placeholder = {
                     Text(
-                        "Message...",
+                        stringResource(R.string.chat_message_placeholder),
                         style = MaterialTheme.typography.bodyLarge,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -330,7 +332,7 @@ fun ChatInput(
                 Icon(
                     painter = painterResource(id = R.drawable.ic_send),
                     contentDescription = "Send",
-                    tint = Color(255, 143, 45)
+                    tint = AccentOrange
                 )
             }
         }

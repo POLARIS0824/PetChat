@@ -9,7 +9,7 @@ import com.example.chat.data.entity.ChatEntity
 import com.example.chat.model.ChatAnalysisResult
 import com.example.chat.model.DeepseekRequest
 import com.example.chat.model.Message
-import com.example.chat.model.PetTypes
+import com.example.chat.model.PetType
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import javax.inject.Inject
@@ -26,14 +26,18 @@ class ChatAnalysisUseCase @Inject constructor(
     private val json = Json { ignoreUnknownKeys = true }
     private val model = com.example.chat.BuildConfig.PETCHAT_MODEL.trim().ifBlank { "deepseek-v3" }
 
+    companion object {
+        private const val ANALYSIS_THRESHOLD = 10
+    }
+
     suspend fun analyzeChats() {
         val unprocessedChats = chatDao.getUnprocessedChats()
-        if (unprocessedChats.size < 10) return
+        if (unprocessedChats.size < ANALYSIS_THRESHOLD) return
 
         val chatsByPetType = unprocessedChats.groupBy { it.petType }
 
         for ((petTypeString, chats) in chatsByPetType) {
-            if (chats.size < 10) continue
+            if (chats.size < ANALYSIS_THRESHOLD) continue
 
             val analysisPrompt = """
                 请分析以下聊天记录，并提供:
@@ -85,7 +89,7 @@ class ChatAnalysisUseCase @Inject constructor(
 
     suspend fun summarizeConversation() {
         val messages = chatDao.getUnprocessedChats()
-        if (messages.size < 10) return
+        if (messages.size < ANALYSIS_THRESHOLD) return
 
         val summaryPrompt = """
             请对以下对话进行摘要，提取关键信息，不超过100字：
@@ -95,7 +99,7 @@ class ChatAnalysisUseCase @Inject constructor(
         """.trimIndent()
 
         try {
-            val petType = PetTypes.entries.firstOrNull { it.name == messages.first().petType } ?: PetTypes.CAT
+            val petType = PetType.entries.firstOrNull { it.name == messages.first().petType } ?: PetType.CAT
             val summary = getPetResponse(petType, summaryPrompt)
             val summaryEntity = ChatEntity(
                 content = "【对话摘要】$summary",
@@ -115,7 +119,7 @@ class ChatAnalysisUseCase @Inject constructor(
         }
     }
 
-    private suspend fun getPetResponse(petType: PetTypes, userMessage: String): String {
+    private suspend fun getPetResponse(petType: PetType, userMessage: String): String {
         return try {
             val messages = buildMessages(petType, userMessage)
             val request = DeepseekRequest(model = model, messages = messages)
@@ -128,7 +132,7 @@ class ChatAnalysisUseCase @Inject constructor(
         }
     }
 
-    private suspend fun buildMessages(petType: PetTypes, userMessage: String): List<Message> {
+    private suspend fun buildMessages(petType: PetType, userMessage: String): List<Message> {
         val enhancedPrompt = promptBuilder.build(petType)
         return listOf(
             Message("system", enhancedPrompt),

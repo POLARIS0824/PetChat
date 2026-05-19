@@ -5,7 +5,6 @@ import com.example.chat.R
 import com.example.chat.model.SocialPost
 import dagger.hilt.android.lifecycle.HiltViewModel
 import java.text.SimpleDateFormat
-import java.util.Date
 import java.util.Locale
 import java.util.UUID
 import javax.inject.Inject
@@ -25,6 +24,8 @@ class SocialViewModel @Inject constructor() : ViewModel() {
 
     private fun loadDummyPosts() {
         val dateFormat = SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault())
+        val dummyTimestamp = dateFormat.parse("2021-06-20 11:18:00")?.time
+            ?: System.currentTimeMillis()
 
         val dummyPosts = listOf(
             SocialPost(
@@ -33,7 +34,7 @@ class SocialViewModel @Inject constructor() : ViewModel() {
                 authorAvatar = R.drawable.pet_shiba,
                 authorUsername = "@spicyyuanroll",
                 content = "凌晨三点的人类卧室探险成功！花瓶碎片×1，尖叫分贝+10086，本喵荣获本月拆家MVP",
-                timestamp = dateFormat.parse("2021-06-20 11:18:00") ?: Date(),
+                timestamp = dummyTimestamp,
                 likeCount = 45,
                 commentCount = 0,
                 isLiked = true
@@ -44,7 +45,7 @@ class SocialViewModel @Inject constructor() : ViewModel() {
                 authorAvatar = R.drawable.avatar1,
                 authorUsername = "@spicyyuanroll",
                 content = "汪！新玩具上线啦，咬起来特别有嚼劲，实名推荐！",
-                timestamp = dateFormat.parse("2021-06-20 11:18:00") ?: Date(),
+                timestamp = dummyTimestamp,
                 likeCount = 5,
                 commentCount = 0,
                 isLiked = true
@@ -55,7 +56,7 @@ class SocialViewModel @Inject constructor() : ViewModel() {
                 authorAvatar = R.drawable.avatar2,
                 authorUsername = "@skybudgie",
                 content = "飞了一圈，回来还是觉得笼子里更有安全感",
-                timestamp = dateFormat.parse("2021-06-20 11:18:00") ?: Date(),
+                timestamp = dummyTimestamp,
                 likeCount = 6,
                 commentCount = 0
             ),
@@ -65,7 +66,7 @@ class SocialViewModel @Inject constructor() : ViewModel() {
                 authorAvatar = R.drawable.avatar3,
                 authorUsername = "@theahighfives",
                 content = "发现主人偷偷吃零食没分我，生气！以后别想有好脸色。",
-                timestamp = dateFormat.parse("2021-06-20 11:18:00") ?: Date(),
+                timestamp = dummyTimestamp,
                 likeCount = 3,
                 commentCount = 0
             ),
@@ -75,7 +76,7 @@ class SocialViewModel @Inject constructor() : ViewModel() {
                 authorAvatar = R.drawable.avatar4,
                 authorUsername = "@gibraltar",
                 content = "虽然铲屎的很笨，但他做的饭香味不错，今天就原谅他了。",
-                timestamp = dateFormat.parse("2021-06-20 11:18:00") ?: Date(),
+                timestamp = dummyTimestamp,
                 likeCount = 9,
                 commentCount = 0
             )
@@ -113,7 +114,7 @@ class SocialViewModel @Inject constructor() : ViewModel() {
             authorAvatar = R.drawable.ic_cat_avatar,
             authorUsername = "@mypet",
             content = content,
-            timestamp = Date(),
+            timestamp = System.currentTimeMillis(),
             likeCount = 0,
             commentCount = 0
         )

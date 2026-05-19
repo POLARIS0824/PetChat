@@ -1,14 +1,14 @@
 package com.example.chat.model
 
-import java.util.Date
+import androidx.annotation.DrawableRes
 
 data class SocialPost(
     val id: String,
     val authorName: String,
-    val authorAvatar: Int, // 资源ID
+    @DrawableRes val authorAvatar: Int,
     val authorUsername: String,
     val content: String,
-    val timestamp: Date,
+    val timestamp: Long,
     val likeCount: Int = 0,
     val commentCount: Int = 0,
     val isLiked: Boolean = false,
@@ -18,9 +18,9 @@ data class SocialPost(
 data class Comment(
     val id: String,
     val authorName: String,
-    val authorAvatar: Int, // 资源ID
+    @DrawableRes val authorAvatar: Int,
     val authorUsername: String,
     val content: String,
-    val timestamp: Date,
+    val timestamp: Long,
     val likeCount: Int = 0
 )

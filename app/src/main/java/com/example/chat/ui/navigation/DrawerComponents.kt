@@ -18,6 +18,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.example.chat.R
 
@@ -62,13 +63,13 @@ fun DrawerContent(
         Column(modifier = Modifier.fillMaxWidth()) {
             DrawerMenuItem(
                 icon = R.drawable.ic_account,
-                text = "会话列表",
+                text = stringResource(R.string.drawer_session_list),
                 onClick = onNavigateToSessionList
             )
-            DrawerMenuItem(icon = R.drawable.ic_account, text = "账号信息")
-            DrawerMenuItem(icon = R.drawable.ic_password, text = "密码设置")
-            DrawerMenuItem(icon = R.drawable.ic_favorite, text = "偏好设置")
-            DrawerMenuItem(icon = R.drawable.ic_settings, text = "系统设置")
+            DrawerMenuItem(icon = R.drawable.ic_account, text = stringResource(R.string.drawer_account))
+            DrawerMenuItem(icon = R.drawable.ic_password, text = stringResource(R.string.drawer_password))
+            DrawerMenuItem(icon = R.drawable.ic_favorite, text = stringResource(R.string.drawer_preferences))
+            DrawerMenuItem(icon = R.drawable.ic_settings, text = stringResource(R.string.drawer_settings))
         }
 
         Spacer(modifier = Modifier.weight(1f))
@@ -85,12 +86,12 @@ fun DrawerContent(
             ) {
                 Icon(
                     painter = painterResource(id = R.drawable.ic_logout),
-                    contentDescription = "退出登录",
+                    contentDescription = stringResource(R.string.drawer_logout),
                     tint = Color(0xFFFF5252)
                 )
                 Spacer(modifier = Modifier.width(12.dp))
                 Text(
-                    text = "退出登录",
+                    text = stringResource(R.string.drawer_logout),
                     color = Color(0xFFFF5252),
                     style = MaterialTheme.typography.bodyLarge
                 )
