@@ -12,7 +12,7 @@ import com.example.chat.data.entity.NoteEntity
 
 @Database(
     entities = [ChatEntity::class, ChatAnalysisEntity::class, NoteEntity::class],
-    version = 7,
+    version = 8,
     exportSchema = false,
 )
 @TypeConverters(Converters::class)

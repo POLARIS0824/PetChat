@@ -7,7 +7,6 @@ import androidx.room.PrimaryKey
 @Entity(
     tableName = "chat_history",
     indices = [
-        Index("petType"),
         Index("sessionId"),
         Index("isProcessed"),
         Index("sessionId", "petType"),

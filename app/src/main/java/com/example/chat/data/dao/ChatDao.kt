@@ -26,12 +26,6 @@ interface ChatDao {
     suspend fun getSessionMessages(sessionId: String, petType: String): List<ChatEntity>
 
     /**
-     * 获取指定宠物类型的所有消息，不考虑会话ID
-     */
-    @Query("SELECT * FROM chat_history WHERE petType = :petType ORDER BY timestamp ASC")
-    suspend fun getMessagesByPetType(petType: String): List<ChatEntity>
-
-    /**
      * 获取未处理的聊天记录数量
      * 用于判断是否达到需要处理的阈值（10条）
      */

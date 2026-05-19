@@ -56,7 +56,9 @@ class PetChatViewModel @Inject constructor(
     private fun loadChatHistory() {
         viewModelScope.launch {
             val currentType = readyState().currentPetType
-            val messages = repository.getMessagesByPetType(currentType)
+            val messages = sessionManager.getSessionMessages(
+                sessionManager.currentSessionId, currentType
+            )
             val chatMessages = messages.map { entity ->
                 ChatMessage(
                     content = entity.content,

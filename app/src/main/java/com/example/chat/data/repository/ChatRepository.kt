@@ -132,14 +132,6 @@ class ChatRepository @Inject constructor(
                 content.contains("不喜欢") || content.contains("想要")
     }
 
-    suspend fun getMessagesByPetType(petType: PetType): List<ChatEntity> {
-        return try {
-            chatDao.getMessagesByPetType(petType.name)
-        } catch (e: Exception) {
-            emptyList()
-        }
-    }
-
     suspend fun getUnprocessedChatsCount(): Int = chatDao.getUnprocessedChatsCount()
 
     // endregion
