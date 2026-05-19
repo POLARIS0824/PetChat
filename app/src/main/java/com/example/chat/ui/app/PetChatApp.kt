@@ -266,6 +266,11 @@ private fun PetChatTopBar(
                         Text(stringResource(R.string.topbar_social), modifier = Modifier.padding(end = 8.dp), fontWeight = FontWeight.Bold, fontSize = 18.sp, color = AccentOrange)
                     }
                 }
+                topLevelKey == SettingsRoute -> {
+                    Row(Modifier.fillMaxWidth().padding(end = 8.dp), horizontalArrangement = Arrangement.End) {
+                        Text(stringResource(R.string.settings_title), modifier = Modifier.padding(end = 8.dp), fontWeight = FontWeight.Bold, fontSize = 18.sp, color = AccentOrange)
+                    }
+                }
             }
         },
         navigationIcon = {
