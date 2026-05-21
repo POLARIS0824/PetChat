@@ -29,14 +29,65 @@ object NetworkModule {
             .addInterceptor { chain ->
                 val config = settingsManager.getConfig()
                 val original = chain.request()
-                val configBase = config.baseUrl.trimEnd('/')
-                val apiPath = original.url.encodedPath
-                val newUrl = "${configBase}${apiPath}".toHttpUrl()
+                val configuredUrl = config.baseUrl.trim()
+                
+                val newUrl = if (configuredUrl.endsWith("/chat/completions") ||
+                    configuredUrl.contains("/chat/completions") ||
+                    configuredUrl.contains("/completions") ||
+                    configuredUrl.contains("/generate")) {
+                    configuredUrl.toHttpUrl()
+                } else {
+                    val configBase = configuredUrl.trimEnd('/')
+                    val apiPath = original.url.encodedPath
+                    
+                    val finalUrlString = if (configBase.endsWith("/v1") && apiPath.startsWith("/v1/")) {
+                        // 避免重复的 /v1
+                        "${configBase.substring(0, configBase.length - 3)}${apiPath}"
+                    } else if (!configBase.endsWith("/v1") && !configBase.contains("/v1/") &&
+                               !apiPath.startsWith("/v1/") && !apiPath.startsWith("v1/")) {
+                        // 若 Base URL 与端点路径都不带 /v1，且并非特殊的自定义路径，则自动插入 /v1
+                        "${configBase}/v1${apiPath}"
+                    } else {
+                        "${configBase}${apiPath}"
+                    }
+                    finalUrlString.toHttpUrl()
+                }
                 val newRequest = original.newBuilder()
                     .url(newUrl)
                     .header("Authorization", "Bearer ${config.apiKey}")
                     .build()
-                chain.proceed(newRequest)
+
+                try {
+                    val requestBodyString = try {
+                        val buffer = okio.Buffer()
+                        newRequest.body?.writeTo(buffer)
+                        buffer.readUtf8()
+                    } catch (e: Exception) {
+                        "Error reading body"
+                    }
+                    android.util.Log.d("API_REQUEST", "URL: $newUrl | Model: ${config.model} | Body: $requestBodyString")
+                } catch (t: Throwable) {
+                    // 保护块：防止 JVM 单元测试中 android.util.Log 未 Mock 报错
+                }
+
+                val response = chain.proceed(newRequest)
+
+                try {
+                    if (!response.isSuccessful) {
+                        val errorBody = try {
+                            response.peekBody(1024 * 1024).string()
+                        } catch (e: Exception) {
+                            "Error reading error body"
+                        }
+                        android.util.Log.e("API_RESPONSE", "Error Code: ${response.code} | Message: ${response.message} | Body: $errorBody")
+                    } else {
+                        android.util.Log.d("API_RESPONSE", "Success Code: ${response.code}")
+                    }
+                } catch (t: Throwable) {
+                    // 保护块：防止 JVM 单元测试中 Mock 响应或 Log 报错
+                }
+
+                response
             }
             .build()
     }
@@ -44,7 +95,10 @@ object NetworkModule {
     @Provides
     @Singleton
     fun provideRetrofit(okHttpClient: OkHttpClient): Retrofit {
-        val json = Json { ignoreUnknownKeys = true }
+        val json = Json { 
+            ignoreUnknownKeys = true 
+            explicitNulls = false
+        }
         val contentType = "application/json".toMediaType()
         return Retrofit.Builder()
             .baseUrl("https://placeholder.local/")

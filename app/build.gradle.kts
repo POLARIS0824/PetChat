@@ -76,7 +76,7 @@ android {
         buildConfigField(
             "String",
             "PETCHAT_BASE_URL",
-            "\"${escapeBuildConfig(readSecret("petchat.baseUrl", "https://dashscope.aliyuncs.com/compatible-mode/v1"))}\""
+            "\"${escapeBuildConfig(readSecret("petchat.baseUrl", "https://api.openai.com"))}\""
         )
         buildConfigField(
             "String",

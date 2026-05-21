@@ -181,7 +181,7 @@ class ChatAnalysisUseCaseTest {
 
         // 1. 验证生成了摘要的 API 调用
         verify(apiService).makeApiRequest(argThat {
-            messages.any { it.content.contains("请对以下对话进行摘要") }
+            messages.any { it.content?.contains("请对以下对话进行摘要") == true }
         })
 
         // 2. 验证往数据库中插入了一条特殊的摘要消息
@@ -295,11 +295,11 @@ class ChatAnalysisUseCaseTest {
 
         // 1. 验证发起了 API 请求以分析 CAT 聊天
         verify(apiService).makeApiRequest(argThat {
-            messages.any { it.content.contains("猫咪对话") }
+            messages.any { it.content?.contains("猫咪对话") == true }
         })
         // 并且绝对不能包含 DOG 聊天的分析请求
         verify(apiService, never()).makeApiRequest(argThat {
-            messages.any { it.content.contains("狗狗对话") }
+            messages.any { it.content?.contains("狗狗对话") == true }
         })
 
         // 2. 验证仅保存了 CAT 的分析结果

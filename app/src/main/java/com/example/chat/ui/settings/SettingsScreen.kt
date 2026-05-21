@@ -1,6 +1,7 @@
 package com.example.chat.ui.settings
 
 import androidx.compose.foundation.layout.*
+import com.example.chat.BuildConfig
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
@@ -25,9 +26,9 @@ fun SettingsScreen(
     onBack: () -> Unit = {},
 ) {
     val currentConfig = remember { settingsManager.getConfig() }
-    var baseUrl by remember { mutableStateOf(currentConfig.baseUrl) }
+    var baseUrl by remember { mutableStateOf(settingsManager.getCustomBaseUrl()) }
     var apiKey by remember { mutableStateOf(currentConfig.apiKey) }
-    var model by remember { mutableStateOf(currentConfig.model) }
+    var model by remember { mutableStateOf(settingsManager.getCustomModel()) }
     var showApiKey by remember { mutableStateOf(false) }
     var saved by remember { mutableStateOf(false) }
 
@@ -71,15 +72,6 @@ private fun SettingsContent(
     onBack: () -> Unit,
 ) {
     Column(modifier = Modifier.fillMaxSize()) {
-//        TopAppBar(
-//            title = { Text(stringResource(R.string.settings_title)) },
-//            navigationIcon = {
-//                TextButton(onClick = onBack) {
-//                    Text(stringResource(R.string.settings_back), color = AccentOrange)
-//                }
-//            }
-//        )
-
         Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -97,7 +89,7 @@ private fun SettingsContent(
                 value = baseUrl,
                 onValueChange = onBaseUrlChange,
                 label = { Text(stringResource(R.string.settings_base_url)) },
-                placeholder = { Text("") },
+                placeholder = { Text("https://api.openai.com") },
                 modifier = Modifier.fillMaxWidth(),
                 singleLine = true,
                 colors = OutlinedTextFieldDefaults.colors(
@@ -136,7 +128,7 @@ private fun SettingsContent(
                 value = model,
                 onValueChange = onModelChange,
                 label = { Text(stringResource(R.string.settings_model)) },
-                placeholder = { Text("deepseek-v4-pro") },
+                placeholder = { Text(BuildConfig.PETCHAT_MODEL) },
                 modifier = Modifier.fillMaxWidth(),
                 singleLine = true,
                 colors = OutlinedTextFieldDefaults.colors(
