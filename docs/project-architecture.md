@@ -50,7 +50,7 @@ PetChat 是一款 Android 宠物聊天应用，用户可以与 4 只性格各异
 | 语言 | Kotlin | 2.0.21 |
 | UI 框架 | Jetpack Compose + Material3 | BOM 2024.12.01 |
 | 导航 | Navigation3（实验性） | 1.0.0 |
-| 网络 | OkHttp（原生，无 Retrofit） | 4.9.3 |
+| 网络 | Retrofit + OkHttp | 2.11.0 / 4.9.3 |
 | JSON | kotlinx.serialization | 1.7.3 |
 | 数据库 | Room | 2.6.1 |
 | 依赖注入 | Hilt | 2.53.1 |
@@ -84,16 +84,17 @@ PetChat 是一款 Android 宠物聊天应用，用户可以与 4 只性格各异
 │  PromptBuilder / ChatAnalysisUseCase                 │
 │  SessionManager / SettingsManager                    │
 ├────────────────────────────┬────────────────────────┤
-│      Data Layer (Room)     │   Network Layer (OkHttp)│
-│  ChatDatabase / ChatDao    │   ChatApiService        │
-│  AnalysisDao / NotesDao    │   SSE Streaming         │
+│      Data Layer (Room)     │  Network Layer          │
+│  ChatDatabase / ChatDao    │  Retrofit + OkHttp      │
+│  AnalysisDao / NotesDao    │  DeepseekApi / ChatApiService │
 └────────────────────────────┴────────────────────────┘
 ```
 
 **设计要点：**
 - 单 Activity 架构，所有页面均为 Compose 函数
 - Repository 为 Hilt `@Singleton`，集中管理数据操作
-- 使用 `callbackFlow` 桥接 OkHttp 回调与 Kotlin Flow
+- Retrofit 声明式 API 定义 + OkHttp Interceptor 动态配置（URL 重写、Auth 注入）
+- 使用 `callbackFlow` 桥接 Retrofit SSE 响应与 Kotlin Flow
 - `StreamResponseListener` 接口封装流式回调
 - SharedPreferences 存储轻量配置（会话 ID、API 设置）
 
@@ -126,7 +127,8 @@ PetChat 是一款 Android 宠物聊天应用，用户可以与 4 只性格各异
 | 文件 | 职责 |
 |------|------|
 | `ChatRepository.kt` | 核心仓库：API 调用、消息构建、持久化、触发分析 |
-| `ChatApiService.kt` | OkHttp 客户端，SSE 流式请求 |
+| `ChatApiService.kt` | Retrofit 客户端封装，SSE 流式请求 |
+| `DeepseekApi.kt` | Retrofit 接口定义（非流式 + 流式端点） |
 | `ChatAnalysisUseCase.kt` | 聊天分析和对话摘要逻辑 |
 | `NotesRepository.kt` | 便利贴 CRUD 仓库 |
 | `PromptBuilder.kt` | 构建系统提示词，注入用户画像 |
@@ -153,6 +155,7 @@ PetChat 是一款 Android 宠物聊天应用，用户可以与 4 只性格各异
 | 文件 | 职责 |
 |------|------|
 | `di/DatabaseModule.kt` | Hilt 模块，提供 Database、DAO 实例 |
+| `di/NetworkModule.kt` | Hilt 模块，提供 OkHttpClient、Retrofit、DeepseekApi 实例 |
 
 ### 4.6 Service 层
 
@@ -201,10 +204,18 @@ AnalysisDao   ──→  database.analysisDao()
 NotesDao      ──→  database.notesDao()
 ```
 
+`NetworkModule` 提供以下绑定：
+
+```
+OkHttpClient  ──→  OkHttpClient.Builder() + URL 重写拦截器 + Auth 头注入
+Retrofit      ──→  Retrofit.Builder() + kotlinx.serialization 转换器
+DeepseekApi   ──→  retrofit.create(DeepseekApi::class.java)
+```
+
 ### 5.2 自动注入组件（@Inject constructor）
 
 ```
-ChatApiService       @Singleton  ← SettingsManager
+ChatApiService       @Singleton  ← DeepseekApi
 ChatRepository       @Singleton  ← ChatDao, ChatApiService, SessionManager,
                                    PromptBuilder, PictureInfoParser,
                                    ChatAnalysisUseCase, SettingsManager
@@ -238,7 +249,7 @@ PetGreetingWorker  @HiltWorker  ← ChatRepository
 PetChatViewModel
   ├── ChatRepository
   │     ├── ChatDao
-  │     ├── ChatApiService ← SettingsManager
+  │     ├── ChatApiService ← DeepseekApi
   │     ├── SessionManager ← ChatDao
   │     ├── PromptBuilder ← AnalysisDao
   │     ├── PictureInfoParser
@@ -324,18 +335,60 @@ NotesViewModel
 
 ## 7. 网络层详解
 
-### 7.1 ChatApiService
+### 7.1 整体架构
 
-使用 OkHttp 原生客户端（无 Retrofit），通过 `SettingsManager` 动态获取 API 配置。
+网络层采用 **Retrofit + OkHttp** 架构：
 
-**超时配置：** 连接 60s，读取 60s，写入 30s
+```
+ChatApiService（业务入口）
+    │
+    ▼
+DeepseekApi（Retrofit 接口）
+    │
+    ▼
+Retrofit（序列化 / 反序列化）
+    │
+    ▼
+OkHttpClient + Interceptor（URL 重写 / Auth 头注入）
+    │
+    ▼
+DashScope API（OpenAI 兼容接口）
+```
 
-**请求头：**
-- `Authorization: Bearer {apiKey}`
-- `Content-Type: application/json`
-- `Accept: text/event-stream`（流式请求）
+### 7.2 DeepseekApi（Retrofit 接口）
 
-### 7.2 两种请求模式
+```kotlin
+interface DeepseekApi {
+    @POST("chat/completions")
+    suspend fun chatCompletions(@Body request: DeepseekRequest): DeepseekResponse
+
+    @POST("chat/completions")
+    @Streaming
+    suspend fun chatCompletionsStreaming(@Body request: DeepseekRequest): ResponseBody
+}
+```
+
+- 非流式方法由 Retrofit + kotlinx.serialization 转换器自动处理序列化/反序列化
+- 流式方法使用 `@Streaming` 注解返回未缓冲的 `ResponseBody`，由 `ChatApiService` 手动解析 SSE
+
+### 7.3 NetworkModule（DI 配置）
+
+`NetworkModule` 提供三个 Hilt 单例：
+
+1. **OkHttpClient**：配置超时（60/60/30s）+ 拦截器
+   - 拦截器在每次请求时从 `SettingsManager` 读取当前 API 配置
+   - 动态重写请求 URL（将占位符替换为实际 base URL）
+   - 注入 `Authorization: Bearer {apiKey}` 请求头
+2. **Retrofit**：使用占位符 base URL（`https://placeholder.local/`），配合 `converter-kotlinx-serialization` 转换器
+3. **DeepseekApi**：通过 `retrofit.create()` 生成实现类
+
+### 7.4 ChatApiService（业务封装）
+
+封装 Retrofit 调用，对外暴露与迁移前完全相同的公共 API：
+
+**超时配置：** 由 NetworkModule 中的 OkHttpClient 统一配置（连接 60s，读取 60s，写入 30s）
+
+### 7.5 两种请求模式
 
 #### 同步请求（`makeApiRequest`）
 
@@ -343,7 +396,7 @@ NotesViewModel
 suspend fun makeApiRequest(request: DeepseekRequest): DeepseekResponse
 ```
 
-使用 `suspendCancellableCoroutine` 包装 OkHttp 异步回调，返回完整响应 JSON。
+一行委托给 `deepseekApi.chatCompletions(request)`。Retrofit 自动处理 suspend/resume、HTTP 调用生命周期和 kotlinx.serialization 反序列化。`HttpException` 被包装为 `IOException` 以保持一致的错误处理行为。
 
 #### 流式请求（`makeStreamingApiRequest`）
 
@@ -352,12 +405,13 @@ fun makeStreamingApiRequest(request: DeepseekRequest): Flow<String>
 ```
 
 1. 设置 `stream = true`
-2. 添加 `Accept: text/event-stream` 请求头
+2. 调用 `deepseekApi.chatCompletionsStreaming()` 获取 `ResponseBody`
 3. 使用 `callbackFlow` 逐行读取响应
 4. 解析 SSE 协议：`data: {json}` 行提取 `delta.content`
 5. `data: [DONE]` 行关闭 Flow
+6. `finally` 块中关闭 `ResponseBody` 释放连接
 
-### 7.3 请求/响应模型
+### 7.6 请求/响应模型
 
 **请求体 `DeepseekRequest`：**
 ```kotlin
@@ -410,7 +464,7 @@ interface StreamResponseListener {
 }
 ```
 
-### 7.4 PictureInfoParser
+### 7.7 PictureInfoParser
 
 从 AI 响应中提取 `<system_note>` XML 块：
 
@@ -691,9 +745,9 @@ PetChatApp
     ▼
 [ChatApiService] makeStreamingApiRequest(request)
     │
-    ├─ 1. kotlinx.serialization 序列化请求为 JSON
-    ├─ 2. OkHttp 构建 Request（URL + Headers）
-    ├─ 3. 异步发起请求
+    ├─ 1. 调用 DeepseekApi.chatCompletionsStreaming()（Retrofit 发起请求）
+    ├─ 2. 拦截器动态重写 URL + 注入 Auth 头
+    ├─ 3. 返回未缓冲的 ResponseBody
     ├─ 4. 逐行读取 SSE 响应
     │     ├─ "data: {json}"  ──→  解析 delta.content  ──→  Flow.emit(content)
     │     └─ "data: [DONE]"  ──→  Flow.close()
@@ -883,9 +937,9 @@ PetGreetingWorker.schedule(context, 9, 0)
 | `SUMMARY_THRESHOLD` | 20 | ChatRepository | 触发对话摘要阈值 |
 | `IMPORTANT_MESSAGE_LENGTH` | 50 | ChatRepository | 重要消息长度阈值 |
 | 数据库版本 | 8 | ChatDatabase | 使用破坏性迁移 |
-| 连接超时 | 60s | ChatApiService | OkHttp 连接超时 |
-| 读取超时 | 60s | ChatApiService | OkHttp 读取超时 |
-| 写入超时 | 30s | ChatApiService | OkHttp 写入超时 |
+| 连接超时 | 60s | NetworkModule | OkHttp 连接超时 |
+| 读取超时 | 60s | NetworkModule | OkHttp 读取超时 |
+| 写入超时 | 30s | NetworkModule | OkHttp 写入超时 |
 | 滚动防抖 | 50ms | PetChatViewModel | 流式更新时的滚动防抖 |
 | 问候时间 | 9:00 | PetGreetingWorker | 默认每日问候时间 |
 | SharedPreferences | `"petchat_session"` | SessionManager | 会话配置存储 |
