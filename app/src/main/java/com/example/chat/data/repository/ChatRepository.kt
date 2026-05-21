@@ -40,6 +40,7 @@ class ChatRepository @Inject constructor(
         messages.add(Message("system", enhancedPrompt))
 
         recentMessages
+            .filter { it.content.isNotBlank() } // 过滤掉由于故障等产生的空白历史信息
             .distinctBy { "${it.role}:${it.content}" }
             .sortedBy { it.timestamp }
             .forEach { messages.add(Message(it.role, it.content)) }
@@ -57,7 +58,7 @@ class ChatRepository @Inject constructor(
             val messages = buildMessages(petType, userMessage)
             val request = DeepseekRequest(model = settingsManager.getConfig().model, messages = messages)
             val response = apiService.makeApiRequest(request)
-            response.choices.firstOrNull()?.message?.content
+            response.choices?.firstOrNull()?.message?.content
                 ?: throw IllegalStateException("AI响应为空")
         } catch (e: Exception) {
             Log.e("PET_RESPONSE", "获取宠物回复出错", e)
@@ -113,6 +114,7 @@ class ChatRepository @Inject constructor(
     // region Chat Persistence
 
     suspend fun saveChatMessage(message: ChatMessage, petType: PetType) {
+        if (message.content.isBlank()) return // 防御性保护：防止保存空白内容消息到数据库
         val entity = ChatEntity(
             content = message.content,
             petType = petType.name,

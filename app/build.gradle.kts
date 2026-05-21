@@ -76,7 +76,7 @@ android {
         buildConfigField(
             "String",
             "PETCHAT_BASE_URL",
-            "\"${escapeBuildConfig(readSecret("petchat.baseUrl", "https://dashscope.aliyuncs.com/compatible-mode/v1"))}\""
+            "\"${escapeBuildConfig(readSecret("petchat.baseUrl", "https://api.openai.com"))}\""
         )
         buildConfigField(
             "String",
@@ -96,7 +96,9 @@ android {
 
     buildTypes {
         release {
+            // TODO: ？
             isMinifyEnabled = true
+            isShrinkResources = true
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
@@ -135,6 +137,8 @@ dependencies {
     implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.8.7")
     implementation("com.squareup.okhttp3:okhttp:4.9.3")
     implementation(libs.kotlinx.serialization.json)
+    implementation(libs.retrofit)
+    implementation(libs.retrofit.converter.kotlinx.serialization)
     implementation("androidx.compose.ui:ui-graphics:1.7.6")
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
@@ -145,6 +149,9 @@ dependencies {
     implementation(libs.androidx.ui.tooling.preview)
     implementation(libs.androidx.material3)
     testImplementation(libs.junit)
+    testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.7.3")
+    testImplementation("org.mockito:mockito-core:5.11.0")
+    testImplementation("org.mockito.kotlin:mockito-kotlin:5.2.1")
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
     androidTestImplementation(platform(libs.androidx.compose.bom))

@@ -4,22 +4,24 @@ import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.JsonElement
 
+import com.example.chat.BuildConfig
+
 @Serializable
 data class DeepseekRequest(
-    val model: String = "deepseek-v3",
+    val model: String = BuildConfig.PETCHAT_MODEL,
     val messages: List<Message>,
     val stream: Boolean = false,
 )
 
 @Serializable
 data class Message(
-    val role: String = "user",
-    val content: String,
+    val role: String,
+    val content: String? = null,
 )
 
 @Serializable
 data class DeepseekResponse(
-    val choices: List<Choice>,
+    val choices: List<Choice>? = null,
     @SerialName("object") val objectType: String? = null,
     val usage: Usage? = null,
     val created: Long? = null,
@@ -29,7 +31,7 @@ data class DeepseekResponse(
 ) {
     @Serializable
     data class Choice(
-        val message: Message = Message(content = ""),
+        val message: Message? = null,
         val finish_reason: String? = null,
         val index: Int? = null,
         val logprobs: JsonElement? = null,

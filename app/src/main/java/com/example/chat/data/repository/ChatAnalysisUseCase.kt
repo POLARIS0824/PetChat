@@ -68,7 +68,7 @@ class ChatAnalysisUseCase @Inject constructor(
 
             try {
                 val response = apiService.makeApiRequest(request)
-                val analysisText = response.choices.firstOrNull()?.message?.content ?: continue
+                val analysisText = response.choices?.firstOrNull()?.message?.content ?: continue
                 val analysis = json.decodeFromString<ChatAnalysisResult>(analysisText)
 
                 val analysisEntity = ChatAnalysisEntity(
@@ -124,7 +124,7 @@ class ChatAnalysisUseCase @Inject constructor(
             val messages = buildMessages(petType, userMessage)
             val request = DeepseekRequest(model = settingsManager.getConfig().model, messages = messages)
             val response = apiService.makeApiRequest(request)
-            response.choices.firstOrNull()?.message?.content
+            response.choices?.firstOrNull()?.message?.content
                 ?: throw IllegalStateException("AI响应为空")
         } catch (e: Exception) {
             Log.e("PET_RESPONSE", "获取宠物回复出错", e)
