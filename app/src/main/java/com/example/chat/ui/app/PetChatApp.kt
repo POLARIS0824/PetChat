@@ -261,13 +261,19 @@ fun PetChatApp(
                                     entry<SettingsRoute> {
                                         SettingsScreen(
                                             settingsManager = settingsManager,
-                                            onBack = { topLevelBackStack.removeLast() }
+                                            onBack = {
+                                                topLevelBackStack.removeLast()
+                                                scope.launch { drawerState.open() }
+                                            }
                                         )
                                     }
                                     entry<PreferencesRoute> {
                                         PreferencesScreen(
                                             settingsManager = settingsManager,
-                                            onBack = { topLevelBackStack.removeLast() }
+                                            onBack = {
+                                                topLevelBackStack.removeLast()
+                                                scope.launch { drawerState.open() }
+                                            }
                                         )
                                     }
                                 }

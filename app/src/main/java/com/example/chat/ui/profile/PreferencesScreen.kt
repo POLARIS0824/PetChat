@@ -58,6 +58,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.activity.compose.BackHandler
 import com.example.chat.R
 import com.example.chat.data.repository.SettingsManager
 import com.example.chat.model.UserProfile
@@ -70,6 +71,9 @@ fun PreferencesScreen(
     settingsManager: SettingsManager,
     onBack: () -> Unit = {},
 ) {
+    BackHandler {
+        onBack()
+    }
     val initialProfile = remember { settingsManager.getUserProfile() }
     
     var username by remember { mutableStateOf(initialProfile.username) }
