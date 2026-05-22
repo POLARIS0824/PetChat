@@ -7,6 +7,7 @@ import com.example.chat.model.ChatMessage
 import com.example.chat.model.DeepseekResponse
 import com.example.chat.model.Message
 import com.example.chat.model.PetType
+import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.runTest
 import org.junit.After
 import org.junit.Assert.*
@@ -39,13 +40,15 @@ class ChatRepositoryTest {
         whenever(sessionManager.currentSessionId).thenReturn("test-session-id")
         
         // Stub default API configuration
-        whenever(settingsManager.getConfig()).thenReturn(
-            ApiConfig(
-                baseUrl = "https://example.com",
-                apiKey = "api-key",
-                model = "deepseek-v3"
+        runBlocking {
+            whenever(settingsManager.getConfig()).thenReturn(
+                ApiConfig(
+                    baseUrl = "https://example.com",
+                    apiKey = "api-key",
+                    model = "deepseek-v3"
+                )
             )
-        )
+        }
 
         repository = ChatRepository(
             chatDao = chatDao,

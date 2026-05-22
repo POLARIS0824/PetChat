@@ -1,41 +1,52 @@
 package com.example.chat.data.repository
 
-import android.content.Context
-import android.content.SharedPreferences
 import com.example.chat.data.dao.ChatDao
 import com.example.chat.model.PetType
 import com.example.chat.model.SessionInfo
-import dagger.hilt.android.qualifiers.ApplicationContext
+import androidx.datastore.core.DataStore
+import androidx.datastore.preferences.core.Preferences
+import androidx.datastore.preferences.core.edit
+import androidx.datastore.preferences.core.stringPreferencesKey
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.runBlocking
 import java.util.UUID
 import javax.inject.Inject
 import javax.inject.Singleton
 
 @Singleton
 class SessionManager @Inject constructor(
-    @ApplicationContext context: Context,
+    private val dataStore: DataStore<Preferences>,
     private val chatDao: ChatDao
 ) {
-    private val prefs: SharedPreferences = context.getSharedPreferences(
-        "petchat_session", Context.MODE_PRIVATE
-    )
+    private var _currentSessionId: String? = null
 
-    var currentSessionId: String = prefs.getString(KEY_SESSION_ID, null)
-        ?: UUID.randomUUID().toString().also { saveSessionId(it) }
-        private set
+    val currentSessionId: String
+        get() {
+            return _currentSessionId ?: runBlocking {
+                val id = dataStore.data.first()[KEY_SESSION_ID] ?: UUID.randomUUID().toString().also {
+                    saveSessionId(it)
+                }
+                _currentSessionId = id
+                id
+            }
+        }
 
     fun createNewSession(): String {
-        currentSessionId = UUID.randomUUID().toString()
-        saveSessionId(currentSessionId)
-        return currentSessionId
+        val newSession = UUID.randomUUID().toString()
+        _currentSessionId = newSession
+        runBlocking { saveSessionId(newSession) }
+        return newSession
     }
 
     fun setCurrentSessionId(sessionId: String) {
-        currentSessionId = sessionId
-        saveSessionId(sessionId)
+        _currentSessionId = sessionId
+        runBlocking { saveSessionId(sessionId) }
     }
 
-    private fun saveSessionId(sessionId: String) {
-        prefs.edit().putString(KEY_SESSION_ID, sessionId).apply()
+    private suspend fun saveSessionId(sessionId: String) {
+        dataStore.edit { preferences ->
+            preferences[KEY_SESSION_ID] = sessionId
+        }
     }
 
     suspend fun getSessionMessages(sessionId: String, petType: PetType): List<com.example.chat.data.entity.ChatEntity> =
@@ -55,6 +66,6 @@ class SessionManager @Inject constructor(
     }
 
     companion object {
-        private const val KEY_SESSION_ID = "current_session_id"
+        private val KEY_SESSION_ID = stringPreferencesKey("current_session_id")
     }
 }

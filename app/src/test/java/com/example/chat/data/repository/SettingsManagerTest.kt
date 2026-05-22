@@ -1,57 +1,93 @@
 package com.example.chat.data.repository
 
-import android.content.Context
-import android.content.SharedPreferences
 import com.example.chat.BuildConfig
+import androidx.datastore.core.DataStore
+import androidx.datastore.preferences.core.PreferenceDataStoreFactory
+import androidx.datastore.preferences.core.Preferences
+import androidx.datastore.preferences.core.edit
+import androidx.datastore.preferences.core.stringPreferencesKey
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Before
+import org.junit.Rule
 import org.junit.Test
-import org.mockito.kotlin.any
-import org.mockito.kotlin.eq
-import org.mockito.kotlin.mock
-import org.mockito.kotlin.whenever
+import org.junit.rules.TemporaryFolder
 
 class SettingsManagerTest {
 
-    private val context: Context = mock()
-    private val sharedPreferences: SharedPreferences = mock()
-    private val editor: SharedPreferences.Editor = mock()
+    @Rule
+    @JvmField
+    val tempFolder = TemporaryFolder()
 
+    private lateinit var dataStore: DataStore<Preferences>
     private lateinit var settingsManager: SettingsManager
+
+    private val KEY_BASE_URL = stringPreferencesKey("base_url")
 
     @Before
     fun setUp() {
-        whenever(context.getSharedPreferences(eq("petchat_api"), eq(Context.MODE_PRIVATE)))
-            .thenReturn(sharedPreferences)
-        whenever(sharedPreferences.edit()).thenReturn(editor)
-        whenever(editor.putString(any(), any())).thenReturn(editor)
-
-        settingsManager = SettingsManager(context)
+        dataStore = PreferenceDataStoreFactory.create(
+            produceFile = { tempFolder.newFile("test_settings.preferences_pb") }
+        )
+        settingsManager = SettingsManager(dataStore)
     }
 
     @Test
-    fun testGetCustomBaseUrl_defaultsToEmpty() {
-        whenever(sharedPreferences.getString(eq("base_url"), any())).thenReturn(null)
+    fun testGetCustomBaseUrl_defaultsToEmpty() = runTest {
         assertEquals("", settingsManager.getCustomBaseUrl())
     }
 
     @Test
-    fun testGetCustomBaseUrl_returnsSavedValue() {
-        whenever(sharedPreferences.getString(eq("base_url"), any())).thenReturn("https://api.custom.com")
+    fun testGetCustomBaseUrl_returnsSavedValue() = runTest {
+        dataStore.edit { prefs ->
+            prefs[KEY_BASE_URL] = "https://api.custom.com"
+        }
         assertEquals("https://api.custom.com", settingsManager.getCustomBaseUrl())
     }
 
     @Test
-    fun testGetConfig_fallbackToBuildConfigWhenNullOrBlank() {
-        whenever(sharedPreferences.getString(eq("base_url"), any())).thenReturn(null)
-        whenever(sharedPreferences.getString(eq("api_key"), any())).thenReturn(null)
-        whenever(sharedPreferences.getString(eq("model"), any())).thenReturn(null)
-
+    fun testGetConfig_fallbackToBuildConfigWhenNullOrBlank() = runTest {
         val config = settingsManager.getConfig()
         assertEquals(BuildConfig.PETCHAT_BASE_URL.trim().trimEnd('/'), config.baseUrl)
 
-        whenever(sharedPreferences.getString(eq("base_url"), any())).thenReturn("   ")
+        dataStore.edit { prefs ->
+            prefs[KEY_BASE_URL] = "   "
+        }
         val configBlank = settingsManager.getConfig()
         assertEquals(BuildConfig.PETCHAT_BASE_URL.trim().trimEnd('/'), configBlank.baseUrl)
+    }
+
+    @Test
+    fun testGetConfigSync_andSaveConfig() = runTest {
+        val config = ApiConfig(
+            baseUrl = "https://sync-api.example.com",
+            apiKey = "sync-key",
+            model = "custom-deepseek"
+        )
+        settingsManager.saveConfig(config)
+        
+        val loadedConfig = settingsManager.getConfigSync()
+        assertEquals("https://sync-api.example.com", loadedConfig.baseUrl)
+        assertEquals("sync-key", loadedConfig.apiKey)
+        assertEquals("custom-deepseek", loadedConfig.model)
+    }
+
+    @Test
+    fun testUserProfile_saveAndLoad() = runTest {
+        val profile = com.example.chat.model.UserProfile(
+            username = "Test User",
+            signature = "My Signature",
+            avatarResId = 999
+        )
+        settingsManager.saveUserProfile(profile)
+
+        val loadedProfile = settingsManager.getUserProfile()
+        assertEquals("Test User", loadedProfile.username)
+        assertEquals("My Signature", loadedProfile.signature)
+        assertEquals(999, loadedProfile.avatarResId)
+
+        val flowProfile = settingsManager.userProfileFlow.first()
+        assertEquals("Test User", flowProfile.username)
     }
 }

@@ -75,6 +75,7 @@ import androidx.navigation3.ui.NavDisplay
 import com.example.chat.R
 import com.example.chat.model.PetType
 import com.example.chat.data.repository.SettingsManager
+import com.example.chat.data.repository.dataStore
 import com.example.chat.service.PetGreetingWorker
 import com.example.chat.ui.cards.CardsViewModel
 import com.example.chat.ui.cards.PetList
@@ -107,7 +108,7 @@ fun PetChatApp(
     cardsViewModel: CardsViewModel = hiltViewModel(),
 ) {
     val context = LocalContext.current
-    val settingsManager = remember { SettingsManager(context) }
+    val settingsManager = remember { SettingsManager(context.dataStore) }
     val topLevelBackStack = remember { TopLevelBackStack<Any>(ChatRoute) }
 
     var currentPetType by remember { mutableStateOf(PetType.CAT) }
@@ -126,13 +127,13 @@ fun PetChatApp(
 
     val windowSize = rememberWindowSizeClass()
 
-    var userProfile by remember { mutableStateOf(settingsManager.getUserProfile()) }
-
-    LaunchedEffect(drawerState.isOpen) {
-        if (drawerState.isOpen) {
-            userProfile = settingsManager.getUserProfile()
-        }
-    }
+    val userProfile by settingsManager.userProfileFlow.collectAsState(
+        initial = com.example.chat.model.UserProfile(
+            username = "Mrh Raju",
+            signature = "在云朵里养宠物，是生活的小惊喜",
+            avatarResId = R.drawable.avatar1
+        )
+    )
 
     MaterialTheme {
         ModalNavigationDrawer(

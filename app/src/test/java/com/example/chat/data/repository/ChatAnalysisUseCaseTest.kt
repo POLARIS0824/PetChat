@@ -10,6 +10,7 @@ import com.example.chat.model.DeepseekRequest
 import com.example.chat.model.DeepseekResponse
 import com.example.chat.model.Message
 import com.example.chat.model.PetType
+import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.runTest
 import org.junit.After
 import org.junit.Assert.*
@@ -46,13 +47,15 @@ class ChatAnalysisUseCaseTest {
         }.whenever(database).runInTransaction(any<Runnable>())
 
         // Stub settingsManager.getConfig()
-        whenever(settingsManager.getConfig()).thenReturn(
-            ApiConfig(
-                baseUrl = "https://example.com/api",
-                apiKey = "test-api-key",
-                model = "deepseek-v3"
+        runBlocking {
+            whenever(settingsManager.getConfig()).thenReturn(
+                ApiConfig(
+                    baseUrl = "https://example.com/api",
+                    apiKey = "test-api-key",
+                    model = "deepseek-v3"
+                )
             )
-        )
+        }
 
         useCase = ChatAnalysisUseCase(
             chatDao = chatDao,

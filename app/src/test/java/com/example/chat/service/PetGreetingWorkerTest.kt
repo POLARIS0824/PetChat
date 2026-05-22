@@ -6,22 +6,27 @@ import android.app.NotificationManager
 import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
-import android.content.SharedPreferences
 import android.util.Log
 import androidx.core.app.NotificationCompat
 import androidx.work.ListenableWorker
 import androidx.work.WorkerParameters
 import com.example.chat.R
 import com.example.chat.data.repository.ChatRepository
+import com.example.chat.data.repository.dataStore
 import com.example.chat.model.PetType
 import com.example.chat.ui.notes.MainDispatcherRule
+import androidx.datastore.core.DataStore
+import androidx.datastore.preferences.core.*
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.runTest
 import org.junit.After
 import org.junit.Assert.*
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
+import org.junit.rules.TemporaryFolder
 import org.mockito.ArgumentMatchers.anyInt
 import org.mockito.ArgumentMatchers.anyString
 import org.mockito.MockedStatic
@@ -34,24 +39,34 @@ class PetGreetingWorkerTest {
     @get:Rule
     val mainDispatcherRule = MainDispatcherRule()
 
+    @Rule
+    @JvmField
+    val tempFolder = TemporaryFolder()
+
     private val context: Context = mock()
-    private val sharedPrefs: SharedPreferences = mock()
-    private val editor: SharedPreferences.Editor = mock()
     private val chatRepository: ChatRepository = mock()
     private val notificationManager: NotificationManager = mock()
     private val workerParams: WorkerParameters = mock()
 
-
+    private lateinit var dataStore: DataStore<Preferences>
     private lateinit var mockedLog: MockedStatic<Log>
     private lateinit var mockedPendingIntent: MockedStatic<PendingIntent>
+    private lateinit var mockedDataStoreExtensions: MockedStatic<*>
     private lateinit var worker: PetGreetingWorker
+
+    private val KEY_HOUR = intPreferencesKey("hour")
+    private val KEY_MINUTE = intPreferencesKey("minute")
+    private val KEY_PET_TYPE = stringPreferencesKey("pet_type")
 
     @Before
     fun setUp() {
+        dataStore = PreferenceDataStoreFactory.create(
+            produceFile = { tempFolder.newFile("test_greeting.preferences_pb") }
+        )
+
         mockedLog = Mockito.mockStatic(Log::class.java)
         mockedLog.`when`<Int> { Log.e(any(), any(), any()) }.thenReturn(0)
         mockedLog.`when`<Int> { Log.e(any(), any()) }.thenReturn(0)
-
 
         mockedPendingIntent = Mockito.mockStatic(PendingIntent::class.java)
         val mockPendingIntent = mock<PendingIntent>()
@@ -59,12 +74,13 @@ class PetGreetingWorkerTest {
             PendingIntent.getActivity(any(), anyInt(), any(), anyInt())
         }.thenReturn(mockPendingIntent)
 
-        // Mock shared preferences
-        whenever(context.getSharedPreferences(eq("pet_greeting"), eq(Context.MODE_PRIVATE)))
-            .thenReturn(sharedPrefs)
-        whenever(sharedPrefs.edit()).thenReturn(editor)
-        whenever(editor.putInt(any(), any())).thenReturn(editor)
-        whenever(editor.putString(any(), any())).thenReturn(editor)
+        // Mock the extension property Context.dataStore
+        @Suppress("UNCHECKED_CAST")
+        val extensionsClass = Class.forName("com.example.chat.data.repository.DataStoreExtensionsKt") as Class<Any>
+        mockedDataStoreExtensions = Mockito.mockStatic(extensionsClass)
+        mockedDataStoreExtensions.`when`<DataStore<Preferences>> {
+            context.dataStore
+        }.thenReturn(dataStore)
 
         // Mock notification manager and strings
         whenever(context.getSystemService(eq(Context.NOTIFICATION_SERVICE)))
@@ -82,29 +98,32 @@ class PetGreetingWorkerTest {
     fun tearDown() {
         mockedLog.close()
         mockedPendingIntent.close()
+        mockedDataStoreExtensions.close()
     }
 
     @Test
-    fun testSaveGreetingTime() {
+    fun testSaveGreetingTime() = runTest {
         PetGreetingWorker.saveGreetingTime(context, 8, 30)
 
-        verify(editor).putInt(eq("hour"), eq(8))
-        verify(editor).putInt(eq("minute"), eq(30))
-        verify(editor).apply()
+        val prefs = dataStore.data.first()
+        assertEquals(8, prefs[KEY_HOUR])
+        assertEquals(30, prefs[KEY_MINUTE])
     }
 
     @Test
-    fun testSavePetType() {
+    fun testSavePetType() = runTest {
         PetGreetingWorker.savePetType(context, PetType.SHIBA)
 
-        verify(editor).putString(eq("pet_type"), eq("SHIBA"))
-        verify(editor).apply()
+        val prefs = dataStore.data.first()
+        assertEquals("SHIBA", prefs[KEY_PET_TYPE])
     }
 
     @Test
     fun testDoWork_successWithGreeting() = runTest {
         // 模拟已保存宠物类型为 DOG
-        whenever(sharedPrefs.getString(eq("pet_type"), anyOrNull())).thenReturn("DOG")
+        dataStore.edit { prefs ->
+            prefs[KEY_PET_TYPE] = "DOG"
+        }
 
         // 模拟大模型成功返回宠物问候语
         val expectedGreeting = "主人，大白今天也很想你汪！"
@@ -115,9 +134,6 @@ class PetGreetingWorkerTest {
         Mockito.mockConstruction(Intent::class.java) { mockIntent, _ ->
             whenever(mockIntent.setFlags(anyInt())).thenReturn(mockIntent)
         }.use { _ ->
-            // Mock 构造 NotificationCompat.Builder / Notification 并通过 verify 监听
-            // 由于 notificationManager.createNotificationChannel 和 notify 需要真实的实例或 Mock，
-            // 我们通过 Mockito.mockConstruction 优雅地处理 NotificationChannel 和 Notification 对象的实例化
             Mockito.mockConstruction(NotificationChannel::class.java).use { _ ->
                 Mockito.mockConstruction(NotificationCompat.Builder::class.java) { mockBuilder, _ ->
                     whenever(mockBuilder.setSmallIcon(anyInt())).thenReturn(mockBuilder)
@@ -147,7 +163,9 @@ class PetGreetingWorkerTest {
     @Test
     fun testDoWork_fallbackOnError() = runTest {
         // 模拟已保存宠物类型为 CAT，并且大模型调用发生异常
-        whenever(sharedPrefs.getString(eq("pet_type"), anyOrNull())).thenReturn("CAT")
+        dataStore.edit { prefs ->
+            prefs[KEY_PET_TYPE] = "CAT"
+        }
         whenever(chatRepository.getPetResponse(eq(PetType.CAT), anyString()))
             .thenThrow(RuntimeException("大模型不可用"))
 

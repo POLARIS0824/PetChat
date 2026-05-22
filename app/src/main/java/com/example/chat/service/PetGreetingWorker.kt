@@ -6,15 +6,20 @@ import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
 import androidx.core.app.NotificationCompat
-import androidx.core.content.edit
 import androidx.hilt.work.HiltWorker
 import androidx.work.*
 import com.example.chat.MainActivity
 import com.example.chat.data.repository.ChatRepository
+import com.example.chat.data.repository.dataStore
 import com.example.chat.model.PetType
 import com.example.chat.R
+import androidx.datastore.preferences.core.edit
+import androidx.datastore.preferences.core.intPreferencesKey
+import androidx.datastore.preferences.core.stringPreferencesKey
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedInject
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.runBlocking
 import java.util.concurrent.TimeUnit
 
 @HiltWorker
@@ -29,22 +34,31 @@ class PetGreetingWorker @AssistedInject constructor(
         private const val NOTIFICATION_ID = 1
         private const val WORK_NAME = "pet_greeting_work"
 
+        private val KEY_HOUR = intPreferencesKey("hour")
+        private val KEY_MINUTE = intPreferencesKey("minute")
+        private val KEY_PET_TYPE = stringPreferencesKey("pet_type")
+
         fun saveGreetingTime(context: Context, hourOfDay: Int, minute: Int) {
-            context.getSharedPreferences("pet_greeting", Context.MODE_PRIVATE).edit {
-                putInt("hour", hourOfDay)
-                putInt("minute", minute)
+            runBlocking {
+                context.dataStore.edit { prefs ->
+                    prefs[KEY_HOUR] = hourOfDay
+                    prefs[KEY_MINUTE] = minute
+                }
             }
         }
 
         fun savePetType(context: Context, petType: PetType) {
-            context.getSharedPreferences("pet_greeting", Context.MODE_PRIVATE).edit {
-                putString("pet_type", petType.name)
+            runBlocking {
+                context.dataStore.edit { prefs ->
+                    prefs[KEY_PET_TYPE] = petType.name
+                }
             }
         }
 
         private fun getSavedPetType(context: Context): PetType {
-            val name = context.getSharedPreferences("pet_greeting", Context.MODE_PRIVATE)
-                .getString("pet_type", null)
+            val name = runBlocking {
+                context.dataStore.data.first()[KEY_PET_TYPE]
+            }
             return PetType.entries.firstOrNull { it.name == name } ?: PetType.CAT
         }
 

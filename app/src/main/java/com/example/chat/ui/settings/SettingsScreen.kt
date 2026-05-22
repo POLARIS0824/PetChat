@@ -15,6 +15,7 @@ import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.activity.compose.BackHandler
+import kotlinx.coroutines.launch
 import com.example.chat.R
 import com.example.chat.data.repository.ApiConfig
 import com.example.chat.data.repository.SettingsManager
@@ -29,12 +30,26 @@ fun SettingsScreen(
     BackHandler {
         onBack()
     }
-    val currentConfig = remember { settingsManager.getConfig() }
-    var baseUrl by remember { mutableStateOf(settingsManager.getCustomBaseUrl()) }
-    var apiKey by remember { mutableStateOf(currentConfig.apiKey) }
-    var model by remember { mutableStateOf(settingsManager.getCustomModel()) }
+    val scope = rememberCoroutineScope()
+    val currentConfig by settingsManager.configFlow.collectAsState(initial = null)
+    
+    var baseUrl by remember { mutableStateOf("") }
+    var apiKey by remember { mutableStateOf("") }
+    var model by remember { mutableStateOf("") }
+    var hasInitialized by remember { mutableStateOf(false) }
     var showApiKey by remember { mutableStateOf(false) }
     var saved by remember { mutableStateOf(false) }
+
+    LaunchedEffect(currentConfig) {
+        currentConfig?.let { config ->
+            if (!hasInitialized) {
+                baseUrl = config.baseUrl
+                apiKey = config.apiKey
+                model = config.model
+                hasInitialized = true
+            }
+        }
+    }
 
     SettingsContent(
         baseUrl = baseUrl,
@@ -47,14 +62,16 @@ fun SettingsScreen(
         onModelChange = { model = it; saved = false },
         onToggleApiKey = { showApiKey = !showApiKey },
         onSave = {
-            settingsManager.saveConfig(
-                ApiConfig(
-                    baseUrl = baseUrl.trim().trimEnd('/'),
-                    apiKey = apiKey.trim(),
-                    model = model.trim()
+            scope.launch {
+                settingsManager.saveConfig(
+                    ApiConfig(
+                        baseUrl = baseUrl.trim().trimEnd('/'),
+                        apiKey = apiKey.trim(),
+                        model = model.trim()
+                    )
                 )
-            )
-            saved = true
+                saved = true
+            }
         },
         onBack = onBack,
     )

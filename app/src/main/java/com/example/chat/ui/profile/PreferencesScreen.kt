@@ -46,6 +46,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -64,6 +65,8 @@ import com.example.chat.data.repository.SettingsManager
 import com.example.chat.model.UserProfile
 import com.example.chat.ui.theme.AccentOrange
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
+import androidx.compose.runtime.collectAsState
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -74,13 +77,26 @@ fun PreferencesScreen(
     BackHandler {
         onBack()
     }
-    val initialProfile = remember { settingsManager.getUserProfile() }
+    val scope = rememberCoroutineScope()
+    val userProfile by settingsManager.userProfileFlow.collectAsState(initial = null)
     
-    var username by remember { mutableStateOf(initialProfile.username) }
-    var signature by remember { mutableStateOf(initialProfile.signature) }
-    var selectedAvatarResId by remember { mutableIntStateOf(initialProfile.avatarResId) }
+    var username by remember { mutableStateOf("") }
+    var signature by remember { mutableStateOf("") }
+    var selectedAvatarResId by remember { mutableIntStateOf(R.drawable.avatar1) }
+    var hasInitialized by remember { mutableStateOf(false) }
     
     var showSuccess by remember { mutableStateOf(false) }
+
+    LaunchedEffect(userProfile) {
+        userProfile?.let { profile ->
+            if (!hasInitialized) {
+                username = profile.username
+                signature = profile.signature
+                selectedAvatarResId = profile.avatarResId
+                hasInitialized = true
+            }
+        }
+    }
 
     LaunchedEffect(showSuccess) {
         if (showSuccess) {
@@ -363,10 +379,12 @@ fun PreferencesScreen(
                 onClick = {
                     val finalName = username.ifBlank { "Mrh Raju" }
                     val finalSig = signature.ifBlank { "在云朵里养宠物，是生活的小惊喜" }
-                    settingsManager.saveUserProfile(
-                        UserProfile(finalName, finalSig, selectedAvatarResId)
-                    )
-                    showSuccess = true
+                    scope.launch {
+                        settingsManager.saveUserProfile(
+                            UserProfile(finalName, finalSig, selectedAvatarResId)
+                        )
+                        showSuccess = true
+                    }
                 },
                 modifier = Modifier
                     .fillMaxWidth()

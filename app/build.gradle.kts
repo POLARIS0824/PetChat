@@ -128,6 +128,7 @@ dependencies {
 
     implementation("androidx.room:room-ktx:2.6.1")
     implementation("androidx.room:room-runtime:2.6.1")
+    implementation(libs.androidx.datastore.core)
     ksp("androidx.room:room-compiler:2.6.1")
     implementation("androidx.work:work-runtime:2.10.0")
     implementation("androidx.compose.ui:ui:1.7.6")
@@ -159,7 +160,6 @@ dependencies {
     debugImplementation(libs.androidx.ui.tooling)
     debugImplementation(libs.androidx.ui.test.manifest)
     implementation("androidx.lifecycle:lifecycle-viewmodel-ktx:2.8.7")
-    implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.8.7")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.3")
     implementation("com.google.accompanist:accompanist-systemuicontroller:0.32.0")
 
@@ -174,4 +174,7 @@ dependencies {
     implementation(libs.androidx.navigation3.runtime)
     implementation(libs.androidx.navigation3.ui)
     implementation(libs.androidx.lifecycle.viewmodel.navigation3)
+
+    // DataStore
+    implementation(libs.androidx.datastore.preferences)
 }

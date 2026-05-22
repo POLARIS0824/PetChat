@@ -1,87 +1,103 @@
 package com.example.chat.data.repository
 
-import android.content.Context
-import android.content.SharedPreferences
 import com.example.chat.data.dao.ChatDao
 import com.example.chat.data.entity.ChatEntity
 import com.example.chat.model.PetType
+import androidx.datastore.core.DataStore
+import androidx.datastore.preferences.core.PreferenceDataStoreFactory
+import androidx.datastore.preferences.core.Preferences
+import androidx.datastore.preferences.core.edit
+import androidx.datastore.preferences.core.stringPreferencesKey
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.*
 import org.junit.Before
+import org.junit.Rule
 import org.junit.Test
+import org.junit.rules.TemporaryFolder
 import org.mockito.kotlin.*
 
 class SessionManagerTest {
 
-    private val context: Context = mock()
-    private val sharedPrefs: SharedPreferences = mock()
-    private val editor: SharedPreferences.Editor = mock()
-    private val chatDao: ChatDao = mock()
+    @Rule
+    @JvmField
+    val tempFolder = TemporaryFolder()
 
+    private val chatDao: ChatDao = mock()
+    private lateinit var dataStore: DataStore<Preferences>
     private lateinit var sessionManager: SessionManager
+
+    private val KEY_SESSION_ID = stringPreferencesKey("current_session_id")
 
     @Before
     fun setUp() {
-        whenever(context.getSharedPreferences(any(), any())).thenReturn(sharedPrefs)
-        whenever(sharedPrefs.edit()).thenReturn(editor)
-        whenever(editor.putString(any(), any())).thenReturn(editor)
+        dataStore = PreferenceDataStoreFactory.create(
+            produceFile = { tempFolder.newFile("test_session.preferences_pb") }
+        )
     }
 
     @Test
-    fun testInitialization_existingSessionId() {
+    fun testInitialization_existingSessionId() = runTest {
         // 模拟已存在 sessionId 的情况
-        whenever(sharedPrefs.getString(eq("current_session_id"), anyOrNull())).thenReturn("existing-session-123")
+        dataStore.edit { prefs ->
+            prefs[KEY_SESSION_ID] = "existing-session-123"
+        }
 
-        sessionManager = SessionManager(context, chatDao)
+        sessionManager = SessionManager(dataStore, chatDao)
 
         assertEquals("existing-session-123", sessionManager.currentSessionId)
-        verify(editor, never()).putString(any(), any())
     }
 
     @Test
-    fun testInitialization_noExistingSessionId() {
+    fun testInitialization_noExistingSessionId() = runTest {
         // 模拟没有已存在 sessionId 的情况，初始化时应生成一个新的 UUID 并保存
-        whenever(sharedPrefs.getString(eq("current_session_id"), anyOrNull())).thenReturn(null)
+        sessionManager = SessionManager(dataStore, chatDao)
 
-        sessionManager = SessionManager(context, chatDao)
+        val id = sessionManager.currentSessionId
+        assertNotNull(id)
+        assertTrue(id.isNotEmpty())
 
-        assertNotNull(sessionManager.currentSessionId)
-        assertTrue(sessionManager.currentSessionId.isNotEmpty())
-        verify(editor).putString(eq("current_session_id"), eq(sessionManager.currentSessionId))
-        verify(editor).apply()
+        val savedId = dataStore.data.first()[KEY_SESSION_ID]
+        assertEquals(id, savedId)
     }
 
     @Test
-    fun testCreateNewSession() {
-        whenever(sharedPrefs.getString(eq("current_session_id"), anyOrNull())).thenReturn("old-session-id")
+    fun testCreateNewSession() = runTest {
+        dataStore.edit { prefs ->
+            prefs[KEY_SESSION_ID] = "old-session-id"
+        }
 
-        sessionManager = SessionManager(context, chatDao)
+        sessionManager = SessionManager(dataStore, chatDao)
         assertEquals("old-session-id", sessionManager.currentSessionId)
 
         val newSessionId = sessionManager.createNewSession()
 
         assertNotEquals("old-session-id", newSessionId)
         assertEquals(newSessionId, sessionManager.currentSessionId)
-        verify(editor).putString(eq("current_session_id"), eq(newSessionId))
-        verify(editor).apply()
+
+        val savedId = dataStore.data.first()[KEY_SESSION_ID]
+        assertEquals(newSessionId, savedId)
     }
 
     @Test
-    fun testSetCurrentSessionId() {
-        whenever(sharedPrefs.getString(eq("current_session_id"), anyOrNull())).thenReturn("some-session")
+    fun testSetCurrentSessionId() = runTest {
+        dataStore.edit { prefs ->
+            prefs[KEY_SESSION_ID] = "some-session"
+        }
 
-        sessionManager = SessionManager(context, chatDao)
+        sessionManager = SessionManager(dataStore, chatDao)
         sessionManager.setCurrentSessionId("custom-session-999")
 
         assertEquals("custom-session-999", sessionManager.currentSessionId)
-        verify(editor).putString(eq("current_session_id"), eq("custom-session-999"))
-        verify(editor).apply()
+
+        val savedId = dataStore.data.first()[KEY_SESSION_ID]
+        assertEquals("custom-session-999", savedId)
     }
 
     @Test
     fun testGetSessionMessages() = runTest {
-        whenever(sharedPrefs.getString(eq("current_session_id"), anyOrNull())).thenReturn("session-abc")
-        sessionManager = SessionManager(context, chatDao)
+        sessionManager = SessionManager(dataStore, chatDao)
 
         val dummyHistory = listOf(
             ChatEntity(id = 1, content = "嗨", role = "user", petType = PetType.CAT.name, sessionId = "session-abc")
@@ -97,8 +113,7 @@ class SessionManagerTest {
 
     @Test
     fun testGetAllSessions() = runTest {
-        whenever(sharedPrefs.getString(eq("current_session_id"), anyOrNull())).thenReturn("session-abc")
-        sessionManager = SessionManager(context, chatDao)
+        sessionManager = SessionManager(dataStore, chatDao)
 
         val dummySessions = listOf(
             ChatDao.SessionEntity(

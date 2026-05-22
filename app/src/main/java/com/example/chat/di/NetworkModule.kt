@@ -27,7 +27,7 @@ object NetworkModule {
             .readTimeout(60, TimeUnit.SECONDS)
             .writeTimeout(30, TimeUnit.SECONDS)
             .addInterceptor { chain ->
-                val config = settingsManager.getConfig()
+                val config = settingsManager.getConfigSync()
                 val original = chain.request()
                 val configuredUrl = config.baseUrl.trim()
                 

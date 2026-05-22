@@ -19,7 +19,7 @@ class NetworkModuleTest {
         val client = NetworkModule.provideOkHttpClient(settingsManager)
         val interceptor = client.interceptors[0]
 
-        whenever(settingsManager.getConfig()).thenReturn(
+        whenever(settingsManager.getConfigSync()).thenReturn(
             ApiConfig(
                 baseUrl = "https://api.openai.com",
                 apiKey = "test-key",
@@ -48,7 +48,7 @@ class NetworkModuleTest {
         val client = NetworkModule.provideOkHttpClient(settingsManager)
         val interceptor = client.interceptors[0]
 
-        whenever(settingsManager.getConfig()).thenReturn(
+        whenever(settingsManager.getConfigSync()).thenReturn(
             ApiConfig(
                 baseUrl = "https://api.openai.com/v1",
                 apiKey = "test-key",
@@ -76,7 +76,7 @@ class NetworkModuleTest {
         val client = NetworkModule.provideOkHttpClient(settingsManager)
         val interceptor = client.interceptors[0]
 
-        whenever(settingsManager.getConfig()).thenReturn(
+        whenever(settingsManager.getConfigSync()).thenReturn(
             ApiConfig(
                 baseUrl = "https://api.openai.com/v1",
                 apiKey = "test-key",
@@ -104,7 +104,7 @@ class NetworkModuleTest {
         val client = NetworkModule.provideOkHttpClient(settingsManager)
         val interceptor = client.interceptors[0]
 
-        whenever(settingsManager.getConfig()).thenReturn(
+        whenever(settingsManager.getConfigSync()).thenReturn(
             ApiConfig(
                 baseUrl = "https://custom-proxy.com/chat/completions",
                 apiKey = "test-key",
