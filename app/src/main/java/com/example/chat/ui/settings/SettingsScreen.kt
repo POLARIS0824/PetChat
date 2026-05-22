@@ -14,6 +14,7 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.activity.compose.BackHandler
 import com.example.chat.R
 import com.example.chat.data.repository.ApiConfig
 import com.example.chat.data.repository.SettingsManager
@@ -25,6 +26,9 @@ fun SettingsScreen(
     settingsManager: SettingsManager,
     onBack: () -> Unit = {},
 ) {
+    BackHandler {
+        onBack()
+    }
     val currentConfig = remember { settingsManager.getConfig() }
     var baseUrl by remember { mutableStateOf(settingsManager.getCustomBaseUrl()) }
     var apiKey by remember { mutableStateOf(currentConfig.apiKey) }

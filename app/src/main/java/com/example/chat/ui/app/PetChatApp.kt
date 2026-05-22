@@ -83,13 +83,15 @@ import com.example.chat.ui.chat.PetChatViewModel
 import com.example.chat.ui.components.PetAvatar
 import com.example.chat.ui.navigation.CardsRoute
 import com.example.chat.ui.navigation.ChatRoute
-import com.example.chat.ui.navigation.DrawerContent
+import com.example.chat.ui.drawer.DrawerContent
 import com.example.chat.ui.navigation.NotesRoute
+import com.example.chat.ui.navigation.PreferencesRoute
 import com.example.chat.ui.navigation.SessionListRoute
 import com.example.chat.ui.navigation.SettingsRoute
 import com.example.chat.ui.navigation.SocialRoute
 import com.example.chat.ui.navigation.TOP_LEVEL_ROUTES
 import com.example.chat.ui.navigation.TopLevelBackStack
+import com.example.chat.ui.profile.PreferencesScreen
 import com.example.chat.ui.notes.NotesScreen
 import com.example.chat.ui.session.SessionListScreen
 import com.example.chat.ui.settings.SettingsScreen
@@ -124,13 +126,26 @@ fun PetChatApp(
 
     val windowSize = rememberWindowSizeClass()
 
+    var userProfile by remember { mutableStateOf(settingsManager.getUserProfile()) }
+
+    LaunchedEffect(drawerState.isOpen) {
+        if (drawerState.isOpen) {
+            userProfile = settingsManager.getUserProfile()
+        }
+    }
+
     MaterialTheme {
         ModalNavigationDrawer(
             drawerContent = {
                 ModalDrawerSheet {
                     DrawerContent(
+                        userProfile = userProfile,
                         onNavigateToSessionList = {
                             topLevelBackStack.add(SessionListRoute)
+                            scope.launch { drawerState.close() }
+                        },
+                        onNavigateToPreferences = {
+                            topLevelBackStack.add(PreferencesRoute)
                             scope.launch { drawerState.close() }
                         },
                         onNavigateToSettings = {
@@ -156,17 +171,20 @@ fun PetChatApp(
 
                 Scaffold(
                     topBar = {
-                        PetChatTopBar(
-                            topLevelKey = topLevelBackStack.topLevelKey,
-                            showPetSelector = showPetSelector,
-                            onTogglePetSelector = { showPetSelector = !showPetSelector },
-                            onOpenDrawer = { scope.launch { drawerState.open() } }
-                        )
+                        if (topLevelBackStack.topLevelKey != PreferencesRoute) {
+                            PetChatTopBar(
+                                topLevelKey = topLevelBackStack.topLevelKey,
+                                showPetSelector = showPetSelector,
+                                onTogglePetSelector = { showPetSelector = !showPetSelector },
+                                onOpenDrawer = { scope.launch { drawerState.open() } }
+                            )
+                        }
                     },
                     bottomBar = {
                         if (windowSize == WindowSize.Compact &&
                             topLevelBackStack.topLevelKey != SessionListRoute &&
-                            topLevelBackStack.topLevelKey != SettingsRoute) {
+                            topLevelBackStack.topLevelKey != SettingsRoute &&
+                            topLevelBackStack.topLevelKey != PreferencesRoute) {
                             PetChatBottomBar(
                                 topLevelKey = topLevelBackStack.topLevelKey,
                                 onRouteSelected = { route ->
@@ -242,6 +260,12 @@ fun PetChatApp(
                                     }
                                     entry<SettingsRoute> {
                                         SettingsScreen(
+                                            settingsManager = settingsManager,
+                                            onBack = { topLevelBackStack.removeLast() }
+                                        )
+                                    }
+                                    entry<PreferencesRoute> {
+                                        PreferencesScreen(
                                             settingsManager = settingsManager,
                                             onBack = { topLevelBackStack.removeLast() }
                                         )

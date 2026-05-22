@@ -3,6 +3,8 @@ package com.example.chat.data.repository
 import android.content.Context
 import android.content.SharedPreferences
 import com.example.chat.BuildConfig
+import com.example.chat.R
+import com.example.chat.model.UserProfile
 import dagger.hilt.android.qualifiers.ApplicationContext
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -34,9 +36,28 @@ class SettingsManager @Inject constructor(
             .apply()
     }
 
+    fun getUserProfile(): UserProfile {
+        val username = prefs.getString(KEY_USER_NAME, "Mrh Raju") ?: "Mrh Raju"
+        val signature = prefs.getString(KEY_USER_SIGNATURE, "在云朵里养宠物，是生活的小惊喜") ?: "在云朵里养宠物，是生活的小惊喜"
+        val avatar = prefs.getInt(KEY_USER_AVATAR, R.drawable.avatar1)
+        return UserProfile(username, signature, avatar)
+    }
+
+    fun saveUserProfile(profile: UserProfile) {
+        prefs.edit()
+            .putString(KEY_USER_NAME, profile.username.trim())
+            .putString(KEY_USER_SIGNATURE, profile.signature.trim())
+            .putInt(KEY_USER_AVATAR, profile.avatarResId)
+            .apply()
+    }
+
     companion object {
         private const val KEY_BASE_URL = "base_url"
         private const val KEY_API_KEY = "api_key"
         private const val KEY_MODEL = "model"
+        private const val KEY_USER_NAME = "user_name"
+        private const val KEY_USER_SIGNATURE = "user_signature"
+        private const val KEY_USER_AVATAR = "user_avatar"
     }
 }
+
