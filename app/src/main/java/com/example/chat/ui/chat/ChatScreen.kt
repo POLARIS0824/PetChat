@@ -107,7 +107,7 @@ fun ChatScreen(
                 ) {
                     items(
                         items = state.chatHistory,
-                        key = { "${it.timestamp}_${it.role}" }
+                        key = { it.id }
                     ) { msg ->
                         val isCurrentlyStreaming = state.isStreaming &&
                                 state.streamingMessage != null &&

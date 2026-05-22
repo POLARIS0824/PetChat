@@ -63,7 +63,9 @@ class PetChatViewModel @Inject constructor(
                 ChatMessage(
                     content = entity.content,
                     role = entity.role,
-                    petType = PetType.entries.firstOrNull { it.name == entity.petType } ?: PetType.CAT
+                    petType = PetType.entries.firstOrNull { it.name == entity.petType } ?: PetType.CAT,
+                    timestamp = entity.timestamp,
+                    id = "db_${entity.id}"
                 )
             }
             _chatUiState.value = ChatUiState.Ready(

@@ -21,6 +21,7 @@ data class ChatMessage(
     val role: String = "user",
     val petType: PetType,
     val timestamp: Long = System.currentTimeMillis(),
+    val id: String = java.util.UUID.randomUUID().toString(),
 )
 
 /**
