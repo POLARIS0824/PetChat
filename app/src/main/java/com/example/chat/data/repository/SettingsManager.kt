@@ -1,6 +1,5 @@
 package com.example.chat.data.repository
 
-import com.example.chat.BuildConfig
 import com.example.chat.R
 import com.example.chat.model.UserProfile
 import androidx.datastore.core.DataStore
@@ -19,12 +18,9 @@ class SettingsManager @Inject constructor(
 
     val configFlow: Flow<ApiConfig> = dataStore.data.map { prefs ->
         ApiConfig(
-            baseUrl = prefs[KEY_BASE_URL]?.takeIf { it.isNotBlank() }
-                ?: BuildConfig.PETCHAT_BASE_URL.trim().trimEnd('/'),
-            apiKey = prefs[KEY_API_KEY]?.takeIf { it.isNotBlank() }
-                ?: BuildConfig.PETCHAT_API_KEY.trim(),
-            model = prefs[KEY_MODEL]?.takeIf { it.isNotBlank() }
-                ?: BuildConfig.PETCHAT_MODEL.trim().takeIf { it.isNotBlank() } ?: "deepseek-v3",
+            baseUrl = prefs[KEY_BASE_URL]?.takeIf { it.isNotBlank() } ?: "",
+            apiKey = prefs[KEY_API_KEY]?.takeIf { it.isNotBlank() } ?: "",
+            model = prefs[KEY_MODEL]?.takeIf { it.isNotBlank() } ?: "",
         )
     }
 
@@ -80,6 +76,9 @@ class SettingsManager @Inject constructor(
     }
 
     companion object {
+        const val DEFAULT_BASE_URL = "https://api.ppio.com/openai"
+        const val DEFAULT_MODEL = "deepseek/deepseek-v4-flash"
+
         private val KEY_BASE_URL = stringPreferencesKey("base_url")
         private val KEY_API_KEY = stringPreferencesKey("api_key")
         private val KEY_MODEL = stringPreferencesKey("model")

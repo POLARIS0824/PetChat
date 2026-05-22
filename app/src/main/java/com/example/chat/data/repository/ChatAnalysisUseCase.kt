@@ -58,8 +58,11 @@ class ChatAnalysisUseCase @Inject constructor(
                 }
             """.trimIndent()
 
+            val config = settingsManager.getConfig()
+            val effectiveModel = config.model.trim().takeIf { it.isNotBlank() }
+                ?: SettingsManager.DEFAULT_MODEL
             val request = DeepseekRequest(
-                model = settingsManager.getConfig().model,
+                model = effectiveModel,
                 messages = listOf(
                     Message("system", "我是一个聊天分析助手，可以帮你分析聊天记录。"),
                     Message("user", analysisPrompt)
@@ -122,7 +125,10 @@ class ChatAnalysisUseCase @Inject constructor(
     private suspend fun getPetResponse(petType: PetType, userMessage: String): String {
         return try {
             val messages = buildMessages(petType, userMessage)
-            val request = DeepseekRequest(model = settingsManager.getConfig().model, messages = messages)
+            val config = settingsManager.getConfig()
+            val effectiveModel = config.model.trim().takeIf { it.isNotBlank() }
+                ?: SettingsManager.DEFAULT_MODEL
+            val request = DeepseekRequest(model = effectiveModel, messages = messages)
             val response = apiService.makeApiRequest(request)
             response.choices?.firstOrNull()?.message?.content
                 ?: throw IllegalStateException("AI响应为空")

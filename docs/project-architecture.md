@@ -562,8 +562,8 @@ AI 响应示例：
 
 ### 8.6 SettingsManager
 
-通过 SharedPreferences 管理 API 配置：
-- `getConfig()` — 读取配置，回退到 BuildConfig 默认值
+通过 Jetpack DataStore Preferences 管理 API 配置与用户信息：
+- `getConfig()` — 读取配置，回退到硬编码的默认缺省值（Base URL: `https://api.deepseek.com`，Model: `deepseek-chat`）
 - `saveConfig(config)` — 保存配置（自动 trim）
 
 ---
@@ -898,15 +898,17 @@ PetGreetingWorker.schedule(context, 9, 0)
 
 ## 15. 构建配置与 API 接入
 
-### 15.1 BuildConfig 注入
+### 15.1 动态 API 配置
 
-从 `local.properties` 或环境变量读取：
+API 接入现已完全移至应用层动态配置，剔除了原有的 `BuildConfig` 编译期注入，不需在打包时硬编码密钥，提升了应用的隐私与灵活性。
 
-| 字段 | 默认值 | 说明 |
+未进行手动配置时的系统缺省回退值如下：
+
+| 配置项 | 缺省默认值 | 说明 |
 |------|--------|------|
-| `PETCHAT_API_KEY` | （无） | API 密钥 |
-| `PETCHAT_BASE_URL` | `https://dashscope.aliyuncs.com/compatible-mode/v1` | API 基础 URL |
-| `PETCHAT_MODEL` | `deepseek-v3` | 模型名称 |
+| `API Key` | （留空） | 用户未输入时为空字符串，需在设置界面配置后方可发起 API 请求 |
+| `Base URL` | `https://api.deepseek.com` | 缺省默认基础地址 |
+| `Model` | `deepseek-chat` | 缺省默认模型名称 |
 
 ### 15.2 API 兼容性
 

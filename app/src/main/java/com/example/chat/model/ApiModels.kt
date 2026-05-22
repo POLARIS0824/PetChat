@@ -4,11 +4,9 @@ import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.JsonElement
 
-import com.example.chat.BuildConfig
-
 @Serializable
 data class DeepseekRequest(
-    val model: String = BuildConfig.PETCHAT_MODEL,
+    val model: String = "",
     val messages: List<Message>,
     val stream: Boolean = false,
 )

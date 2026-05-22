@@ -1,6 +1,5 @@
 package com.example.chat.data.repository
 
-import com.example.chat.BuildConfig
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.PreferenceDataStoreFactory
 import androidx.datastore.preferences.core.Preferences
@@ -47,15 +46,16 @@ class SettingsManagerTest {
     }
 
     @Test
-    fun testGetConfig_fallbackToBuildConfigWhenNullOrBlank() = runTest {
+    fun testGetConfig_defaultsToEmptyWhenNullOrBlank() = runTest {
         val config = settingsManager.getConfig()
-        assertEquals(BuildConfig.PETCHAT_BASE_URL.trim().trimEnd('/'), config.baseUrl)
+        assertEquals("", config.baseUrl)
+        assertEquals("", config.model)
 
         dataStore.edit { prefs ->
             prefs[KEY_BASE_URL] = "   "
         }
         val configBlank = settingsManager.getConfig()
-        assertEquals(BuildConfig.PETCHAT_BASE_URL.trim().trimEnd('/'), configBlank.baseUrl)
+        assertEquals("", configBlank.baseUrl)
     }
 
     @Test

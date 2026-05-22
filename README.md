@@ -87,15 +87,15 @@
 ## 项目结构
 
 </rewritten_file> 
-## 安全配置（必做）
+## API 安全配置
 
-请勿在源码中硬编码 API Key。项目已改为从 `local.properties` 或环境变量读取：
+应用支持动态 API 配置。为了保障您的密钥安全，请勿在源码或本地配置文件中硬编码 API Key。
 
-```properties
-petchat.apiKey=your_api_key_here
-petchat.baseUrl=https://dashscope.aliyuncs.com/compatible-mode/v1
-petchat.model=deepseek-v3
-```
+您可以在应用运行后，在**设置界面**（Settings Screen）中动态修改和保存以下配置：
+- **API Key**: 您的 API 密钥（例如 DeepSeek 密钥，默认留空）
+- **Base URL**: API 基础地址（默认：`https://api.deepseek.com`）
+- **Model**: 所需的模型名称（默认：`deepseek-chat`）
 
-- 可复制 `local.properties.example` 到本地 `local.properties` 后填写。
+这些配置通过 Jetpack DataStore 异步持久化在设备本地，不会在打包编译时混入包体中，提高了安全性与灵活性。
+
 - `local.properties` 与 `keystore.properties` 均不应提交到仓库。

@@ -29,7 +29,8 @@ object NetworkModule {
             .addInterceptor { chain ->
                 val config = settingsManager.getConfigSync()
                 val original = chain.request()
-                val configuredUrl = config.baseUrl.trim()
+                val configuredUrl = config.baseUrl.trim().takeIf { it.isNotBlank() }
+                    ?: SettingsManager.DEFAULT_BASE_URL
                 
                 val newUrl = if (configuredUrl.endsWith("/chat/completions") ||
                     configuredUrl.contains("/chat/completions") ||
@@ -65,7 +66,9 @@ object NetworkModule {
                     } catch (e: Exception) {
                         "Error reading body"
                     }
-                    android.util.Log.d("API_REQUEST", "URL: $newUrl | Model: ${config.model} | Body: $requestBodyString")
+                    val effectiveModel = config.model.trim().takeIf { it.isNotBlank() }
+                        ?: SettingsManager.DEFAULT_MODEL
+                    android.util.Log.d("API_REQUEST", "URL: $newUrl | Model: $effectiveModel | Body: $requestBodyString")
                 } catch (t: Throwable) {
                     // 保护块：防止 JVM 单元测试中 android.util.Log 未 Mock 报错
                 }

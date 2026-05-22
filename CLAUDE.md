@@ -146,10 +146,9 @@ The app uses a single-activity architecture with bottom navigation and a modal d
 
 ## API Configuration
 
-- Base URL: `https://dashscope.aliyuncs.com/compatible-mode/v1`
-- Model: `deepseek-v3`
-- API key is injected at build time via `BuildConfig` fields sourced from `local.properties` or environment variables (see `app/build.gradle.kts`)
-- Copy `local.properties.example` to `local.properties` and fill in `petchat.apiKey`
+- Default Base URL: `https://api.deepseek.com`
+- Default Model: `deepseek-chat`
+- The API settings (Base URL, API Key, and Model) are configured dynamically inside the app's Settings Screen, backed by Jetpack DataStore Preferences.
 - Timeout: 60s connect, 60s read, 30s write
 
 ## Important Notes

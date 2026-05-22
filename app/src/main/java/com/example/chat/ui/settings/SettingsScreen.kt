@@ -1,7 +1,6 @@
 package com.example.chat.ui.settings
 
 import androidx.compose.foundation.layout.*
-import com.example.chat.BuildConfig
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
@@ -111,7 +110,7 @@ private fun SettingsContent(
                 value = baseUrl,
                 onValueChange = onBaseUrlChange,
                 label = { Text(stringResource(R.string.settings_base_url)) },
-                placeholder = { Text("https://api.openai.com") },
+                placeholder = { Text("https://api.deepseek.com") },
                 modifier = Modifier.fillMaxWidth(),
                 singleLine = true,
                 colors = OutlinedTextFieldDefaults.colors(
@@ -150,7 +149,7 @@ private fun SettingsContent(
                 value = model,
                 onValueChange = onModelChange,
                 label = { Text(stringResource(R.string.settings_model)) },
-                placeholder = { Text(BuildConfig.PETCHAT_MODEL) },
+                placeholder = { Text("deepseek-v4-pro") },
                 modifier = Modifier.fillMaxWidth(),
                 singleLine = true,
                 colors = OutlinedTextFieldDefaults.colors(

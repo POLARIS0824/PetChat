@@ -56,7 +56,10 @@ class ChatRepository @Inject constructor(
     suspend fun getPetResponse(petType: PetType, userMessage: String): String {
         return try {
             val messages = buildMessages(petType, userMessage)
-            val request = DeepseekRequest(model = settingsManager.getConfig().model, messages = messages)
+            val config = settingsManager.getConfig()
+            val effectiveModel = config.model.trim().takeIf { it.isNotBlank() }
+                ?: SettingsManager.DEFAULT_MODEL
+            val request = DeepseekRequest(model = effectiveModel, messages = messages)
             val response = apiService.makeApiRequest(request)
             response.choices?.firstOrNull()?.message?.content
                 ?: throw IllegalStateException("AI响应为空")
@@ -73,7 +76,10 @@ class ChatRepository @Inject constructor(
     ) {
         try {
             val messages = buildMessages(petType, userMessage)
-            val request = DeepseekRequest(model = settingsManager.getConfig().model, messages = messages, stream = true)
+            val config = settingsManager.getConfig()
+            val effectiveModel = config.model.trim().takeIf { it.isNotBlank() }
+                ?: SettingsManager.DEFAULT_MODEL
+            val request = DeepseekRequest(model = effectiveModel, messages = messages, stream = true)
             apiService.makeStreamingApiRequest(request).collect { content ->
                 listener.onContent(content)
             }
