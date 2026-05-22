@@ -29,6 +29,9 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import com.example.chat.R
 import com.example.chat.ui.theme.AccentOrange
+import com.example.chat.ui.util.rememberWindowSizeClass
+import com.example.chat.ui.util.rememberAppDimensions
+import com.example.chat.ui.util.FormFactorPreviews
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -43,6 +46,9 @@ fun NotesScreen(
     var showEditDialog by remember { mutableStateOf(false) }
     var currentEditingNote by remember { mutableStateOf<NoteUiModel?>(null) }
 
+    val windowSize = rememberWindowSizeClass()
+    val dimensions = rememberAppDimensions(windowSize)
+
     Column(
         modifier = modifier
             .fillMaxSize()
@@ -54,10 +60,10 @@ fun NotesScreen(
         )
 
         LazyVerticalGrid(
-            columns = GridCells.Fixed(2),
-            contentPadding = PaddingValues(horizontal = 24.dp, vertical = 16.dp),
-            horizontalArrangement = Arrangement.spacedBy(24.dp),
-            verticalArrangement = Arrangement.spacedBy(24.dp),
+            columns = GridCells.Adaptive(minSize = 140.dp),
+            contentPadding = PaddingValues(horizontal = dimensions.screenPadding, vertical = dimensions.screenPadding),
+            horizontalArrangement = Arrangement.spacedBy(dimensions.itemSpacing * 2),
+            verticalArrangement = Arrangement.spacedBy(dimensions.itemSpacing * 2),
             modifier = Modifier.weight(1f),
             state = rememberLazyGridState(),
         ) {
@@ -384,4 +390,14 @@ private fun AddNoteDialog(
             }
         }
     )
+}
+
+@FormFactorPreviews
+@Composable
+fun NotesScreenPreview() {
+    MaterialTheme {
+        Box(modifier = Modifier.fillMaxSize().background(Color.White)) {
+            NotesScreen()
+        }
+    }
 }

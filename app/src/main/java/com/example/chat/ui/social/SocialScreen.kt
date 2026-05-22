@@ -20,6 +20,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
+import com.example.chat.ui.util.FormFactorPreviews
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -45,7 +46,7 @@ fun SocialScreen(
     ) {
         LazyColumn(
             modifier = Modifier.fillMaxSize(),
-            contentPadding = PaddingValues(bottom = 80.dp) // 为底部导航栏留出空间
+            contentPadding = PaddingValues(bottom = 16.dp)
         ) {
             items(posts) { post ->
                 SocialPostItem(
@@ -260,7 +261,7 @@ private fun formatDate(timestamp: Long): String {
 }
 
 // 写一个 preview
-@Preview
+@FormFactorPreviews
 @Composable
 fun PreviewSocialScreen() {
     SocialScreen()

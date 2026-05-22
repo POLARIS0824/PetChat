@@ -47,7 +47,7 @@ fun SettingsScreen(
                 ApiConfig(
                     baseUrl = baseUrl.trim().trimEnd('/'),
                     apiKey = apiKey.trim(),
-                    model = model.trim().ifBlank { "deepseek-v3" }
+                    model = model.trim()
                 )
             )
             saved = true
@@ -171,7 +171,7 @@ private fun SettingsContent(
 private fun SettingsScreenPreview() {
     MaterialTheme {
         SettingsContent(
-            baseUrl = "",
+            baseUrl = "https://api.openai.com",
             apiKey = "sk-abc123",
             model = "deepseek-v4-pro",
             showApiKey = false,
@@ -192,9 +192,9 @@ private fun SettingsScreenPreview() {
 private fun SettingsScreenSavedPreview() {
     MaterialTheme {
         SettingsContent(
-            baseUrl = "https://dashscope.aliyuncs.com/compatible-mode/v1",
+            baseUrl = "https://api.openai.com",
             apiKey = "sk-abc123",
-            model = "deepseek-v3",
+            model = "deepseek-v4-pro",
             showApiKey = true,
             saved = true,
             onBaseUrlChange = {},

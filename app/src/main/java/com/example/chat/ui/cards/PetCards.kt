@@ -21,8 +21,9 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.layout.offset
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -59,6 +60,10 @@ import androidx.compose.ui.unit.min
 import com.example.chat.R
 import com.example.chat.model.Pet
 import com.example.chat.model.PetType
+import com.example.chat.ui.util.WindowSize
+import com.example.chat.ui.util.rememberAppDimensions
+import com.example.chat.ui.util.rememberWindowSizeClass
+import com.example.chat.ui.util.FormFactorPreviews
 import kotlin.math.roundToInt
 
 @Composable
@@ -67,12 +72,17 @@ fun PetList(
     modifier: Modifier = Modifier,
     onNavigateToChat: (PetType) -> Unit = {}
 ) {
-    LazyColumn(
+    val windowSize = rememberWindowSizeClass()
+    val dimensions = rememberAppDimensions(windowSize)
+
+    LazyVerticalGrid(
+        columns = GridCells.Adaptive(minSize = 340.dp),
         modifier = modifier
             .fillMaxSize()
             .background(Color.White),
-        contentPadding = PaddingValues(16.dp),
-        verticalArrangement = Arrangement.spacedBy(16.dp)
+        contentPadding = PaddingValues(dimensions.screenPadding),
+        verticalArrangement = Arrangement.spacedBy(dimensions.itemSpacing * 2),
+        horizontalArrangement = Arrangement.spacedBy(dimensions.itemSpacing * 2)
     ) {
         items(pets) { pet ->
             PetCard(
@@ -161,15 +171,13 @@ fun PetCard(
                         .align(Alignment.TopCenter)
                 )
 
+                val windowSize = rememberWindowSizeClass()
+                val cardPadding = if (windowSize == WindowSize.Compact) 16.dp else 24.dp
+
                 Column(
                     modifier = Modifier
                         .fillMaxSize()
-                        .padding(
-                            start = min(24.dp, LocalConfiguration.current.screenWidthDp.dp * 0.06f),
-                            end = min(24.dp, LocalConfiguration.current.screenWidthDp.dp * 0.06f),
-                            top = min(24.dp, LocalConfiguration.current.screenWidthDp.dp * 0.06f),
-                            bottom = min(24.dp, LocalConfiguration.current.screenWidthDp.dp * 0.06f)
-                        )
+                        .padding(cardPadding)
                 ) {
                     Text(
                         text = pet.name,
@@ -186,22 +194,20 @@ fun PetCard(
                         modifier = Modifier.padding(start = 16.dp, end = 16.dp)
                     )
 
-                    Spacer(modifier = Modifier.height(min(24.dp, LocalConfiguration.current.screenWidthDp.dp * 0.05f)))
+                    Spacer(modifier = Modifier.height(if (windowSize == WindowSize.Compact) 12.dp else 18.dp))
 
                     Row(
                         modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.Center
+                        horizontalArrangement = Arrangement.spacedBy(12.dp, Alignment.CenterHorizontally)
                     ) {
                         InfoTag(
                             text = "${pet.breed}·${pet.gender}",
-                            backgroundColor = Color(0xFFD8F0D7),
-                            modifier = Modifier.padding(end = 24.dp)
+                            backgroundColor = Color(0xFFD8F0D7)
                         )
 
                         InfoTag(
                             text = pet.weight,
-                            backgroundColor = Color(0xFFF0C0BD),
-                            modifier = Modifier.padding(end = 24.dp)
+                            backgroundColor = Color(0xFFF0C0BD)
                         )
 
                         InfoTag(
@@ -210,20 +216,17 @@ fun PetCard(
                         )
                     }
 
-                    Spacer(modifier = Modifier.height(min(24.dp, LocalConfiguration.current.screenWidthDp.dp * 0.04f)))
+                    Spacer(modifier = Modifier.height(if (windowSize == WindowSize.Compact) 12.dp else 18.dp))
 
                     Row(
                         modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.Center
+                        horizontalArrangement = Arrangement.spacedBy(12.dp, Alignment.CenterHorizontally)
                     ) {
                         Button(
                             onClick = { },
                             colors = ButtonDefaults.buttonColors(containerColor = Color.White),
                             shape = RoundedCornerShape(10.dp),
-                            modifier = Modifier
-                                .padding(end = 24.dp)
-                                .weight(1f)
-                                .width(160.dp)
+                            modifier = Modifier.weight(1f)
                         ) {
                             Text(stringResource(R.string.cards_delete), color = Color.Black)
                         }
@@ -232,9 +235,7 @@ fun PetCard(
                             onClick = { onChatClick(pet.petType) },
                             colors = ButtonDefaults.buttonColors(containerColor = Color(255, 166, 88)),
                             shape = RoundedCornerShape(10.dp),
-                            modifier = Modifier
-                                .width(160.dp)
-                                .weight(1f)
+                            modifier = Modifier.weight(1f)
                         ) {
                             Text(stringResource(R.string.cards_chat), color = Color.White)
                         }
@@ -273,6 +274,7 @@ private fun InfoTag(
     backgroundColor: Color,
     modifier: Modifier = Modifier
 ) {
+    val windowSize = rememberWindowSizeClass()
     Box(
         modifier = modifier
             .wrapContentSize()
@@ -281,8 +283,8 @@ private fun InfoTag(
                 shape = RoundedCornerShape(10)
             )
             .padding(
-                horizontal = min(12.dp, LocalConfiguration.current.screenWidthDp.dp * 0.03f),
-                vertical = min(8.dp, LocalConfiguration.current.screenWidthDp.dp * 0.02f)
+                horizontal = if (windowSize == WindowSize.Compact) 10.dp else 12.dp,
+                vertical = if (windowSize == WindowSize.Compact) 6.dp else 8.dp
             )
     ) {
         Text(
@@ -292,5 +294,43 @@ private fun InfoTag(
             maxLines = 1,
             overflow = TextOverflow.Ellipsis
         )
+    }
+}
+
+@FormFactorPreviews
+@Composable
+fun PetListPreview() {
+    val samplePets = listOf(
+        Pet(
+            name = "布丁",
+            status = "懒洋洋地趴着，享受阳光中",
+            imageRes = R.drawable.card_cat,
+            initialRes = R.drawable.card_cat_inital,
+            finalRes = R.drawable.card_cat_final,
+            breed = "英短",
+            age = "2岁",
+            gender = "母",
+            weight = "4kg",
+            character = "慵懒，爱睡觉，吃货",
+            hobby = "日光浴，吃鱼",
+            petType = PetType.CAT
+        ),
+        Pet(
+            name = "大白",
+            status = "今天状态很好活力满满",
+            imageRes = R.drawable.card_dog,
+            initialRes = R.drawable.card_dog_inital,
+            finalRes = R.drawable.card_dog_final,
+            breed = "萨摩耶",
+            age = "1岁",
+            gender = "公",
+            weight = "28kg",
+            character = "活泼，粘人，爱笑",
+            hobby = "追球，吃骨头",
+            petType = PetType.DOG
+        )
+    )
+    MaterialTheme {
+        PetList(pets = samplePets)
     }
 }
