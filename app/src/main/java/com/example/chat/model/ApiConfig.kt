@@ -1,4 +1,4 @@
-package com.example.chat.data.repository
+package com.example.chat.model
 
 data class ApiConfig(
     val baseUrl: String,

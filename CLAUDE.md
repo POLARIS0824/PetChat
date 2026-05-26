@@ -77,9 +77,9 @@ Data Layer (Room Database via ChatDao) & Network Layer (ChatApiService via OkHtt
 
 ### Key Components
 
-- **PetChatViewModel** (`viewmodel/PetChatViewModel.kt`): Manages UI state (`ChatUiState` sealed interface: Loading/Ready), handles streaming responses via `StreamResponseListener` callbacks, coordinates chat history and sessions. Uses `viewModelScope` for coroutines.
-- **CardsViewModel** (`viewmodel/CardsViewModel.kt`): Manages pet card collection.
-- **NotesViewModel** (`viewmodel/NotesViewModel.kt`): CRUD operations for sticky notes, filtered by pet type.
+- **PetChatViewModel** (`ui/chat/PetChatViewModel.kt`): Manages UI state (`ChatUiState` sealed interface: Loading/Ready), handles streaming responses via `StreamResponseListener` callbacks, coordinates chat history and sessions. Uses `viewModelScope` for coroutines.
+- **CardsViewModel** (`ui/cards/CardsViewModel.kt`): Manages pet card collection.
+- **NotesViewModel** (`ui/notes/NotesViewModel.kt`): CRUD operations for sticky notes, filtered by pet type.
 - **SocialViewModel** (`ui/social/SocialViewModel.kt`): Manages state for the social feed screen independently.
 - **ChatRepository** (`data/repository/ChatRepository.kt`): `@Singleton` injected via Hilt. Manages all data operations, API calls, prompt enhancement with user profiling, and local database persistence. Contains pet personality prompts and streaming API logic.
 - **ChatDatabase** (`data/ChatDatabase.kt`): Room database with `fallbackToDestructiveMigration()`.
@@ -110,7 +110,7 @@ Four pet types with distinct system prompts in `PromptConfig` (`data/repository/
 - **CAT** (布丁): Gold Shaded Persian - tsundere personality
 - **DOG** (大白): Samoyed - energetic and cheerful
 - **HAMSTER** (团绒): Silver Shaded Persian - cute and clingy
-- **DOG2** (豆豆): Shiba Inu - stubborn and quiet
+- **SHIBA** (豆豆): Shiba Inu - stubborn and quiet
 
 Chat history is organized by `petType`, not by sessions. Each pet type maintains its own conversation history.
 
@@ -125,17 +125,18 @@ Chat history is organized by `petType`, not by sessions. Each pet type maintains
 
 The app uses a single-activity architecture with bottom navigation and a modal drawer:
 
-**Screens** (defined by `Screen` enum in `ui/navigation/Navigation.kt`):
+**Screens** (navigated using NavKey routes in `ui/navigation/Routes.kt`):
 - **Chat** (`ui/chat/ChatScreen.kt` + `ChatComponents.kt`): Main chat interface with pet selector dropdown
 - **Cards** (`ui/cards/PetCards.kt`): Pet card collection with draggable interactions
-- **Notes** (`ui/NotesScreen.kt`): Sticky notes screen
+- **Notes** (`ui/notes/NotesScreen.kt`): Sticky notes screen
 - **Social** (`ui/social/SocialScreen.kt`): Social feed with `SocialViewModel`
 - **SessionList** (`ui/session/SessionListScreen.kt`): Chat session history list
 
 **Navigation**:
-- Bottom navigation bar covers Chat, Cards, Notes, Social
-- Modal drawer (triggered from Chat screen) provides navigation to SessionList and settings
-- Drawer content lives in `ui/navigation/DrawerComponents.kt`
+- Driven by Jetpack Navigation 3 (`androidx.navigation3.runtime.NavKey`) with `TopLevelBackStack` and `NavDisplay` hosting routes (`ChatRoute`, `CardsRoute`, `NotesRoute`, etc.)
+- Bottom navigation bar covers Chat, Cards, Notes, Social (supports Navigation Rail on non-compact screens)
+- Modal drawer (triggered from Chat screen) provides navigation to SessionList, user profile preferences, and settings
+- Drawer content lives in `ui/drawer/DrawerComponents.kt`
 - Chat-specific composables (bubbles, input) live in `ui/chat/ChatComponents.kt`
 
 ### Session Management
@@ -146,8 +147,8 @@ The app uses a single-activity architecture with bottom navigation and a modal d
 
 ## API Configuration
 
-- Default Base URL: `https://api.deepseek.com`
-- Default Model: `deepseek-chat`
+- Default Base URL: `https://api.ppio.com/openai`
+- Default Model: `deepseek/deepseek-v4-flash`
 - The API settings (Base URL, API Key, and Model) are configured dynamically inside the app's Settings Screen, backed by Jetpack DataStore Preferences.
 - Timeout: 60s connect, 60s read, 30s write
 

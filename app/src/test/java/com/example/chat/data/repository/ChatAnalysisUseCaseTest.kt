@@ -6,7 +6,7 @@ import com.example.chat.data.dao.AnalysisDao
 import com.example.chat.data.dao.ChatDao
 import com.example.chat.data.entity.ChatAnalysisEntity
 import com.example.chat.data.entity.ChatEntity
-import com.example.chat.model.DeepseekRequest
+import com.example.chat.model.ApiConfig
 import com.example.chat.model.DeepseekResponse
 import com.example.chat.model.Message
 import com.example.chat.model.PetType
@@ -19,7 +19,6 @@ import org.junit.Test
 import org.mockito.MockedStatic
 import org.mockito.Mockito
 import org.mockito.kotlin.*
-import java.io.IOException
 
 class ChatAnalysisUseCaseTest {
 

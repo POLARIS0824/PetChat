@@ -1,6 +1,6 @@
 package com.example.chat.di
 
-import com.example.chat.data.repository.ApiConfig
+import com.example.chat.model.ApiConfig
 import com.example.chat.data.repository.SettingsManager
 import okhttp3.Interceptor
 import okhttp3.Request

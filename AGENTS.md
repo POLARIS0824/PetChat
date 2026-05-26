@@ -3,7 +3,7 @@
 ## Project Structure & Module Organization
 - Root is a single-module Android app (`:app`) managed by Gradle Kotlin DSL.
 - Main source: `app/src/main/java/com/example/chat`.
-- UI and feature folders: `ui/`, `ui/social/`, `viewmodel/`, `data/`, `model/`, `service/`, `util/`.
+- UI and feature folders: `ui/` (with nested feature folders like `chat/`, `cards/`, `notes/`, `social/`, `session/`, `settings/`, `profile/`, `drawer/`, `navigation/`, `theme/`), `data/`, `model/`, `service/`, `di/`, `util/`.
 - Resources and manifest: `app/src/main/res` and `app/src/main/AndroidManifest.xml`.
 - Unit tests live in `app/src/test/java`.
 - Instrumented tests live in `app/src/androidTest/java`.

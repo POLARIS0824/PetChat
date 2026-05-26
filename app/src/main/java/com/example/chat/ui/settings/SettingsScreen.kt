@@ -16,7 +16,7 @@ import androidx.compose.ui.unit.dp
 import androidx.activity.compose.BackHandler
 import kotlinx.coroutines.launch
 import com.example.chat.R
-import com.example.chat.data.repository.ApiConfig
+import com.example.chat.model.ApiConfig
 import com.example.chat.data.repository.SettingsManager
 import com.example.chat.ui.theme.AccentOrange
 
