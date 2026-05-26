@@ -111,8 +111,8 @@ fun ChatScreen(
                     ) { msg ->
                         val isCurrentlyStreaming = state.isStreaming &&
                                 state.streamingMessage != null &&
-                                msg.role != "user" &&
-                                msg == state.chatHistory.lastOrNull { it.role != "user" }
+                                msg.role == "assistant" &&
+                                msg.id == state.streamingMessage.id
 
                         ChatBubble(
                             message = msg,

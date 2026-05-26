@@ -38,6 +38,7 @@ class PetChatViewModel @Inject constructor(
 
     private var lastPictureInfo: PictureInfo? = null
     private var scrollJob: Job? = null
+    private var streamingJob: Job? = null
 
     private val _allSessions = MutableStateFlow<List<SessionInfo>>(emptyList())
     val allSessions: StateFlow<List<SessionInfo>> = _allSessions.asStateFlow()
@@ -86,6 +87,7 @@ class PetChatViewModel @Inject constructor(
     }
 
     fun selectPetType(petType: PetType) {
+        streamingJob?.cancel()
         updateReady { it.copy(currentPetType = petType) }
         loadChatHistory()
     }
@@ -98,13 +100,15 @@ class PetChatViewModel @Inject constructor(
 
     fun sendMessage(message: String) {
         if (message.isBlank()) return
+        if (readyState().isStreaming) return
         sendMessageAgent(message)
     }
 
     private fun sendMessageAgent(message: String) {
         if (message.isBlank()) return
 
-        viewModelScope.launch {
+        streamingJob?.cancel()
+        streamingJob = viewModelScope.launch {
             val petType = readyState().currentPetType
 
             updateReady {
@@ -267,6 +271,8 @@ class PetChatViewModel @Inject constructor(
 
                 repository.getPetAgentResponse(petType, message, responseListener)
 
+            } catch (e: kotlin.coroutines.cancellation.CancellationException) {
+                throw e
             } catch (e: Exception) {
                 e.printStackTrace()
                 updateReady {
