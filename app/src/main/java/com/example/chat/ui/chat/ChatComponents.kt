@@ -253,22 +253,6 @@ fun ChatInput(
             ),
         horizontalAlignment = Alignment.Start
     ) {
-        if (isLoading) {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(vertical = 4.dp),
-                horizontalArrangement = Arrangement.Start
-            ) {
-                LoadingAnimation(
-                    modifier = Modifier
-                        .height(30.dp)
-                        .fillMaxWidth(0.3f)
-                        .align(Alignment.CenterVertically)
-                )
-            }
-        }
-
         Row(
             modifier = Modifier
                 .fillMaxWidth()
