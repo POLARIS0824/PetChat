@@ -4,6 +4,7 @@ import android.util.Log
 import com.example.chat.data.dao.ChatDao
 import com.example.chat.data.entity.ChatEntity
 import com.example.chat.data.tools.ToolRegistry
+import com.example.chat.model.ApiConfig
 import com.example.chat.model.ChatMessage
 import com.example.chat.model.DeepseekResponse
 import com.example.chat.model.Message
