@@ -24,6 +24,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 
 @Composable
+@Suppress("ConfigurationScreenWidthHeight")
 fun PetAvatar(
     name: String,
     imageRes: Int,

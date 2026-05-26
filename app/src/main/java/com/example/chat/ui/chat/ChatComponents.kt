@@ -73,8 +73,8 @@ fun AnimatedAvatar(
     val alpha by transition.animateFloat(
         label = "Alpha",
         transitionSpec = { tween(frameDelay.toInt() / 2) }
-    ) {
-        1f
+    ) { state ->
+        if (state >= 0) 1f else 1f
     }
 
     LaunchedEffect(Unit) {
@@ -234,8 +234,8 @@ fun ChatInput(
     message: String,
     onMessageChange: (String) -> Unit,
     onSendClick: () -> Unit,
-    isLoading: Boolean = false,
     modifier: Modifier = Modifier,
+    isLoading: Boolean = false,
     showPetSelector: Boolean = false,
     onHidePetSelector: () -> Unit = {},
     isStreaming: Boolean = false,

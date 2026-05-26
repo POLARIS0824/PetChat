@@ -21,6 +21,7 @@ enum class WindowSize {
 }
 
 @Composable
+@Suppress("ConfigurationScreenWidthHeight")
 fun rememberWindowSizeClass(): WindowSize {
     val configuration = LocalConfiguration.current
     return when {

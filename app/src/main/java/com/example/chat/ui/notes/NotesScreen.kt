@@ -36,8 +36,8 @@ import com.example.chat.ui.util.FormFactorPreviews
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun NotesScreen(
-    viewModel: NotesViewModel = hiltViewModel(),
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    viewModel: NotesViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val state = (uiState as? NotesUiState.Ready) ?: NotesUiState.Ready()
