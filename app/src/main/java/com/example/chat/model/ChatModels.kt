@@ -22,7 +22,17 @@ data class ChatMessage(
     val petType: PetType,
     val timestamp: Long = System.currentTimeMillis(),
     val id: String = java.util.UUID.randomUUID().toString(),
+    val toolCallInfo: ToolCallInfo? = null,
 )
+
+data class ToolCallInfo(
+    val toolName: String,
+    val displayName: String,
+    val status: ToolStatus,
+    val resultPreview: String? = null,
+)
+
+enum class ToolStatus { EXECUTING, COMPLETED, FAILED }
 
 /**
  * AI返回的图片相关信息数据类

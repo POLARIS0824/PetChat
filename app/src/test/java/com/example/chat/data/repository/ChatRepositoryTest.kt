@@ -3,7 +3,7 @@ package com.example.chat.data.repository
 import android.util.Log
 import com.example.chat.data.dao.ChatDao
 import com.example.chat.data.entity.ChatEntity
-import com.example.chat.model.ApiConfig
+import com.example.chat.data.tools.ToolRegistry
 import com.example.chat.model.ChatMessage
 import com.example.chat.model.DeepseekResponse
 import com.example.chat.model.Message
@@ -27,6 +27,7 @@ class ChatRepositoryTest {
     private val pictureInfoParser: PictureInfoParser = mock()
     private val analysisUseCase: ChatAnalysisUseCase = mock()
     private val settingsManager: SettingsManager = mock()
+    private val toolRegistry: ToolRegistry = mock()
 
     private lateinit var repository: ChatRepository
     private lateinit var mockedLog: MockedStatic<Log>
@@ -58,7 +59,8 @@ class ChatRepositoryTest {
             promptBuilder = promptBuilder,
             pictureInfoParser = pictureInfoParser,
             analysisUseCase = analysisUseCase,
-            settingsManager = settingsManager
+            settingsManager = settingsManager,
+            toolRegistry = toolRegistry
         )
     }
 

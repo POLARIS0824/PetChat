@@ -6,13 +6,15 @@ import androidx.room.TypeConverters
 import com.example.chat.data.dao.AnalysisDao
 import com.example.chat.data.dao.ChatDao
 import com.example.chat.data.dao.NotesDao
+import com.example.chat.data.dao.ReminderDao
 import com.example.chat.data.entity.ChatAnalysisEntity
 import com.example.chat.data.entity.ChatEntity
 import com.example.chat.data.entity.NoteEntity
+import com.example.chat.data.entity.ReminderEntity
 
 @Database(
-    entities = [ChatEntity::class, ChatAnalysisEntity::class, NoteEntity::class],
-    version = 8,
+    entities = [ChatEntity::class, ChatAnalysisEntity::class, NoteEntity::class, ReminderEntity::class],
+    version = 9,
     exportSchema = false,
 )
 @TypeConverters(Converters::class)
@@ -20,4 +22,5 @@ abstract class ChatDatabase : RoomDatabase() {
     abstract fun chatDao(): ChatDao
     abstract fun analysisDao(): AnalysisDao
     abstract fun notesDao(): NotesDao
+    abstract fun reminderDao(): ReminderDao
 }

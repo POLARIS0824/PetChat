@@ -4,18 +4,42 @@ import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.JsonElement
 
+// region Request Models
+
 @Serializable
 data class DeepseekRequest(
     val model: String = "",
     val messages: List<Message>,
     val stream: Boolean = false,
+    val tools: List<ApiTool>? = null,
+    val tool_choice: String? = null,
 )
 
 @Serializable
 data class Message(
     val role: String,
     val content: String? = null,
+    val tool_calls: List<ToolCall>? = null,
+    val tool_call_id: String? = null,
+    val name: String? = null,
 )
+
+@Serializable
+data class ApiTool(
+    val type: String = "function",
+    val function: FunctionDefinition,
+)
+
+@Serializable
+data class FunctionDefinition(
+    val name: String,
+    val description: String,
+    val parameters: Map<String, JsonElement>,
+)
+
+// endregion
+
+// region Response Models
 
 @Serializable
 data class DeepseekResponse(
@@ -39,7 +63,8 @@ data class DeepseekResponse(
     @Serializable
     data class Delta(
         val content: String? = null,
-        val role: String? = null
+        val role: String? = null,
+        val tool_calls: List<ToolCallDelta>? = null
     )
 
     @Serializable
@@ -50,11 +75,55 @@ data class DeepseekResponse(
     )
 }
 
+@Serializable
+data class ToolCall(
+    val id: String? = null,
+    val type: String = "function",
+    val function: FunctionCall? = null
+)
+
+@Serializable
+data class FunctionCall(
+    val name: String? = null,
+    val arguments: String? = null
+)
+
+@Serializable
+data class ToolCallDelta(
+    val index: Int? = null,
+    val id: String? = null,
+    val type: String? = null,
+    val function: FunctionCallDelta? = null
+)
+
+@Serializable
+data class FunctionCallDelta(
+    val name: String? = null,
+    val arguments: String? = null
+)
+
+// endregion
+
+// region Streaming
+
+sealed class StreamEvent {
+    data class Content(val text: String) : StreamEvent()
+    data class ToolCallDeltaEvent(
+        val index: Int,
+        val id: String?,
+        val functionName: String?,
+        val argumentsDelta: String?
+    ) : StreamEvent()
+    data object StreamFinished : StreamEvent()
+}
+
 interface StreamResponseListener {
     fun onContent(content: String)
     fun onComplete()
     fun onError(e: Exception)
 }
+
+// endregion
 
 @Serializable
 data class ChatAnalysisResult(

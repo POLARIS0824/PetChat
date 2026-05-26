@@ -75,4 +75,9 @@
     <string name="notification_channel_desc">来自宠物的每日问候</string>
     <string name="notification_title">来自宠物的问候</string>
     <string name="notification_fallback">喵~ 想你了，主人！</string>
+
+    <!-- Reminder Notification -->
+    <string name="reminder_title">提醒</string>
+    <string name="reminder_channel_name">宠物提醒</string>
+    <string name="reminder_channel_desc">来自宠物的定时提醒</string>
 </resources>

@@ -2,14 +2,18 @@ package com.example.chat.ui.chat
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.chat.data.repository.AgentStreamListener
 import com.example.chat.data.repository.ChatRepository
 import com.example.chat.data.repository.SessionManager
+import com.example.chat.data.tools.ToolResult
+import com.example.chat.model.AgentStatus
 import com.example.chat.model.ChatMessage
 import com.example.chat.model.ChatUiState
 import com.example.chat.model.PetType
 import com.example.chat.model.PictureInfo
 import com.example.chat.model.SessionInfo
-import com.example.chat.model.StreamResponseListener
+import com.example.chat.model.ToolCallInfo
+import com.example.chat.model.ToolStatus
 import android.app.Application
 import com.example.chat.R
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -94,10 +98,10 @@ class PetChatViewModel @Inject constructor(
 
     fun sendMessage(message: String) {
         if (message.isBlank()) return
-        sendMessageStreaming(message)
+        sendMessageAgent(message)
     }
 
-    private fun sendMessageStreaming(message: String) {
+    private fun sendMessageAgent(message: String) {
         if (message.isBlank()) return
 
         viewModelScope.launch {
@@ -134,7 +138,7 @@ class PetChatViewModel @Inject constructor(
                 delay(50)
                 updateReady { it.copy(shouldScrollToBottom = true) }
 
-                val responseListener = object : StreamResponseListener {
+                val responseListener = object : AgentStreamListener {
                     private val responseBuffer = StringBuffer()
 
                     override fun onContent(content: String) {
@@ -143,7 +147,9 @@ class PetChatViewModel @Inject constructor(
                         updateReady { state ->
                             state.copy(
                                 streamingMessage = updatedMessage,
-                                chatHistory = state.chatHistory.dropLast(1) + updatedMessage,
+                                chatHistory = state.chatHistory.map {
+                                    if (it.id == petMessage.id) updatedMessage else it
+                                },
                                 shouldScrollToBottom = false
                             )
                         }
@@ -151,6 +157,63 @@ class PetChatViewModel @Inject constructor(
                         scrollJob = viewModelScope.launch {
                             delay(50)
                             updateReady { it.copy(shouldScrollToBottom = true) }
+                        }
+                    }
+
+                    override fun onThinking() {
+                        updateReady { it.copy(agentStatus = AgentStatus.THINKING) }
+                    }
+
+                    override fun onToolCallStart(
+                        toolCallId: String,
+                        toolName: String,
+                        displayName: String
+                    ) {
+                        updateReady { it.copy(agentStatus = AgentStatus.EXECUTING) }
+                        val statusMsg = ChatMessage(
+                            content = "",
+                            role = "tool_status",
+                            petType = petType,
+                            id = toolCallId.ifEmpty { java.util.UUID.randomUUID().toString() },
+                            toolCallInfo = ToolCallInfo(
+                                toolName = toolName,
+                                displayName = displayName,
+                                status = ToolStatus.EXECUTING
+                            )
+                        )
+                        updateReady {
+                            it.copy(chatHistory = it.chatHistory + statusMsg)
+                        }
+                    }
+
+                    override fun onToolCallComplete(
+                        toolCallId: String,
+                        toolName: String,
+                        displayName: String,
+                        result: ToolResult
+                    ) {
+                        updateReady { it.copy(agentStatus = null) }
+                        val status = if (result.success) ToolStatus.COMPLETED else ToolStatus.FAILED
+                        val statusMsg = ChatMessage(
+                            content = result.displayMessage,
+                            role = "tool_status",
+                            petType = petType,
+                            id = toolCallId.ifEmpty { java.util.UUID.randomUUID().toString() },
+                            toolCallInfo = ToolCallInfo(
+                                toolName = toolName,
+                                displayName = displayName,
+                                status = status,
+                                resultPreview = result.displayMessage
+                            )
+                        )
+                        updateReady {
+                            it.copy(
+                                chatHistory = it.chatHistory.map { msg ->
+                                    if (msg.id == toolCallId && msg.role == "tool_status" && msg.toolCallInfo?.status == ToolStatus.EXECUTING)
+                                        statusMsg
+                                    else msg
+                                }
+                            )
                         }
                     }
 
@@ -163,14 +226,13 @@ class PetChatViewModel @Inject constructor(
                                 isStreaming = false,
                                 streamingMessage = null,
                                 isForegroundLoading = false,
+                                agentStatus = null,
                                 shouldScrollToBottom = false
                             )
                         }
 
                         viewModelScope.launch {
                             repository.saveChatMessage(finalMessage, petType)
-                            val pictureInfo = repository.consumeLastPictureInfo()
-                            if (pictureInfo != null) lastPictureInfo = pictureInfo
                             val unprocessedCount = repository.getUnprocessedChatsCount()
                             if (unprocessedCount >= 10) repository.analyzeChats()
                         }
@@ -191,7 +253,10 @@ class PetChatViewModel @Inject constructor(
                                 isStreaming = false,
                                 streamingMessage = null,
                                 isForegroundLoading = false,
-                                chatHistory = it.chatHistory.dropLast(1) + errorMessage
+                                agentStatus = null,
+                                chatHistory = it.chatHistory.map { msg ->
+                                    if (msg.id == petMessage.id) errorMessage else msg
+                                }
                             )
                         }
                         viewModelScope.launch {
@@ -200,12 +265,17 @@ class PetChatViewModel @Inject constructor(
                     }
                 }
 
-                repository.getPetResponseWithPictureInfoStreaming(petType, message, responseListener)
+                repository.getPetAgentResponse(petType, message, responseListener)
 
             } catch (e: Exception) {
                 e.printStackTrace()
                 updateReady {
-                    it.copy(isStreaming = false, isForegroundLoading = false, streamingMessage = null)
+                    it.copy(
+                        isStreaming = false,
+                        isForegroundLoading = false,
+                        streamingMessage = null,
+                        agentStatus = null
+                    )
                 }
             }
         }

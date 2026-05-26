@@ -23,9 +23,11 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
@@ -51,6 +53,8 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.example.chat.R
 import com.example.chat.model.ChatMessage
+import com.example.chat.model.ToolCallInfo
+import com.example.chat.model.ToolStatus
 import kotlinx.coroutines.delay
 import java.text.SimpleDateFormat
 import java.util.Locale
@@ -100,6 +104,11 @@ fun ChatBubble(
     modifier: Modifier = Modifier,
     isStreaming: Boolean = false
 ) {
+    if (message.toolCallInfo != null) {
+        ToolStatusBubble(message.toolCallInfo, modifier)
+        return
+    }
+
     val isFromUser = message.role == "user"
     val backgroundColor = if (isFromUser) AccentOrange else Color.White
     val textColor = if (isFromUser) Color.White else Color.Black
@@ -180,6 +189,42 @@ fun TypingIndicator(modifier: Modifier = Modifier) {
                     .alpha(alpha)
                     .background(dotColor, CircleShape)
             )
+        }
+    }
+}
+
+@Composable
+fun ToolStatusBubble(
+    toolCallInfo: ToolCallInfo,
+    modifier: Modifier = Modifier
+) {
+    val (icon, text) = when (toolCallInfo.status) {
+        ToolStatus.EXECUTING -> "🔧" to "${toolCallInfo.displayName}中..."
+        ToolStatus.COMPLETED -> "✅" to "${toolCallInfo.displayName} 已完成"
+        ToolStatus.FAILED -> "❌" to "${toolCallInfo.displayName} 失败"
+    }
+
+    Row(
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(vertical = 4.dp),
+        horizontalArrangement = Arrangement.Center
+    ) {
+        Surface(
+            shape = RoundedCornerShape(12.dp),
+            color = Color(0xFFF0F0F0),
+            modifier = Modifier.widthIn(max = 320.dp)
+        ) {
+            Row(
+                modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = "$icon $text",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = Color.Gray
+                )
+            }
         }
     }
 }

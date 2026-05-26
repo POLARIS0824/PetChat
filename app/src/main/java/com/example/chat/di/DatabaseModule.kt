@@ -6,6 +6,7 @@ import com.example.chat.data.dao.AnalysisDao
 import com.example.chat.data.dao.ChatDao
 import com.example.chat.data.ChatDatabase
 import com.example.chat.data.dao.NotesDao
+import com.example.chat.data.dao.ReminderDao
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -42,6 +43,11 @@ object DatabaseModule {
     @Provides
     fun provideNotesDao(database: ChatDatabase): NotesDao {
         return database.notesDao()
+    }
+
+    @Provides
+    fun provideReminderDao(database: ChatDatabase): ReminderDao {
+        return database.reminderDao()
     }
 
 }

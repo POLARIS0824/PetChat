@@ -90,4 +90,17 @@ interface ChatDao {
         val lastMessage: String,
         val timestamp: Long
     )
+
+    @Query("""
+        SELECT * FROM chat_history
+        WHERE sessionId = :sessionId
+          AND (isImportant = 1 OR content LIKE '%' || :query || '%')
+        ORDER BY timestamp DESC
+        LIMIT :limit
+    """)
+    suspend fun searchMessagesByKeyword(
+        sessionId: String,
+        query: String,
+        limit: Int = 15
+    ): List<ChatEntity>
 }
