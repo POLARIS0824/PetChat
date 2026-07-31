@@ -46,7 +46,7 @@ class NotesViewModelTest {
     private class FakeNotesDao : NotesDao {
         val notesState = MutableStateFlow<List<NoteEntity>>(emptyList())
 
-        override fun getByTypeFlow(petType: String): Flow<List<NoteEntity>> {
+        override fun getByTypeFlow(petType: PetType): Flow<List<NoteEntity>> {
             return notesState.map { list -> list.filter { it.petType == petType } }
         }
 
@@ -107,7 +107,7 @@ class NotesViewModelTest {
     @Test
     fun testAddAndRetrieveNotes() = runTest {
         // 添加一条猫咪便利贴
-        viewModel.addNote("给猫咪买猫草", PetType.CAT.name)
+        viewModel.addNote("给猫咪买猫草", PetType.CAT)
         
         // 触发 Flow 收集
         val state = viewModel.uiState.first()
@@ -121,8 +121,8 @@ class NotesViewModelTest {
     @Test
     fun testFilterNotesByPetType() = runTest {
         // 添加猫咪和狗狗各一条便利贴
-        viewModel.addNote("给布丁梳毛", PetType.CAT.name)
-        viewModel.addNote("带大白去公园", PetType.DOG.name)
+        viewModel.addNote("给布丁梳毛", PetType.CAT)
+        viewModel.addNote("带大白去公园", PetType.DOG)
 
         // 默认不过滤，应能查出所有
         var state = viewModel.uiState.first()
@@ -130,7 +130,7 @@ class NotesViewModelTest {
         assertEquals(2, readyState.notes.size)
 
         // 设置过滤为 CAT
-        viewModel.setFilter(PetType.CAT.name)
+        viewModel.setFilter(PetType.CAT)
         
         state = viewModel.uiState.first()
         readyState = state as NotesUiState.Ready
@@ -139,7 +139,7 @@ class NotesViewModelTest {
         assertEquals(PetType.CAT, readyState.notes[0].petType)
 
         // 设置过滤为 DOG
-        viewModel.setFilter(PetType.DOG.name)
+        viewModel.setFilter(PetType.DOG)
         
         state = viewModel.uiState.first()
         readyState = state as NotesUiState.Ready
@@ -150,7 +150,7 @@ class NotesViewModelTest {
 
     @Test
     fun testDeleteNote() = runTest {
-        viewModel.addNote("临时便签", PetType.CAT.name)
+        viewModel.addNote("临时便签", PetType.CAT)
 
         var state = viewModel.uiState.first()
         var readyState = state as NotesUiState.Ready
@@ -166,7 +166,7 @@ class NotesViewModelTest {
 
     @Test
     fun testUpdateNote() = runTest {
-        viewModel.addNote("旧内容", PetType.CAT.name)
+        viewModel.addNote("旧内容", PetType.CAT)
 
         var state = viewModel.uiState.first()
         var readyState = state as NotesUiState.Ready

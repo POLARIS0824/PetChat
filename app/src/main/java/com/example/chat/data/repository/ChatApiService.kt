@@ -3,13 +3,11 @@ package com.example.chat.data.repository
 import android.util.Log
 import com.example.chat.model.DeepseekRequest
 import com.example.chat.model.DeepseekResponse
-import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.flow.flowOn
-import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.Json
 import okhttp3.ResponseBody
@@ -84,15 +82,10 @@ class ChatApiService @Inject constructor(
         }
 
         awaitClose {
-            val body = responseBodyRef
-            if (body != null) {
-                CoroutineScope(Dispatchers.IO).launch {
-                    try {
-                        body.close()
-                    } catch (e: Exception) {
-                        Log.e("API_STREAM_ERROR", "Error closing response body in awaitClose", e)
-                    }
-                }
+            try {
+                responseBodyRef?.close()
+            } catch (e: Exception) {
+                Log.e("API_STREAM_ERROR", "Error closing response body in awaitClose", e)
             }
         }
     }.flowOn(Dispatchers.IO)

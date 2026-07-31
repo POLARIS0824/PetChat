@@ -14,6 +14,15 @@ enum class PetType(val displayName: String) {
 }
 
 /**
+ * 从数据库/DataStore 中存储的字符串还原 PetType。
+ * 兼容旧版本存储值 "DOG2"（已重命名为 SHIBA）。
+ */
+fun petTypeFromStorage(value: String?): PetType = when (value) {
+    "DOG2" -> PetType.SHIBA
+    else -> PetType.entries.firstOrNull { it.name == value } ?: PetType.CAT
+}
+
+/**
  * 聊天消息数据类
  */
 data class ChatMessage(

@@ -6,6 +6,7 @@ import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.components.SingletonComponent
+import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.json.Json
 import okhttp3.HttpUrl.Companion.toHttpUrl
 import okhttp3.MediaType.Companion.toMediaType
@@ -27,7 +28,7 @@ object NetworkModule {
             .readTimeout(60, TimeUnit.SECONDS)
             .writeTimeout(30, TimeUnit.SECONDS)
             .addInterceptor { chain ->
-                val config = settingsManager.getConfigSync()
+                val config = runBlocking { settingsManager.getConfig() }
                 val original = chain.request()
                 val configuredUrl = config.baseUrl.trim().takeIf { it.isNotBlank() }
                     ?: SettingsManager.DEFAULT_BASE_URL

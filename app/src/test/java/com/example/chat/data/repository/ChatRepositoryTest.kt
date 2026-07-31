@@ -38,7 +38,9 @@ class ChatRepositoryTest {
         mockedLog.`when`<Int> { Log.e(any(), any()) }.thenReturn(0)
 
         // Stub default currentSessionId
-        whenever(sessionManager.currentSessionId).thenReturn("test-session-id")
+        runBlocking {
+            whenever(sessionManager.getCurrentSessionId()).thenReturn("test-session-id")
+        }
         
         // Stub default API configuration
         runBlocking {
@@ -83,7 +85,7 @@ class ChatRepositoryTest {
             verify(chatDao).insert(capture())
             assertEquals("吃了吗", firstValue.content)
             assertEquals("test-session-id", firstValue.sessionId)
-            assertEquals(PetType.CAT.name, firstValue.petType)
+            assertEquals(PetType.CAT, firstValue.petType)
             assertEquals("user", firstValue.role)
             assertFalse(firstValue.isImportant)
         }
@@ -169,8 +171,8 @@ class ChatRepositoryTest {
         
         // 模拟已有的最近 3 条聊天历史记录（CONTEXT_MESSAGE_LIMIT）
         val recentHistory = listOf(
-            ChatEntity(id = 1L, content = "哈？", role = "assistant", petType = petType.name, sessionId = "session", timestamp = 100L),
-            ChatEntity(id = 2L, content = "给你罐头", role = "user", petType = petType.name, sessionId = "session", timestamp = 200L)
+            ChatEntity(id = 1L, content = "哈？", role = "assistant", petType = petType, sessionId = "session", timestamp = 100L),
+            ChatEntity(id = 2L, content = "给你罐头", role = "user", petType = petType, sessionId = "session", timestamp = 200L)
         )
         whenever(chatDao.getRecentSessionMessages(any(), any(), eq(3))).thenReturn(recentHistory)
         whenever(promptBuilder.build(petType)).thenReturn("猫咪傲娇设定")

@@ -36,4 +36,10 @@ class ConvertersTest {
         assertEquals(PetType.CAT, converters.toPetType("UNKNOWN_PET"))
         assertEquals(PetType.CAT, converters.toPetType(""))
     }
+
+    @Test
+    fun testToPetType_legacyDOG2MapsToSHIBA() {
+        // 旧版本存储的 "DOG2" 应兼容映射为 SHIBA
+        assertEquals(PetType.SHIBA, converters.toPetType("DOG2"))
+    }
 }

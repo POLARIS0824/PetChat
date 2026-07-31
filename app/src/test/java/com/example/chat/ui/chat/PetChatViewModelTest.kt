@@ -13,6 +13,7 @@ import com.example.chat.model.SessionInfo
 import com.example.chat.model.StreamResponseListener
 import com.example.chat.ui.notes.MainDispatcherRule
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.*
@@ -35,7 +36,9 @@ class PetChatViewModelTest {
 
     @Before
     fun setUp() {
-        whenever(sessionManager.currentSessionId).thenReturn("test-session-id")
+        runBlocking {
+            whenever(sessionManager.getCurrentSessionId()).thenReturn("test-session-id")
+        }
         whenever(application.getString(R.string.chat_error_fallback)).thenReturn("出错了喵，请稍后再试。")
     }
 
@@ -60,8 +63,8 @@ class PetChatViewModelTest {
     @Test
     fun testInitialization_loadsExistingHistory() = runTest {
         val history = listOf(
-            ChatEntity(id = 1L, content = "你好", role = "user", petType = "CAT", sessionId = "test-session-id"),
-            ChatEntity(id = 2L, content = "哼！本喵才不想理你！", role = "assistant", petType = "CAT", sessionId = "test-session-id")
+            ChatEntity(id = 1L, content = "你好", role = "user", petType = PetType.CAT, sessionId = "test-session-id"),
+            ChatEntity(id = 2L, content = "哼！本喵才不想理你！", role = "assistant", petType = PetType.CAT, sessionId = "test-session-id")
         )
         initViewModel(history)
         testScheduler.advanceUntilIdle()
@@ -79,7 +82,7 @@ class PetChatViewModelTest {
     @Test
     fun testSelectPetType_reloadsHistoryForNewPet() = runTest {
         val catHistory = listOf(
-            ChatEntity(id = 1L, content = "猫咪对话", role = "user", petType = "CAT", sessionId = "test-session-id")
+            ChatEntity(id = 1L, content = "猫咪对话", role = "user", petType = PetType.CAT, sessionId = "test-session-id")
         )
         whenever(sessionManager.getSessionMessages("test-session-id", PetType.CAT)).thenReturn(catHistory)
         viewModel = PetChatViewModel(repository, sessionManager, application)
@@ -87,8 +90,8 @@ class PetChatViewModelTest {
 
         // 切换为 DOG 且模拟 DOG 包含 2 条消息
         val dogHistory = listOf(
-            ChatEntity(id = 2L, content = "狗狗消息1", role = "user", petType = "DOG", sessionId = "test-session-id"),
-            ChatEntity(id = 3L, content = "狗狗消息2", role = "assistant", petType = "DOG", sessionId = "test-session-id")
+            ChatEntity(id = 2L, content = "狗狗消息1", role = "user", petType = PetType.DOG, sessionId = "test-session-id"),
+            ChatEntity(id = 3L, content = "狗狗消息2", role = "assistant", petType = PetType.DOG, sessionId = "test-session-id")
         )
         whenever(sessionManager.getSessionMessages("test-session-id", PetType.DOG)).thenReturn(dogHistory)
 
@@ -217,12 +220,14 @@ class PetChatViewModelTest {
         
         // 模拟切换目标会话的聊天历史
         val newSessionHistory = listOf(
-            ChatEntity(id = 10L, content = "狗狗好", role = "user", petType = "DOG", sessionId = "session-2")
+            ChatEntity(id = 10L, content = "狗狗好", role = "user", petType = PetType.DOG, sessionId = "session-2")
         )
         whenever(sessionManager.getSessionMessages("session-2", PetType.DOG)).thenReturn(newSessionHistory)
 
-        // 模拟切换会话后 SessionManager.currentSessionId 会更新
-        whenever(sessionManager.currentSessionId).thenReturn("session-2")
+        // 模拟切换会话后 SessionManager.getCurrentSessionId() 会更新
+        runBlocking {
+            whenever(sessionManager.getCurrentSessionId()).thenReturn("session-2")
+        }
 
         // 切换到 session-2
         viewModel.switchToSession("session-2")

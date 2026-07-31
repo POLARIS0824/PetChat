@@ -13,7 +13,7 @@ class PromptBuilderTest {
     private class FakeAnalysisDao : AnalysisDao {
         private val db = mutableListOf<ChatAnalysisEntity>()
 
-        override suspend fun getLatestAnalysis(petType: String): ChatAnalysisEntity? {
+        override suspend fun getLatestAnalysis(petType: PetType): ChatAnalysisEntity? {
             return db.filter { it.petType == petType }
                 .maxByOrNull { it.timestamp }
         }
@@ -47,7 +47,7 @@ class PromptBuilderTest {
         
         // 预插入一条画像数据
         val analysis = ChatAnalysisEntity(
-            petType = petType.name,
+            petType = petType,
             summary = "用户喜欢调侃傲娇属性",
             preferences = "[\"喜欢鱼干\", \"讨厌被冷落\"]",
             patterns = "[\"经常主动发起对话\"]",
@@ -75,7 +75,7 @@ class PromptBuilderTest {
 
         // 插入一条旧的画像
         val oldAnalysis = ChatAnalysisEntity(
-            petType = petType.name,
+            petType = petType,
             summary = "旧的分析",
             preferences = "旧偏好",
             patterns = "旧模式",
@@ -85,7 +85,7 @@ class PromptBuilderTest {
 
         // 插入一条新的画像
         val newAnalysis = ChatAnalysisEntity(
-            petType = petType.name,
+            petType = petType,
             summary = "最新的分析内容",
             preferences = "最新偏好",
             patterns = "最新模式",

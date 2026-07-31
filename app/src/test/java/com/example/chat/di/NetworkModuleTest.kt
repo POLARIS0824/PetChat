@@ -2,6 +2,7 @@ package com.example.chat.di
 
 import com.example.chat.model.ApiConfig
 import com.example.chat.data.repository.SettingsManager
+import kotlinx.coroutines.runBlocking
 import okhttp3.Interceptor
 import okhttp3.Request
 import org.junit.Assert.assertEquals
@@ -19,13 +20,15 @@ class NetworkModuleTest {
         val client = NetworkModule.provideOkHttpClient(settingsManager)
         val interceptor = client.interceptors[0]
 
-        whenever(settingsManager.getConfigSync()).thenReturn(
-            ApiConfig(
-                baseUrl = "https://api.openai.com",
-                apiKey = "test-key",
-                model = "deepseek-v3"
+        runBlocking {
+            whenever(settingsManager.getConfig()).thenReturn(
+                ApiConfig(
+                    baseUrl = "https://api.openai.com",
+                    apiKey = "test-key",
+                    model = "deepseek-v3"
+                )
             )
-        )
+        }
 
         val mockChain: Interceptor.Chain = mock()
         val originalRequest = Request.Builder()
@@ -48,13 +51,15 @@ class NetworkModuleTest {
         val client = NetworkModule.provideOkHttpClient(settingsManager)
         val interceptor = client.interceptors[0]
 
-        whenever(settingsManager.getConfigSync()).thenReturn(
-            ApiConfig(
-                baseUrl = "https://api.openai.com/v1",
-                apiKey = "test-key",
-                model = "deepseek-v3"
+        runBlocking {
+            whenever(settingsManager.getConfig()).thenReturn(
+                ApiConfig(
+                    baseUrl = "https://api.openai.com/v1",
+                    apiKey = "test-key",
+                    model = "deepseek-v3"
+                )
             )
-        )
+        }
 
         val mockChain: Interceptor.Chain = mock()
         val originalRequest = Request.Builder()
@@ -76,13 +81,15 @@ class NetworkModuleTest {
         val client = NetworkModule.provideOkHttpClient(settingsManager)
         val interceptor = client.interceptors[0]
 
-        whenever(settingsManager.getConfigSync()).thenReturn(
-            ApiConfig(
-                baseUrl = "https://api.openai.com/v1",
-                apiKey = "test-key",
-                model = "deepseek-v3"
+        runBlocking {
+            whenever(settingsManager.getConfig()).thenReturn(
+                ApiConfig(
+                    baseUrl = "https://api.openai.com/v1",
+                    apiKey = "test-key",
+                    model = "deepseek-v3"
+                )
             )
-        )
+        }
 
         val mockChain: Interceptor.Chain = mock()
         val originalRequest = Request.Builder()
@@ -104,13 +111,15 @@ class NetworkModuleTest {
         val client = NetworkModule.provideOkHttpClient(settingsManager)
         val interceptor = client.interceptors[0]
 
-        whenever(settingsManager.getConfigSync()).thenReturn(
-            ApiConfig(
-                baseUrl = "https://custom-proxy.com/chat/completions",
-                apiKey = "test-key",
-                model = "deepseek-v3"
+        runBlocking {
+            whenever(settingsManager.getConfig()).thenReturn(
+                ApiConfig(
+                    baseUrl = "https://custom-proxy.com/chat/completions",
+                    apiKey = "test-key",
+                    model = "deepseek-v3"
+                )
             )
-        )
+        }
 
         val mockChain: Interceptor.Chain = mock()
         val originalRequest = Request.Builder()

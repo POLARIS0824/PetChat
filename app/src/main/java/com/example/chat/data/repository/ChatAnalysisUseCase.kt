@@ -36,7 +36,7 @@ class ChatAnalysisUseCase @Inject constructor(
 
         val chatsByPetType = unprocessedChats.groupBy { it.petType }
 
-        for ((petTypeString, chats) in chatsByPetType) {
+        for ((petType, chats) in chatsByPetType) {
             if (chats.size < ANALYSIS_THRESHOLD) continue
 
             val analysisPrompt = """
@@ -75,7 +75,7 @@ class ChatAnalysisUseCase @Inject constructor(
                 val analysis = json.decodeFromString<ChatAnalysisResult>(analysisText)
 
                 val analysisEntity = ChatAnalysisEntity(
-                    petType = petTypeString,
+                    petType = petType,
                     summary = analysis.summary,
                     preferences = json.encodeToString(analysis.preferences),
                     patterns = json.encodeToString(analysis.patterns)
@@ -85,7 +85,7 @@ class ChatAnalysisUseCase @Inject constructor(
                     chatDao.updateBlocking(chats.map { it.copy(isProcessed = true) })
                 }
             } catch (e: Exception) {
-                Log.e("ANALYSIS", "分析聊天记录出错 (petType=$petTypeString)", e)
+                Log.e("ANALYSIS", "分析聊天记录出错 (petType=$petType)", e)
             }
         }
     }
@@ -102,11 +102,11 @@ class ChatAnalysisUseCase @Inject constructor(
         """.trimIndent()
 
         try {
-            val petType = PetType.entries.firstOrNull { it.name == messages.first().petType } ?: PetType.CAT
+            val petType = messages.first().petType
             val summary = getPetResponse(petType, summaryPrompt)
             val summaryEntity = ChatEntity(
                 content = "【对话摘要】$summary",
-                petType = messages.first().petType,
+                petType = petType,
                 sessionId = messages.first().sessionId,
                 role = "system",
                 isImportant = true,

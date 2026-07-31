@@ -2,6 +2,7 @@ package com.example.chat.data.repository
 
 import com.example.chat.data.entity.NoteEntity
 import com.example.chat.data.dao.NotesDao
+import com.example.chat.model.PetType
 import kotlinx.coroutines.flow.Flow
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -10,7 +11,7 @@ import javax.inject.Singleton
 class NotesRepository @Inject constructor(
     private val notesDao: NotesDao
 ) {
-    fun getNotesByTypeFlow(petType: String): Flow<List<NoteEntity>> =
+    fun getNotesByTypeFlow(petType: PetType): Flow<List<NoteEntity>> =
         notesDao.getByTypeFlow(petType)
 
     fun getAllNotesFlow(): Flow<List<NoteEntity>> =

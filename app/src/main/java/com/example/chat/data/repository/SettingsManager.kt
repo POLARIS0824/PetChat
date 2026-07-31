@@ -8,7 +8,6 @@ import com.example.chat.model.ApiConfig
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.runBlocking
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -18,10 +17,13 @@ class SettingsManager @Inject constructor(
 ) {
 
     val configFlow: Flow<ApiConfig> = dataStore.data.map { prefs ->
+        val initialized = prefs[KEY_CONFIG_INITIALIZED] ?: false
         ApiConfig(
-            baseUrl = prefs[KEY_BASE_URL]?.takeIf { it.isNotBlank() } ?: "",
+            baseUrl = prefs[KEY_BASE_URL]?.takeIf { it.isNotBlank() }
+                ?: if (initialized) "" else DEFAULT_BASE_URL,
             apiKey = prefs[KEY_API_KEY]?.takeIf { it.isNotBlank() } ?: "",
-            model = prefs[KEY_MODEL]?.takeIf { it.isNotBlank() } ?: "",
+            model = prefs[KEY_MODEL]?.takeIf { it.isNotBlank() }
+                ?: if (initialized) "" else DEFAULT_MODEL,
         )
     }
 
@@ -44,10 +46,6 @@ class SettingsManager @Inject constructor(
         return configFlow.first()
     }
 
-    fun getConfigSync(): ApiConfig = runBlocking {
-        getConfig()
-    }
-
     suspend fun getCustomBaseUrl(): String {
         return customBaseUrlFlow.first()
     }
@@ -61,6 +59,7 @@ class SettingsManager @Inject constructor(
             prefs[KEY_BASE_URL] = config.baseUrl.trim().trimEnd('/')
             prefs[KEY_API_KEY] = config.apiKey.trim()
             prefs[KEY_MODEL] = config.model.trim().takeIf { it.isNotBlank() } ?: ""
+            prefs[KEY_CONFIG_INITIALIZED] = true
         }
     }
 
@@ -86,5 +85,6 @@ class SettingsManager @Inject constructor(
         private val KEY_USER_NAME = stringPreferencesKey("user_name")
         private val KEY_USER_SIGNATURE = stringPreferencesKey("user_signature")
         private val KEY_USER_AVATAR = intPreferencesKey("user_avatar")
+        private val KEY_CONFIG_INITIALIZED = booleanPreferencesKey("config_initialized")
     }
 }

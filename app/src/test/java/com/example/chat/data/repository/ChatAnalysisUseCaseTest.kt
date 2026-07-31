@@ -75,7 +75,7 @@ class ChatAnalysisUseCaseTest {
     fun testAnalyzeChats_thresholdNotMet() = runTest {
         // 当未处理聊天记录数不足 10 条时（分析的阈值）
         val chats = List(5) {
-            ChatEntity(id = it.toLong(), content = "内容$it", petType = PetType.CAT.name, sessionId = "session-1")
+            ChatEntity(id = it.toLong(), content = "内容$it", petType = PetType.CAT, sessionId = "session-1")
         }
         whenever(chatDao.getUnprocessedChats()).thenReturn(chats)
 
@@ -91,7 +91,7 @@ class ChatAnalysisUseCaseTest {
     fun testAnalyzeChats_thresholdMetAndSucceeds() = runTest {
         // 当未处理聊天记录数达到 10 条（如 10 条 CAT 的对话）
         val chats = List(10) {
-            ChatEntity(id = it.toLong(), content = "猫咪对话$it", petType = PetType.CAT.name, sessionId = "session-1", role = "user")
+            ChatEntity(id = it.toLong(), content = "猫咪对话$it", petType = PetType.CAT, sessionId = "session-1", role = "user")
         }
         whenever(chatDao.getUnprocessedChats()).thenReturn(chats)
 
@@ -125,7 +125,7 @@ class ChatAnalysisUseCaseTest {
         // 2. 验证保存了解析后的用户画像分析
         argumentCaptor<ChatAnalysisEntity>().apply {
             verify(analysisDao).insertBlocking(capture())
-            assertEquals(PetType.CAT.name, firstValue.petType)
+            assertEquals(PetType.CAT, firstValue.petType)
             assertEquals("用户对猫咪表现出浓厚的喜爱，并多次喂食小鱼干。", firstValue.summary)
             assertTrue(firstValue.preferences.contains("喜欢鱼干"))
             assertTrue(firstValue.patterns.contains("主动提问"))
@@ -143,7 +143,7 @@ class ChatAnalysisUseCaseTest {
     fun testSummarizeConversation_thresholdNotMet() = runTest {
         // 当未处理聊天记录数不足 10 条时，不进行总结
         val chats = List(8) {
-            ChatEntity(id = it.toLong(), content = "普通聊天$it", petType = PetType.CAT.name, sessionId = "session-1")
+            ChatEntity(id = it.toLong(), content = "普通聊天$it", petType = PetType.CAT, sessionId = "session-1")
         }
         whenever(chatDao.getUnprocessedChats()).thenReturn(chats)
 
@@ -161,7 +161,7 @@ class ChatAnalysisUseCaseTest {
             ChatEntity(
                 id = it.toLong(),
                 content = "消息$it",
-                petType = PetType.CAT.name,
+                petType = PetType.CAT,
                 sessionId = "session-xyz",
                 role = if (it % 2 == 0) "user" else "assistant"
             )
@@ -191,7 +191,7 @@ class ChatAnalysisUseCaseTest {
             verify(chatDao).insertBlocking(capture())
             assertEquals("【对话摘要】用户与猫咪亲切互动，讨论了日常琐事。", firstValue.content)
             assertEquals("system", firstValue.role)
-            assertEquals(PetType.CAT.name, firstValue.petType)
+            assertEquals(PetType.CAT, firstValue.petType)
             assertEquals("session-xyz", firstValue.sessionId)
             assertTrue(firstValue.isImportant)
             assertTrue(firstValue.isSummary)
@@ -210,7 +210,7 @@ class ChatAnalysisUseCaseTest {
     fun testAnalyzeChats_apiFailureGracefulFallback() = runTest {
         // 当未处理聊天记录数达到 10 条，但是 API 发生异常时
         val chats = List(10) {
-            ChatEntity(id = it.toLong(), content = "猫咪对话$it", petType = PetType.CAT.name, sessionId = "session-1", role = "user")
+            ChatEntity(id = it.toLong(), content = "猫咪对话$it", petType = PetType.CAT, sessionId = "session-1", role = "user")
         }
         whenever(chatDao.getUnprocessedChats()).thenReturn(chats)
         whenever(apiService.makeApiRequest(any())).thenThrow(RuntimeException("API故障"))
@@ -227,7 +227,7 @@ class ChatAnalysisUseCaseTest {
     fun testSummarizeConversation_apiFailureGracefulFallback() = runTest {
         // 当未处理聊天记录数达到 10 条，但是在事务中发生数据库操作异常时
         val chats = List(12) {
-            ChatEntity(id = it.toLong(), content = "消息$it", petType = PetType.CAT.name, sessionId = "session-xyz", role = "user")
+            ChatEntity(id = it.toLong(), content = "消息$it", petType = PetType.CAT, sessionId = "session-xyz", role = "user")
         }
         whenever(chatDao.getUnprocessedChats()).thenReturn(chats)
         whenever(promptBuilder.build(any())).thenReturn("基础提示词")
@@ -251,9 +251,9 @@ class ChatAnalysisUseCaseTest {
     fun testAnalyzeChats_mixedPetTypesBelowThresholdIndividual() = runTest {
         // 总未处理数达到 15 条（>= 10），但 CAT 有 8 条，DOG 有 7 条，各自都未达 10 条
         val chats = List(8) {
-            ChatEntity(id = it.toLong(), content = "猫咪对话$it", petType = PetType.CAT.name, sessionId = "session-1", role = "user")
+            ChatEntity(id = it.toLong(), content = "猫咪对话$it", petType = PetType.CAT, sessionId = "session-1", role = "user")
         } + List(7) {
-            ChatEntity(id = (it + 8).toLong(), content = "狗狗对话$it", petType = PetType.DOG.name, sessionId = "session-1", role = "user")
+            ChatEntity(id = (it + 8).toLong(), content = "狗狗对话$it", petType = PetType.DOG, sessionId = "session-1", role = "user")
         }
         whenever(chatDao.getUnprocessedChats()).thenReturn(chats)
 
@@ -269,9 +269,9 @@ class ChatAnalysisUseCaseTest {
     fun testAnalyzeChats_mixedPetTypesOneAboveThreshold() = runTest {
         // 总未处理数达到 17 条，其中 CAT 有 12 条（>= 10），DOG 有 5 条（< 10）
         val chats = List(12) {
-            ChatEntity(id = it.toLong(), content = "猫咪对话$it", petType = PetType.CAT.name, sessionId = "session-1", role = "user")
+            ChatEntity(id = it.toLong(), content = "猫咪对话$it", petType = PetType.CAT, sessionId = "session-1", role = "user")
         } + List(5) {
-            ChatEntity(id = (it + 12).toLong(), content = "狗狗对话$it", petType = PetType.DOG.name, sessionId = "session-1", role = "user")
+            ChatEntity(id = (it + 12).toLong(), content = "狗狗对话$it", petType = PetType.DOG, sessionId = "session-1", role = "user")
         }
         whenever(chatDao.getUnprocessedChats()).thenReturn(chats)
         whenever(promptBuilder.build(any())).thenReturn("提示词")
@@ -307,7 +307,7 @@ class ChatAnalysisUseCaseTest {
         // 2. 验证仅保存了 CAT 的分析结果
         argumentCaptor<ChatAnalysisEntity>().apply {
             verify(analysisDao).insertBlocking(capture())
-            assertEquals(PetType.CAT.name, firstValue.petType)
+            assertEquals(PetType.CAT, firstValue.petType)
             assertEquals("猫咪互动总结", firstValue.summary)
         }
 
@@ -315,7 +315,7 @@ class ChatAnalysisUseCaseTest {
         argumentCaptor<List<ChatEntity>>().apply {
             verify(chatDao).updateBlocking(capture())
             assertEquals(12, firstValue.size)
-            assertTrue(firstValue.all { it.petType == PetType.CAT.name && it.isProcessed })
+            assertTrue(firstValue.all { it.petType == PetType.CAT && it.isProcessed })
         }
     }
 }

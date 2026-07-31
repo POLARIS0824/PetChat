@@ -4,11 +4,12 @@ import androidx.room.Dao
 import androidx.room.Insert
 import androidx.room.Query
 import com.example.chat.data.entity.ChatAnalysisEntity
+import com.example.chat.model.PetType
 
 @Dao
 interface AnalysisDao {
     @Query("SELECT * FROM chat_analysis WHERE petType = :petType ORDER BY timestamp DESC LIMIT 1")
-    suspend fun getLatestAnalysis(petType: String): ChatAnalysisEntity?
+    suspend fun getLatestAnalysis(petType: PetType): ChatAnalysisEntity?
 
     @Insert
     suspend fun insert(analysis: ChatAnalysisEntity)

@@ -5,6 +5,7 @@ import androidx.room.Insert
 import androidx.room.Query
 import androidx.room.Update
 import com.example.chat.data.entity.ChatEntity
+import com.example.chat.model.PetType
 
 /**
  * 聊天记录数据访问对象（DAO）
@@ -23,7 +24,7 @@ interface ChatDao {
      * 获取指定会话的所有消息
      */
     @Query("SELECT * FROM chat_history WHERE sessionId = :sessionId AND petType = :petType ORDER BY timestamp ASC")
-    suspend fun getSessionMessages(sessionId: String, petType: String): List<ChatEntity>
+    suspend fun getSessionMessages(sessionId: String, petType: PetType): List<ChatEntity>
 
     /**
      * 获取未处理的聊天记录数量
@@ -60,7 +61,7 @@ interface ChatDao {
 
     // 获取指定会话的最近消息
     @Query("SELECT * FROM chat_history WHERE sessionId = :sessionId AND petType = :petType ORDER BY timestamp DESC LIMIT :limit")
-    suspend fun getRecentSessionMessages(sessionId: String, petType: String, limit: Int): List<ChatEntity>
+    suspend fun getRecentSessionMessages(sessionId: String, petType: PetType, limit: Int): List<ChatEntity>
 
     // 新增：获取指定会话的重要消息
     @Query("SELECT * FROM chat_history WHERE sessionId = :sessionId AND isImportant = 1 ORDER BY timestamp ASC")

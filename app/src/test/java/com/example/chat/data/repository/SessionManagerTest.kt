@@ -9,7 +9,6 @@ import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.stringPreferencesKey
 import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.*
 import org.junit.Before
@@ -46,7 +45,7 @@ class SessionManagerTest {
 
         sessionManager = SessionManager(dataStore, chatDao)
 
-        assertEquals("existing-session-123", sessionManager.currentSessionId)
+        assertEquals("existing-session-123", sessionManager.getCurrentSessionId())
     }
 
     @Test
@@ -54,7 +53,7 @@ class SessionManagerTest {
         // 模拟没有已存在 sessionId 的情况，初始化时应生成一个新的 UUID 并保存
         sessionManager = SessionManager(dataStore, chatDao)
 
-        val id = sessionManager.currentSessionId
+        val id = sessionManager.getCurrentSessionId()
         assertNotNull(id)
         assertTrue(id.isNotEmpty())
 
@@ -69,12 +68,12 @@ class SessionManagerTest {
         }
 
         sessionManager = SessionManager(dataStore, chatDao)
-        assertEquals("old-session-id", sessionManager.currentSessionId)
+        assertEquals("old-session-id", sessionManager.getCurrentSessionId())
 
         val newSessionId = sessionManager.createNewSession()
 
         assertNotEquals("old-session-id", newSessionId)
-        assertEquals(newSessionId, sessionManager.currentSessionId)
+        assertEquals(newSessionId, sessionManager.getCurrentSessionId())
 
         val savedId = dataStore.data.first()[KEY_SESSION_ID]
         assertEquals(newSessionId, savedId)
@@ -89,7 +88,7 @@ class SessionManagerTest {
         sessionManager = SessionManager(dataStore, chatDao)
         sessionManager.setCurrentSessionId("custom-session-999")
 
-        assertEquals("custom-session-999", sessionManager.currentSessionId)
+        assertEquals("custom-session-999", sessionManager.getCurrentSessionId())
 
         val savedId = dataStore.data.first()[KEY_SESSION_ID]
         assertEquals("custom-session-999", savedId)
@@ -100,15 +99,15 @@ class SessionManagerTest {
         sessionManager = SessionManager(dataStore, chatDao)
 
         val dummyHistory = listOf(
-            ChatEntity(id = 1, content = "嗨", role = "user", petType = PetType.CAT.name, sessionId = "session-abc")
+            ChatEntity(id = 1, content = "嗨", role = "user", petType = PetType.CAT, sessionId = "session-abc")
         )
-        whenever(chatDao.getSessionMessages("session-abc", "CAT")).thenReturn(dummyHistory)
+        whenever(chatDao.getSessionMessages("session-abc", PetType.CAT)).thenReturn(dummyHistory)
 
         val messages = sessionManager.getSessionMessages("session-abc", PetType.CAT)
 
         assertEquals(1, messages.size)
         assertEquals("嗨", messages[0].content)
-        verify(chatDao).getSessionMessages("session-abc", "CAT")
+        verify(chatDao).getSessionMessages("session-abc", PetType.CAT)
     }
 
     @Test

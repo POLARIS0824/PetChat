@@ -33,7 +33,7 @@ class ChatRepository @Inject constructor(
     private suspend fun buildMessages(petType: PetType, userMessage: String): List<Message> {
         val enhancedPrompt = promptBuilder.build(petType)
         val recentMessages = chatDao.getRecentSessionMessages(
-            sessionManager.currentSessionId, petType.name, CONTEXT_MESSAGE_LIMIT
+            sessionManager.getCurrentSessionId(), petType, CONTEXT_MESSAGE_LIMIT
         )
 
         val messages = mutableListOf<Message>()
@@ -123,8 +123,8 @@ class ChatRepository @Inject constructor(
         if (message.content.isBlank()) return // 防御性保护：防止保存空白内容消息到数据库
         val entity = ChatEntity(
             content = message.content,
-            petType = petType.name,
-            sessionId = sessionManager.currentSessionId,
+            petType = petType,
+            sessionId = sessionManager.getCurrentSessionId(),
             role = message.role,
             isImportant = isMessageImportant(message.content)
         )

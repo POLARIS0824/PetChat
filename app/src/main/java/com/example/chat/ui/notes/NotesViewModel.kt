@@ -25,7 +25,7 @@ class NotesViewModel @Inject constructor(
     private val repository: NotesRepository
 ) : ViewModel() {
 
-    private val _selectedPetType = MutableStateFlow<String?>(null)
+    private val _selectedPetType = MutableStateFlow<PetType?>(null)
 
     private val notesFlow = _selectedPetType.flatMapLatest { petType ->
         if (petType == null) repository.getAllNotesFlow()
@@ -46,7 +46,7 @@ class NotesViewModel @Inject constructor(
         initialValue = NotesUiState.Loading
     )
 
-    fun addNote(content: String, petType: String) {
+    fun addNote(content: String, petType: PetType) {
         viewModelScope.launch {
             val note = NoteEntity(
                 content = content,
@@ -69,21 +69,21 @@ class NotesViewModel @Inject constructor(
         }
     }
 
-    fun setFilter(petType: String?) {
+    fun setFilter(petType: PetType?) {
         _selectedPetType.value = petType
     }
 
     private fun NoteEntity.toUiModel() = NoteUiModel(
         id = id,
         content = content,
-        petType = PetType.entries.firstOrNull { it.name == petType } ?: PetType.CAT,
+        petType = petType,
         timestamp = timestamp
     )
 
     private fun NoteUiModel.toEntity() = NoteEntity(
         id = id,
         content = content,
-        petType = petType.name,
+        petType = petType,
         timestamp = timestamp
     )
 }

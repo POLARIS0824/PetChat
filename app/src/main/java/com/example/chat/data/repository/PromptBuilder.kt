@@ -11,7 +11,7 @@ class PromptBuilder @Inject constructor(
 ) {
     suspend fun build(petType: PetType): String {
         val basePrompt = PromptConfig.prompts[petType] ?: ""
-        val analysis = analysisDao.getLatestAnalysis(petType.name)
+        val analysis = analysisDao.getLatestAnalysis(petType)
         return if (analysis != null) {
             """
             $basePrompt

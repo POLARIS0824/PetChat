@@ -57,13 +57,13 @@ class PetChatViewModel @Inject constructor(
         viewModelScope.launch {
             val currentType = readyState().currentPetType
             val messages = sessionManager.getSessionMessages(
-                sessionManager.currentSessionId, currentType
+                sessionManager.getCurrentSessionId(), currentType
             )
             val chatMessages = messages.map { entity ->
                 ChatMessage(
                     content = entity.content,
                     role = entity.role,
-                    petType = PetType.entries.firstOrNull { it.name == entity.petType } ?: PetType.CAT,
+                    petType = entity.petType,
                     timestamp = entity.timestamp,
                     id = "db_${entity.id}"
                 )
@@ -87,9 +87,11 @@ class PetChatViewModel @Inject constructor(
     }
 
     fun createNewSession() {
-        sessionManager.createNewSession()
-        updateReady { it.copy(chatHistory = emptyList()) }
-        loadAllSessions()
+        viewModelScope.launch {
+            sessionManager.createNewSession()
+            updateReady { it.copy(chatHistory = emptyList()) }
+            loadAllSessions()
+        }
     }
 
     fun sendMessage(message: String) {

@@ -3,6 +3,7 @@ package com.example.chat.data.repository
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.PreferenceDataStoreFactory
 import androidx.datastore.preferences.core.Preferences
+import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.stringPreferencesKey
 import com.example.chat.model.ApiConfig
@@ -47,20 +48,26 @@ class SettingsManagerTest {
     }
 
     @Test
-    fun testGetConfig_defaultsToEmptyWhenNullOrBlank() = runTest {
+    fun testGetConfig_defaultsToDefaultValuesWhenNotInitialized() = runTest {
+        // 未配置过（config_initialized = false）时，应返回默认值
         val config = settingsManager.getConfig()
-        assertEquals("", config.baseUrl)
-        assertEquals("", config.model)
+        assertEquals(SettingsManager.DEFAULT_BASE_URL, config.baseUrl)
+        assertEquals(SettingsManager.DEFAULT_MODEL, config.model)
+    }
 
+    @Test
+    fun testGetConfig_returnsEmptyWhenInitializedButBlank() = runTest {
+        // 配置过但值为空白时，应返回空字符串
         dataStore.edit { prefs ->
             prefs[KEY_BASE_URL] = "   "
+            prefs[booleanPreferencesKey("config_initialized")] = true
         }
         val configBlank = settingsManager.getConfig()
         assertEquals("", configBlank.baseUrl)
     }
 
     @Test
-    fun testGetConfigSync_andSaveConfig() = runTest {
+    fun testSaveConfig_andGetConfig() = runTest {
         val config = ApiConfig(
             baseUrl = "https://sync-api.example.com",
             apiKey = "sync-key",
@@ -68,7 +75,7 @@ class SettingsManagerTest {
         )
         settingsManager.saveConfig(config)
         
-        val loadedConfig = settingsManager.getConfigSync()
+        val loadedConfig = settingsManager.getConfig()
         assertEquals("https://sync-api.example.com", loadedConfig.baseUrl)
         assertEquals("sync-key", loadedConfig.apiKey)
         assertEquals("custom-deepseek", loadedConfig.model)

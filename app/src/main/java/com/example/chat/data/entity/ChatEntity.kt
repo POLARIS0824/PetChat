@@ -3,6 +3,7 @@ package com.example.chat.data.entity
 import androidx.room.Entity
 import androidx.room.Index
 import androidx.room.PrimaryKey
+import com.example.chat.model.PetType
 
 @Entity(
     tableName = "chat_history",
@@ -16,7 +17,7 @@ data class ChatEntity(
     @PrimaryKey(autoGenerate = true)
     val id: Long = 0,
     val content: String,
-    val petType: String,
+    val petType: PetType,
     val timestamp: Long = System.currentTimeMillis(),
     val isProcessed: Boolean = false,
     val sessionId: String,

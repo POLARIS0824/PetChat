@@ -169,8 +169,9 @@ PetChat 是一款 Android 宠物聊天应用，用户可以与 4 只性格各异
 |------|------|
 | `ui/app/PetChatApp.kt` | 根 Composable：Scaffold + Drawer + TopBar + BottomBar + NavDisplay |
 | `ui/navigation/AppNavigation.kt` | `TopLevelBackStack` 自定义回退栈 |
-| `ui/navigation/DrawerComponents.kt` | 侧边抽屉内容 |
-| `ui/navigation/Routes.kt` | 路由定义（6 个路由） |
+| `ui/drawer/DrawerComponents.kt` | 侧边抽屉内容 |
+| `ui/navigation/Routes.kt` | 路由定义（7 个路由） |
+| `ui/profile/PreferencesScreen.kt` | 个人信息与偏好设置界面 |
 | `ui/chat/ChatScreen.kt` | 聊天界面 |
 | `ui/chat/ChatComponents.kt` | 气泡、输入框、打字指示器、动画 |
 | `ui/chat/PetChatViewModel.kt` | 主聊天 ViewModel |
@@ -637,6 +638,7 @@ _allSessions: MutableStateFlow<List<SessionInfo>>
 | `SocialRoute` | 底部导航 | 萌友圈 |
 | `SessionListRoute` | 侧边抽屉 | 会话历史列表 |
 | `SettingsRoute` | 侧边抽屉 | API 设置 |
+| `PreferencesRoute` | 侧边抽屉 | 个人信息与偏好设置（如用户名、签名及头像） |
 
 **底部导航栏（4 个 Tab）：**
 1. 聊天（Chat）
@@ -668,7 +670,8 @@ PetChatApp
 │       ├── NotesScreen
 │       ├── SocialScreen
 │       ├── SessionListScreen
-│       └── SettingsScreen
+│       ├── SettingsScreen
+│       └── PreferencesScreen
 └── PetSelectorOverlay（宠物快速切换浮层）
     ├── 布丁（CAT）
     ├── 大白（DOG）

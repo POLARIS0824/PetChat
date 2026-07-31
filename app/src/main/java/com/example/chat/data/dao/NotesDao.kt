@@ -6,12 +6,13 @@ import androidx.room.Insert
 import androidx.room.Query
 import androidx.room.Update
 import com.example.chat.data.entity.NoteEntity
+import com.example.chat.model.PetType
 import kotlinx.coroutines.flow.Flow
 
 @Dao
 interface NotesDao {
     @Query("SELECT * FROM notes WHERE petType = :petType ORDER BY timestamp DESC")
-    fun getByTypeFlow(petType: String): Flow<List<NoteEntity>>
+    fun getByTypeFlow(petType: PetType): Flow<List<NoteEntity>>
 
     @Query("SELECT * FROM notes ORDER BY timestamp DESC")
     fun getAllFlow(): Flow<List<NoteEntity>>

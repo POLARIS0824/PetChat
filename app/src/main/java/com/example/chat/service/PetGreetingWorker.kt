@@ -12,14 +12,18 @@ import com.example.chat.MainActivity
 import com.example.chat.data.repository.ChatRepository
 import com.example.chat.data.repository.dataStore
 import com.example.chat.model.PetType
+import com.example.chat.model.petTypeFromStorage
 import com.example.chat.R
+import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedInject
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.launch
 import java.util.concurrent.TimeUnit
 
 @HiltWorker
@@ -37,33 +41,39 @@ class PetGreetingWorker @AssistedInject constructor(
         private val KEY_HOUR = intPreferencesKey("hour")
         private val KEY_MINUTE = intPreferencesKey("minute")
         private val KEY_PET_TYPE = stringPreferencesKey("pet_type")
+        private val KEY_GREETING_SCHEDULED = booleanPreferencesKey("greeting_scheduled")
 
-        fun saveGreetingTime(context: Context, hourOfDay: Int, minute: Int) {
-            runBlocking {
-                context.dataStore.edit { prefs ->
-                    prefs[KEY_HOUR] = hourOfDay
-                    prefs[KEY_MINUTE] = minute
-                }
+        suspend fun saveGreetingTime(context: Context, hourOfDay: Int, minute: Int) {
+            context.dataStore.edit { prefs ->
+                prefs[KEY_HOUR] = hourOfDay
+                prefs[KEY_MINUTE] = minute
             }
         }
 
-        fun savePetType(context: Context, petType: PetType) {
-            runBlocking {
-                context.dataStore.edit { prefs ->
-                    prefs[KEY_PET_TYPE] = petType.name
-                }
+        suspend fun savePetType(context: Context, petType: PetType) {
+            context.dataStore.edit { prefs ->
+                prefs[KEY_PET_TYPE] = petType.name
             }
         }
 
-        private fun getSavedPetType(context: Context): PetType {
-            val name = runBlocking {
-                context.dataStore.data.first()[KEY_PET_TYPE]
+        private suspend fun getSavedPetType(context: Context): PetType {
+            val name = context.dataStore.data.first()[KEY_PET_TYPE]
+            return petTypeFromStorage(name)
+        }
+
+        private suspend fun isGreetingScheduled(context: Context): Boolean =
+            context.dataStore.data.first()[KEY_GREETING_SCHEDULED] ?: false
+
+        private suspend fun markGreetingScheduled(context: Context) {
+            context.dataStore.edit { prefs ->
+                prefs[KEY_GREETING_SCHEDULED] = true
             }
-            return PetType.entries.firstOrNull { it.name == name } ?: PetType.CAT
         }
 
         fun schedule(context: Context, hourOfDay: Int, minute: Int) {
-            saveGreetingTime(context, hourOfDay, minute)
+            CoroutineScope(Dispatchers.IO).launch {
+                saveGreetingTime(context, hourOfDay, minute)
+            }
 
             val workManager = WorkManager.getInstance(context)
             val currentTime = System.currentTimeMillis()

@@ -219,8 +219,8 @@ private fun EditNoteDialog(
 
 @Composable
 private fun FilterChips(
-    selectedType: String?,
-    onFilterSelected: (String?) -> Unit
+    selectedType: PetType?,
+    onFilterSelected: (PetType?) -> Unit
 ) {
     LazyRow(
         modifier = Modifier
@@ -243,8 +243,8 @@ private fun FilterChips(
 
         items(PetType.entries) { type ->
             FilterChip(
-                selected = selectedType == type.name,
-                onClick = { onFilterSelected(type.name) },
+                selected = selectedType == type,
+                onClick = { onFilterSelected(type) },
                 label = { Text("#${type.displayName}") },
                 colors = FilterChipDefaults.filterChipColors(
                     selectedContainerColor = AccentOrange,
@@ -316,7 +316,7 @@ private fun NoteCard(
 @Composable
 private fun AddNoteDialog(
     onDismiss: () -> Unit,
-    onAdd: (String, String) -> Unit
+    onAdd: (String, PetType) -> Unit
 ) {
     var content by remember { mutableStateOf("") }
     var selectedType by remember { mutableStateOf(PetType.CAT) }
@@ -370,7 +370,7 @@ private fun AddNoteDialog(
             Button(
                 onClick = {
                     if (content.isNotEmpty()) {
-                        onAdd(content, selectedType.name)
+                        onAdd(content, selectedType)
                     }
                 },
                 enabled = content.isNotEmpty(),
