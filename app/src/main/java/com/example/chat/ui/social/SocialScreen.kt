@@ -23,7 +23,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import com.example.chat.ui.util.FormFactorPreviews
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import com.example.chat.R
 import com.example.chat.model.SocialPost
 import com.example.chat.ui.social.SocialViewModel

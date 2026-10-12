@@ -12,7 +12,9 @@ pluginManagement {
     }
 }
 plugins {
-    id("org.gradle.toolchains.foojay-resolver-convention") version "0.10.0"
+    // Settings plugins cannot use version catalog aliases:
+    // https://docs.gradle.org/current/userguide/version_catalogs.html#sec:plugins
+    id("org.gradle.toolchains.foojay-resolver-convention") version "1.0.0"
 }
 dependencyResolutionManagement {
     repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
@@ -24,4 +26,4 @@ dependencyResolutionManagement {
 
 rootProject.name = "Chat"
 include(":app")
- 
+
